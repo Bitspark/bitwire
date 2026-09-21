@@ -66,6 +66,14 @@ matching belongs to a composed dispatcher. They are not package
 dependencies. Bitwire conformance cases may exercise a pinned Nightseam driver;
 Bitwire libraries do not depend on its runtime.
 
+The pinned revision predates the request-serial rule adopted in
+[Nightseam PR444](https://github.com/Bitspark/nightseam/pull/444), which tightens
+`nightseam.duplex/1` in place rather than naming a new profile version. That
+rule is the profile's to make under the ownership table above; its compatibility
+disposition is an [open review finding](../integration.md#open-review-findings).
+These references are not repinned, and this page does not describe the tightened
+rule as retained profile obligation, until that evidence is accepted.
+
 ## Publication evidence
 
 Value conversion can allocate live bindings before sending. It may undo those
