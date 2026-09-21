@@ -6,7 +6,7 @@ on:
       tag:
         description: Existing immutable public release tag
         required: true
-        default: v0.1.0
+        default: v0.2.0
         type: string
       authentication:
         description: Prefer a configured PyPI trusted publisher; token is a bootstrap fallback

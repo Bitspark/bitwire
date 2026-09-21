@@ -7,8 +7,14 @@ static_assert(std::is_abstract_v<bitwire::Wire>);
 static_assert(std::has_virtual_destructor_v<bitwire::Wire>);
 static_assert(std::is_same_v<decltype(&bitwire::Wire::send),
     void (bitwire::Wire::*)(const bitwire::Path&, const bitwire::Message&)>);
-static_assert(std::is_same_v<decltype(&bitwire::Wire::receive),
-    bitwire::Detach (bitwire::Wire::*)(const bitwire::Path&, bitwire::Receiver)>);
+static_assert(std::is_same_v<decltype(&bitwire::Endpoint::receive),
+    bitwire::Detach (bitwire::Endpoint::*)(bitwire::Receiver)>);
+
+static_assert(std::is_base_of_v<bitwire::Wire, bitwire::Endpoint>);
+template<class T> concept HasReceive = requires(T& value, bitwire::Receiver receiver) { value.receive(receiver); };
+template<class T> concept HasClose = requires(T& value) { value.close(); };
+static_assert(!HasReceive<bitwire::Wire> && !HasClose<bitwire::Wire>);
+static_assert(HasReceive<bitwire::Endpoint> && HasClose<bitwire::Endpoint>);
 
 // Declaration/value checks only: this is not a runtime or routing conformance
 // test. It guards against silently converting JSON or copying capability data

@@ -10,27 +10,37 @@ runtime that carries its interactions. A wire gives access to an origin;
 selecting a path or mounting several origins must preserve that same interface.
 The contract is shared across languages, generators and runtime implementations.
 
-**Status: [0.1.0 released](https://github.com/Bitspark/bitwire/releases/tag/v0.1.0).** Native bindings are present in eight
-languages. Ten independent access-composition cases execute against pinned
-Nightseam Go and TypeScript implementations. Every binding has package or
-consumer checks. Go, npm, Rust and Python registry installations and public
-Swift/C++/Haskell source consumers are verified. The [language matrix](docs/languages.md) records
-each publication status and Nightseam adoption separately. No endpoint runtime
-is included.
+**Status: 0.2.0 candidate; [0.1.0 remains released](https://github.com/Bitspark/bitwire/releases/tag/v0.1.0).**
+All eight bindings separate send access from receive attachment and closure.
+A test-only Go/TypeScript composition experiment exercises shared dispatch,
+relative paths and preservation. The earlier ten Nightseam cases remain a pinned
+0.1.0 baseline. The [language matrix](docs/languages.md) records publication and
+adoption separately. No production endpoint runtime is included.
 
 ## The interface
 
 ```typescript
 interface Wire {
   send(path: Path, message: Message): void;
-  receive(path: Path, receiver: Receiver): () => void;
+}
+
+interface Endpoint extends Wire {
+  receive(receiver: Receiver): () => void;
   close(code?: number, reason?: string): void;
+}
+
+interface Receiver {
+  message?: (path: Path, message: Message) => void | Promise<void>;
+  closed?: (code: number, reason: string) => void;
 }
 ```
 
 Paths are sequences of opaque strings, relative to the wire's origin. `Message`
 carries a request, response, event or cancellation and may hold a local return
-capability. `receive` installs a receiver and returns its detach function.
+capability. An Endpoint accepts one active receiver and returns its detach
+function. Path registration and matching belong to a composed dispatcher;
+selected receiving views share that owner. The [design decision](docs/decisions/0002-delivery-dispatch-and-ownership.md)
+explains why access and ownership are separate capabilities.
 The [contract](docs/wire/contract.md) gives these names their shared meaning.
 
 Selection and mounting are governed by laws, not by the choice of carrier:

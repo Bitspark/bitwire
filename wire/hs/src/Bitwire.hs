@@ -20,6 +20,7 @@ module Bitwire
   , Message (..)
   , Receiver (..)
   , Wire (..)
+  , Endpoint (..)
   ) where
 
 import Data.ByteString (ByteString)
@@ -116,28 +117,27 @@ data Message = Message
   , messageReturn :: Maybe ReturnAddress
   }
 
--- | Callbacks run in the dispatcher's IO context. Exact registrations win;
--- otherwise the longest matching namespace prefix wins. Paths delivered to
--- callbacks are relative to the Wire on which this receiver was registered.
+-- | Callbacks run in the dispatcher's IO context. Paths are relative to the
+-- endpoint origin. Routing and matching policy belong to a separate dispatcher.
 data Receiver = Receiver
-  { receiverNamespace :: Bool
-  , onMessage :: Maybe (Path -> Message -> IO ())
+  { onMessage :: Maybe (Path -> Message -> IO ())
   , onClosed :: Maybe (Code -> Text -> IO ())
   }
 
--- | An endpoint with an origin, represented by its three operations.
---
--- Send completes on admission or raises an IO exception on refusal; it does
--- not run destination application code on the sender's stack or await a reply.
--- Receive refuses duplicate registrations and returns an idempotent detach
--- action that prevents new dispatch. Close ends this endpoint according to its
--- ownership: a selected view shares closure; a mount owns only its routing and
--- registrations and leaves borrowed children usable.
---
--- Roots own queue bounds, scheduling and carrier closure. Providing this record
--- alone does not establish that an implementation obeys those behavioral laws.
-data Wire = Wire
+-- | Send-only access to an origin. Admission refusal raises an IO exception.
+-- Send does not run destination application code on the sender's stack or await
+-- a reply. This capability does not grant receiver attachment or closure.
+newtype Wire = Wire
   { send :: Path -> Message -> IO ()
-  , receive :: Path -> Receiver -> IO (IO ())
+  }
+
+-- | Endpoint control bundles send access, receive attachment and lifecycle.
+-- Receive refuses a second active attachment and returns an idempotent detach
+-- action that prevents new dispatch. Already admitted requests retain their
+-- return access. Roots own scheduling, admission bounds and carrier closure;
+-- this record alone does not establish runtime behavioral conformance.
+data Endpoint = Endpoint
+  { endpointWire :: Wire
+  , receive :: Receiver -> IO (IO ())
   , close :: Code -> Text -> IO ()
   }

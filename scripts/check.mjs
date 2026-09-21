@@ -24,5 +24,6 @@ run('go', ['vet', './...']);
 run('go', ['test', './...']);
 run(process.execPath, [compiler, '-p', 'wire/ts/tsconfig.check.json']);
 run(process.execPath, [compiler, '-p', 'wire/ts/tsconfig.build.json']);
+run(process.execPath, ['scripts/composition.mjs']);
 console.log('Core checks passed: documentation, Go and TypeScript declarations.');
 console.log('Runtime conformance and native package installation are separate CI gates.');

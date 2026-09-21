@@ -1,12 +1,16 @@
 # Go Wire declarations
 
-Package `github.com/Bitspark/bitwire/wire/go`, named `wire`, presents the 0.1
+Package `github.com/Bitspark/bitwire/wire/go`, named `wire`, presents the 0.2
 [Wire contract](../../docs/wire/contract.md). It uses only the Go standard library.
 
 ```go
 type Wire interface {
     Send(path []string, message Message) error
-    Receive(path []string, receiver Receiver) (detach func(), err error)
+}
+
+type Endpoint interface {
+    Wire
+    Receive(receiver Receiver) (detach func(), err error)
     Close(code Code, reason string) error
 }
 ```
@@ -15,14 +19,19 @@ type Wire interface {
 types. Install the released module with:
 
 ```console
-go get github.com/Bitspark/bitwire@v0.1.0
+go get github.com/Bitspark/bitwire@v0.2.0
 ```
 
-There is no endpoint implementation in this package. Existing
-Nightseam Go implementations require an adoption change or bridge because these
-declarations introduce distinct named types.
+`Wire` grants send access. `Endpoint` additionally grants one owning receive
+attachment and lifecycle control. A `ReturnAddress` needs only `Wire`.
+The receiver sees each complete message and its relative path; it has no
+registration path or namespace option. Shared selection and handler routing
+belong to an explicit dispatcher composition.
 
-From the repository root, `go vet ./...` and `go test ./...` compile the package.
-The independent [conformance baseline](../../conformance/README.md) checks
-composition behavior through pinned public Nightseam implementations. Those
-drivers and the release's public Go installation check are separate evidence.
+There is no endpoint implementation in this package. Nightseam implementations
+of the 0.1 contract require an adoption change or bridge for 0.2.
+
+From the repository root, `go vet ./...` and `go test ./...` check the package
+and its send-only consumer example. The independent
+[conformance work](../../conformance/README.md) records behavioral evidence
+separately from declaration and package installation checks.

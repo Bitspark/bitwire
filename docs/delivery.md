@@ -1,5 +1,16 @@
 # First delivery
 
+## Subsequent 0.2.0 delivery
+
+The [accepted separation](decisions/0002-delivery-dispatch-and-ownership.md)
+updates all eight bindings, adds a test-only composition experiment, and requires
+a new immutable minor release. The delivery sequence is package and composition
+checks, reviewed merge, exact-commit public rehearsal, tag/publication and clean
+registry/source consumers. [Nightseam #439](https://github.com/Bitspark/nightseam/issues/439)
+implements the runtime and generator changes in parallel. It must use the new
+release and provide its own combined acceptance; Bitwire's reference experiment
+does not discharge those obligations. The historical first delivery follows.
+
 [Delivery issue #2](https://github.com/Bitspark/bitwire/issues/2) and
 [milestone 0.1.0](https://github.com/Bitspark/bitwire/milestone/1) track the first
 public contract and the complete eight-language scope.

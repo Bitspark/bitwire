@@ -14,7 +14,7 @@ Once a release tag is published, add its exact version to a SwiftPM manifest:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Bitspark/bitwire.git", exact: "0.1.0")
+    .package(url: "https://github.com/Bitspark/bitwire.git", exact: "0.2.0")
 ],
 targets: [
     .target(name: "YourAdapter", dependencies: [
@@ -25,7 +25,11 @@ targets: [
 
 The version above illustrates the syntax; it does not assert that the release
 exists. Consumer source imports `Bitwire` and implements `Wire`. Implementations
-provide admission, asynchronous dispatch, registration and endpoint lifetime.
+provide admission and asynchronous dispatch. `Wire` exposes only `send`;
+`Endpoint: Wire` adds `receive(receiver:)` and `close(code:reason:)`. One receiver
+may be attached at a time; a second active attachment is refused. The receiver
+sees the relative path and complete message. Dispatch and matching policy live
+outside this primitive.
 
 ```swift
 import Bitwire
@@ -39,7 +43,7 @@ func sendRead(over wire: any Wire, returnTo address: ReturnAddress) throws {
 
 ## Representation
 
-- `Wire`, callbacks and supporting values are `Sendable`; Swift 6 concurrency
+- `Wire`, `Endpoint`, callbacks and supporting values are `Sendable`; Swift 6 concurrency
   checking remains enabled. Admission refusal is reported by `throws`.
 - Paths use `[String]`. Implementations must compare segment UTF-8 or Unicode
   scalar sequences. Swift's native string equality considers canonically
@@ -55,7 +59,8 @@ func sendRead(over wire: any Wire, returnTo address: ReturnAddress) throws {
   Local routing must also preserve any opaque received context the runtime
   associates with that identity. Public frame fields do not supply verification
   proof, and the contract introduces no application-writable trusted context.
-- `Detach` is an idempotent registration removal. Closing a Wire and releasing
+- `ReturnAddress.wire` exposes send-only access, without requiring endpoint control.
+- `Detach` is an idempotent receive detachment. Closing an `Endpoint` and releasing
   a live binding remain distinct operations under the shared contract/profile.
 
 See the [common contract](../../docs/wire/contract.md) and

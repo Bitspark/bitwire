@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               bitspark-bitwire
-version:            0.1.0
+version:            0.2.0
 synopsis:           Shared relative-path Wire contract
 description:
     Native Haskell types for Bitwire's relative-path Wire boundary and its

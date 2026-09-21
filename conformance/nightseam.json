@@ -1,6 +1,6 @@
 {
   "repository": "https://github.com/Bitspark/nightseam.git",
   "revision": "1c63f1c4d7e4b5987d4bd32e294177645c92ed8f",
-  "status": "before-adoption",
-  "description": "Exercises the public Nightseam implementation with its native definitions. This does not claim that Nightseam already imports Bitwire."
+  "status": "historical-0.1.0-before-adoption",
+  "description": "Historical Bitwire 0.1.0 access and dispatcher-policy baseline, using the pinned Nightseam native definitions. It does not establish Bitwire 0.2 conformance or adoption."
 }

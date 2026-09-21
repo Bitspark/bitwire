@@ -24,7 +24,14 @@ recipes can be added without changing the access contract.
 
 ## Current delivery
 
-All eight native bindings are implemented. Go/TypeScript have independent
+The working tree targets **0.2.0**, a breaking minor release. Wire provides Send;
+Endpoint adds a single Receive attachment and Close. All eight native bindings,
+package consumers and the Go/TypeScript reference composition experiment use that
+contract. Publication of this candidate is pending; the table below records the
+existing 0.1.0 distributions, not availability of 0.2.0. See the
+[decision and migration](decisions/0002-delivery-dispatch-and-ownership.md).
+
+All eight 0.1.0 native bindings are implemented. Go/TypeScript have independent
 behavioral observations against pinned Nightseam; native bindings have type,
 representation and packaged-consumer checks. The latter do not establish that
 their runtime implementations conform.
@@ -55,7 +62,7 @@ The [Haskell publication run](https://github.com/Bitspark/bitwire/actions/runs/3
 records successful artifact checks and the subsequent authorization refusal.
 The supported Haskell distribution now uses the public Git release; the
 `bindings` workflow checks that installation separately from the current source.
-Every binding carries contract revision `0.1.0`; registry availability and
+Every binding at that release carries contract revision `0.1.0`; registry availability and
 Nightseam adoption remain separate facts.
 
 ## Native representations
@@ -68,13 +75,17 @@ capabilities are not serialized into profile envelopes.
 
 Nightseam at `1c63f1c4d7e4b5987d4bd32e294177645c92ed8f` provides extraction
 references for Go, TypeScript, Python, Rust, Swift, C++ and Java. Its Haskell
-runtime has not landed; that binding is derived from this shared contract.
+runtime was not present at that extraction revision; that binding was derived
+from this shared contract. This historical reference is not a statement about
+the current upstream rollout.
 
 ## Adoption
 
-[Nightseam #421](https://github.com/Bitspark/nightseam/issues/421) has received the
+[Nightseam #439](https://github.com/Bitspark/nightseam/issues/439) now owns the
+approved 0.2.0 API and dispatcher migration in parallel with publication.
+[Nightseam #421](https://github.com/Bitspark/nightseam/issues/421) received the
 verified public Go/TypeScript handover for 0.6.0; its import migration and
-post-adoption acceptance are tracked there. Its other-language rollout is separately
+post-adoption acceptance are coordinated with #439. Its other-language rollout is separately
 scheduled upstream. All eight Bitwire bindings remain in scope; no future
 runtime port or extra registry account silently becomes a prerequisite for the
 agreed Go/TypeScript handover. A binding can exist before a complete runtime or

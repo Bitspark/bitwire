@@ -88,25 +88,21 @@ public struct Message: Sendable {
     }
 }
 
-/// Deliveries use paths relative to the Wire on which this receiver registered.
+/// Deliveries use paths relative to the endpoint origin. Dispatch policy is external.
 public struct Receiver: Sendable {
-    /// Exact routes win; otherwise the longest matching namespace prefix wins.
-    public var namespace: Bool
     public var message: @Sendable ([String], Message) -> Void
     public var closed: @Sendable (Int, String) -> Void
 
     public init(
-        namespace: Bool = false,
         message: @escaping @Sendable ([String], Message) -> Void,
         closed: @escaping @Sendable (Int, String) -> Void = { _, _ in }
     ) {
-        self.namespace = namespace
         self.message = message
         self.closed = closed
     }
 }
 
-/// An idempotent registration detachment. It does not close the endpoint.
+/// An idempotent receive detachment. It does not close the endpoint.
 public typealias Detach = @Sendable () -> Void
 
 /// Access to an origin. Paths are sequences of opaque Unicode-scalar strings.
@@ -116,17 +112,20 @@ public typealias Detach = @Sendable () -> Void
 /// identity test. Compare UTF-8/scalar sequences instead. Empty segments and
 /// slashes within a segment have no special meaning.
 ///
-/// Implementations own dispatch and admission bounds. A selected view shares
-/// endpoint closure; a mount owns its routing but borrows its children. The
-/// profile retains correlation, identity and live-reference obligations.
+/// Wire grants send access only. Implementations own admission and dispatch;
+/// the profile retains correlation, identity and live-reference obligations.
 public protocol Wire: Sendable {
     /// Complete on admission or throw on refusal, without invoking destination
     /// application code on the sender's stack or awaiting a response.
     func send(path: [String], message: Message) throws
 
-    /// Register an exact path, or its namespace. Refuse duplicate registration.
+}
+
+/// Endpoint control is separate from send-only Wire access.
+public protocol Endpoint: Wire {
+    /// Attach one receiver; refuse another while the attachment is active.
     /// Detachment prevents new dispatch; admitted work retains its return path.
-    func receive(path: [String], receiver: Receiver) throws -> Detach
+    func receive(receiver: Receiver) throws -> Detach
 
     /// End this endpoint with the profile's code and reason.
     func close(code: Int, reason: String) throws

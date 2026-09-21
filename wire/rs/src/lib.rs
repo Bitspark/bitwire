@@ -1,7 +1,7 @@
 //! The shared relative-path Wire contract, independent of any runtime.
 //!
-//! A [`Wire`] admits a message at an opaque relative path, registers a receiver,
-//! and ends an endpoint. Runtimes own queues, asynchronous dispatch, routing,
+//! A [`Wire`] admits a message at an opaque relative path. [`Endpoint`] adds
+//! one owning receive attachment and endpoint closure. Runtimes own queues, asynchronous dispatch, routing,
 //! codecs and carriers; this crate provides none of those implementations.
 //!
 //! Paths are sequences of Unicode scalar strings. No separator parsing or
@@ -99,16 +99,14 @@ impl Message {
 pub type Detach = Arc<dyn Fn() + Send + Sync>;
 /// Shared access to an endpoint; no executor or carrier is required by this type.
 pub type SharedWire = Arc<dyn Wire>;
-/// A delivery relative to the origin on which its receiver was registered.
+/// A delivery relative to the origin of the attached endpoint.
 pub type Delivery = Arc<dyn Fn(Vec<String>, Message) + Send + Sync>;
 /// Notification that access has ended with a profile termination code and reason.
 pub type Ending = Arc<dyn Fn(u16, String) + Send + Sync>;
 
-/// Receives deliveries relative to its Wire's origin, and an ending.
+/// Receives deliveries relative to its attached endpoint, and an ending.
 #[derive(Clone, Default)]
 pub struct Receiver {
-    /// Match descendants too. Exact matches win, then the longest segment prefix.
-    pub namespace: bool,
     pub message: Option<Delivery>,
     pub closed: Option<Ending>,
 }
@@ -122,18 +120,26 @@ impl Receiver {
     }
 }
 
-/// Access to an origin through an opaque relative path.
+/// Send-only access to an origin through an opaque relative path.
 ///
 /// Send completes on admission or refusal, without running destination application
-/// code on the sender's stack or awaiting a response. Roots own bounded asynchronous
-/// dispatch and carrier closure. Selection shares endpoint closure; a mount owns
-/// routing and registrations and does not close its borrowed children.
-///
-/// Duplicate receiver registrations are refused. Detach prevents new dispatch and
-/// is idempotent; admitted requests retain their captured return and cancellation
-/// access. The implementation must preserve message content and local identities.
+/// code on the sender's stack or awaiting a response. The implementation must
+/// preserve message content and local identities. Access grants no receiving or
+/// closure authority. Routing policies belong to compositions above this boundary.
 pub trait Wire: Send + Sync {
     fn send(&self, path: &[String], message: Message) -> Result<(), PublicError>;
-    fn receive(&self, path: &[String], receiver: Receiver) -> Result<Detach, PublicError>;
+}
+
+/// Owning endpoint access, including one active receive attachment and closure.
+///
+/// Receive refuses a closed endpoint or a second attachment until the first
+/// detaches. Its callbacks receive every delivered relative path and the complete
+/// message. Detach is
+/// idempotent; a stale detach must not remove a later attachment. Admitted requests
+/// retain their captured return and cancellation access. Closure notifies only
+/// the active receiver once; detached receivers are not notified. Closing twice
+/// has no additional effect; closure is distinct from releasing a live binding.
+pub trait Endpoint: Wire {
+    fn receive(&self, receiver: Receiver) -> Result<Detach, PublicError>;
     fn close(&self, code: u16, reason: &str) -> Result<(), PublicError>;
 }
