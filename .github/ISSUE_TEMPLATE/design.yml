@@ -1,0 +1,32 @@
+name: Design proposal
+description: Propose a change to the shared contract or its ownership.
+labels: [design]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question and current behavior
+      description: State one decision and the observable need behind it.
+    validations:
+      required: true
+  - type: textarea
+    id: composition
+    attributes:
+      label: Existing composition and obstruction
+      description: Explain what the current contract can express and the exact missing behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: recommendation
+    attributes:
+      label: Alternatives and recommendation
+      description: Include language, profile, runtime and consumer implications.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Acceptance observations
+      description: Describe the evidence that would establish the proposed behavior.
+    validations:
+      required: true

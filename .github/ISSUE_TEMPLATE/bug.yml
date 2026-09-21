@@ -1,0 +1,20 @@
+name: Something is wrong
+description: Report a contract, declaration or tooling defect.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Report security concerns privately as described in SECURITY.md.
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and observed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction and affected commit
+      description: Include the language, runtime if any, and the smallest reproducing example.
+    validations:
+      required: true

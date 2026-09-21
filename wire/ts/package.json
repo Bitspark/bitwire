@@ -1,0 +1,21 @@
+{
+  "name": "@bitspark/bitwire",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The shared contract for access through relative paths.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bitspark/bitwire.git",
+    "directory": "wire/ts"
+  },
+  "types": "./dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "files": ["dist", "README.md", "LICENSE", "NOTICE"],
+  "sideEffects": false,
+  "scripts": {
+    "check": "tsc -p tsconfig.check.json",
+    "build": "tsc -p tsconfig.build.json"
+  }
+}
