@@ -72,6 +72,12 @@ For a pending PyPI trusted publisher, use project `bitspark-bitwire`, owner
 `pypi`. This route needs no PyPI API token. The pending publisher does not reserve
 the package name until publication. Binding READMEs describe package checks.
 
+Hackage also requires the token's account to belong to its Uploaders group.
+The first 0.1.0 upload was refused for that missing authorization; the server
+directs the account owner to `hackage-trustees@haskell.org` for approval. See
+[#11](https://github.com/Bitspark/bitwire/issues/11) before retrying. Java's
+remaining signing setup is tracked in [#10](https://github.com/Bitspark/bitwire/issues/10).
+
 ## Recovery
 
 If publication partially succeeds, preserve the tag and existing artifacts.

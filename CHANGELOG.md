@@ -13,6 +13,7 @@
 - Validate package artifacts and consumers outside the checkout.
 - Publish npmjs, Go and crates.io packages with exact-commit public rehearsal and registry verification.
 - Verify public SwiftPM Git dependency and C++ installed-package consumers.
+- Publish Python on PyPI and verify tests against the public installation.
 - Add separate manual publication paths for PyPI, Maven Central and Hackage.
 - Define common preservation laws and the retained profile boundary without moving runtime or generator implementations.
 
