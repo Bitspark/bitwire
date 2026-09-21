@@ -7,6 +7,15 @@ module name are both `dev.bitspark.bitwire`.
 The coordinates are prepared for publication; their presence here does not claim
 that the artifact is already available on Maven Central.
 
+Signing passed in CI. Publication currently receives HTTP 401 from Central;
+[the diagnostic run](https://github.com/Bitspark/bitwire/actions/runs/35586883193)
+confirmed that both secrets are present, have no surrounding whitespace or
+control characters, and reach Maven unchanged. A direct Portal status query
+using the same credentials also returned 401. This rules out Maven substitution
+as the cause, but does not distinguish an expired, revoked, mismatched or otherwise
+unaccepted token pair. [Issue #10](https://github.com/Bitspark/bitwire/issues/10)
+tracks resolution and public installation verification.
+
 ```xml
 <dependency>
   <groupId>dev.bitspark</groupId>

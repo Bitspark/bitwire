@@ -41,7 +41,7 @@ verified independently for each distribution:
 | Python | [`bitspark-bitwire==0.1.0`](https://pypi.org/project/bitspark-bitwire/0.1.0/) | Tests passed against the public PyPI installation, following wheel/source and exact-wheel consumer checks. |
 | Swift | Public Git dependency, exact version `0.1.0` | Standalone Swift 6.1.3 consumer resolved the tag, compiled and ran. |
 | C++ | Public tagged source and installed `Bitwire::wire` | GNU 13.3 installed-package consumer compiled and passed CTest. |
-| Java | Maven Central publication pending | Build, tests, sources, Javadoc and installed consumer passed; signing secrets remain to be configured in [#10](https://github.com/Bitspark/bitwire/issues/10). |
+| Java | Maven Central publication pending | Build, tests, sources, Javadoc, installed consumer and signing passed; Central rejects the configured token with HTTP 401, tracked in [#10](https://github.com/Bitspark/bitwire/issues/10). |
 | Haskell | Public Git dependency pinned to the 0.1.0 release commit | Cabal build/tests, source-package consumer and anonymous Git consumer with a fresh store; [installation instructions](../wire/hs/README.md#install-from-git). Hackage publication is deferred in [#11](https://github.com/Bitspark/bitwire/issues/11). |
 
 The [core release run](https://github.com/Bitspark/bitwire/actions/runs/35577033829)
