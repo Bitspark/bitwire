@@ -41,7 +41,10 @@ and the shared cases together. Runtime-specific dependencies must not leak into
 the contract package. Shared method names alone do not establish interoperability;
 the required profile, identity and live-reference agreements remain explicit.
 
-The older Bitlink whole-runtime decomposition and Nightseam's existing
-specification-home decision need reconciliation during adoption. This decision
-records Bitwire's selected scope; it does not claim those repositories have
-already migrated. See [integration](../integration.md).
+At bootstrap, the older Bitlink whole-runtime decomposition and Nightseam's
+specification-home decision needed reconciliation. Nightseam has since approved
+this narrower boundary: [#421](https://github.com/Bitspark/nightseam/issues/421)
+requires adoption in 0.6.0 once Bitwire is ready, and
+[#422](https://github.com/Bitspark/nightseam/issues/422) tracks the decision-record
+revision. Bitlink's older description still needs reconciliation. These decisions
+do not claim completed consumer migration. See [integration](../integration.md).

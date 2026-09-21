@@ -30,15 +30,21 @@ Bitwire has no runtime dependency on these consumers. Archon is a useful model
 for a small independently specified foundation, not a required dependency:
 identity cryptography and authentication do not belong in this access package.
 
-## Reconcile the ownership records
+## Ownership records
 
-Nightseam's [2026-09-21 decision](https://github.com/Bitspark/nightseam/blob/5217cc60fdf8dd8d6b88e7ebb15bfcc98bb1d515/docs/decisions/the-reusable-foundation-lives-in-nightseam.md)
-currently assigns both Wire specification and implementation to Nightseam.
+At bootstrap, Nightseam's [earlier 2026-09-21 decision](https://github.com/Bitspark/nightseam/blob/5217cc60fdf8dd8d6b88e7ebb15bfcc98bb1d515/docs/decisions/the-reusable-foundation-lives-in-nightseam.md)
+assigned both Wire specification and implementation to Nightseam.
 Bitlink's older model assigns an entire runtime extraction to the name Bitwire.
 The [Bitwire decision](decisions/0001-shared-wire-contract.md) selects a narrower
 scope: shared contract and conformance here, runtime implementation in Nightseam.
-The sibling records have not been amended by this bootstrap; adoption must make
-their ownership statements agree.
+
+Nightseam has since approved that narrower boundary. Its required 0.6.0 adoption
+task, [#421](https://github.com/Bitspark/nightseam/issues/421), waits for a versioned,
+independently consumable contract and behavioral evidence. Public Nightseam builds
+and installation must not require private Bitwire access. The decision-record
+revision is tracked separately in [#422](https://github.com/Bitspark/nightseam/issues/422).
+This approval does not change the current imports or establish completed adoption.
+Bitlink's older whole-runtime description still needs reconciliation.
 
 ## Next steps
 
