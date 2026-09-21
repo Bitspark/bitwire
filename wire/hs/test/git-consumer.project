@@ -1,0 +1,7 @@
+packages: ./consumer
+
+source-repository-package
+  type: git
+  location: https://github.com/Bitspark/bitwire.git
+  tag: 9f45a2e0e9dc576db34237e5ad3aaaa0266a276b
+  subdir: wire/hs

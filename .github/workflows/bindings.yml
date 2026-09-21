@@ -83,6 +83,8 @@ jobs:
           cabal-version: '3.12.1.0'
       - run: cabal update
       - run: node wire/hs/check.mjs
+      - name: Consume the immutable public Haskell Git release
+        run: node wire/hs/check-git.mjs
   bindings:
     if: always()
     needs: [rust, python, swift, cpp, java, haskell]

@@ -4,8 +4,34 @@
 The package contains declarations and a local return-identity constructor. It
 contains no endpoint runtime, router, transport, codec or generated adapters.
 
-The source package is prepared for version 0.1.0. Its presence here does not
-claim publication on Hackage or adoption by a Nightseam Haskell implementation.
+Version 0.1.0 is available as a public Git dependency. Hackage publication is
+deferred; it is not needed for the installation below. This package does not
+claim adoption by a Nightseam Haskell implementation.
+
+## Install from Git
+
+Add the release commit to your application's `cabal.project`:
+
+```cabal
+packages: .
+
+source-repository-package
+  type: git
+  location: https://github.com/Bitspark/bitwire.git
+  tag: 9f45a2e0e9dc576db34237e5ad3aaaa0266a276b
+  subdir: wire/hs
+```
+
+This is the commit of immutable release `v0.1.0`. Add
+`bitspark-bitwire == 0.1.0` to your executable or library's `build-depends` in
+its `.cabal` file, then run `cabal build`. No Hackage publisher account or GitHub
+credentials are required. Cabal may still download other dependencies from
+Hackage. The repository location belongs in the consuming project's
+`cabal.project`; a library's `build-depends` alone does not tell downstream
+projects where to fetch an unpublished dependency.
+
+[Cabal's source dependency documentation](https://cabal.readthedocs.io/en/stable/cabal-project-description-file.html#taking-a-dependency-from-a-source-code-repository)
+describes this supported installation mechanism.
 
 ```haskell
 import Bitwire
@@ -82,5 +108,16 @@ directory. The script leaves that directory intact:
 node wire/hs/check.mjs --artifact-dir /path/to/artifacts
 ```
 
-Release verification should repeat the consumer check against the published
-Hackage version with no source override.
+To verify the public Git installation with the existing release pin:
+
+```text
+node wire/hs/check-git.mjs
+```
+
+This check copies only the consumer fixture into a temporary directory, uses a
+fresh Cabal configuration and store, disables inherited Git configuration and
+credentials, and builds Bitwire from the pinned public repository. CI runs it
+alongside the current source-package check. These checks serve different
+purposes: one verifies today's source artifact, the other the released Git
+dependency. A future Hackage publication will additionally verify a registry
+consumer without the Git source declaration.

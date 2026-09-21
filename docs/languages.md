@@ -42,7 +42,7 @@ verified independently for each distribution:
 | Swift | Public Git dependency, exact version `0.1.0` | Standalone Swift 6.1.3 consumer resolved the tag, compiled and ran. |
 | C++ | Public tagged source and installed `Bitwire::wire` | GNU 13.3 installed-package consumer compiled and passed CTest. |
 | Java | Maven Central publication pending | Build, tests, sources, Javadoc and installed consumer passed; signing secrets remain to be configured in [#10](https://github.com/Bitspark/bitwire/issues/10). |
-| Haskell | Hackage uploader approval pending | Cabal build/tests, source package and extracted-package consumer passed; Hackage rejected the upload because the account lacks uploader permission, tracked in [#11](https://github.com/Bitspark/bitwire/issues/11). |
+| Haskell | Public Git dependency pinned to the 0.1.0 release commit | Cabal build/tests, source-package consumer and anonymous Git consumer with a fresh store; [installation instructions](../wire/hs/README.md#install-from-git). Hackage publication is deferred in [#11](https://github.com/Bitspark/bitwire/issues/11). |
 
 The [core release run](https://github.com/Bitspark/bitwire/actions/runs/35577033829)
 records Go, npm and Rust registry checks. Swift and C++ public source checks used
@@ -51,6 +51,8 @@ The [Python publication run](https://github.com/Bitspark/bitwire/actions/runs/35
 records the upload and subsequent PyPI installation tests.
 The [Haskell publication run](https://github.com/Bitspark/bitwire/actions/runs/35578334722)
 records successful artifact checks and the subsequent authorization refusal.
+The supported Haskell distribution now uses the public Git release; the
+`bindings` workflow checks that installation separately from the current source.
 Every binding carries contract revision `0.1.0`; registry availability and
 Nightseam adoption remain separate facts.
 

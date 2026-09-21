@@ -52,7 +52,12 @@ it. Rust uses `CARGO_REGISTRY_TOKEN`. The npm workspace root remains private.
 ## Additional registries
 
 Swift consumes the root SwiftPM package through the public Git URL and tag.
-C++ consumes tagged source and the installed CMake package. Additional registry
+C++ consumes tagged source and the installed CMake package. Haskell consumes the
+public Git release using Cabal's `source-repository-package`; see the
+[installation instructions](wire/hs/README.md#install-from-git). Run
+`node wire/hs/check-git.mjs` to verify the pinned release independently of the
+local library. Hackage publication is deferred until uploader approval.
+Additional registry
 workflows select an existing stable immutable public release and build its exact
 source. Account setup does not block the first Go/TypeScript handover.
 
@@ -75,7 +80,8 @@ the package name until publication. Binding READMEs describe package checks.
 Hackage also requires the token's account to belong to its Uploaders group.
 The first 0.1.0 upload was refused for that missing authorization; the server
 directs the account owner to `hackage-trustees@haskell.org` for approval. See
-[#11](https://github.com/Bitspark/bitwire/issues/11) before retrying. Java's
+[#11](https://github.com/Bitspark/bitwire/issues/11) before retrying. The operator
+will request that approval later; Git consumption is the current delivery path. Java's
 remaining signing setup is tracked in [#10](https://github.com/Bitspark/bitwire/issues/10).
 
 ## Recovery
