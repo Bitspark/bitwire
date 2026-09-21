@@ -11,7 +11,7 @@ if (operation === 'resolve') {
   const repository = process.env.GITHUB_REPOSITORY;
   if (repository !== 'Bitspark/bitwire') throw new Error('Registry publication belongs to Bitspark/bitwire.');
   async function get(path) {
-    const response = await fetch(`https://api.github.com/repos/${repository}/${path}`, {
+    const response = await fetch(`https://api.github.com/repos/${repository}${path ? `/${path}` : ''}`, {
       headers: {
         Accept: 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2026-03-10',

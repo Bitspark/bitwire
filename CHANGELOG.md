@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Wait for npm's install metadata to contain the released version before checking public consumers.
+
 ## 0.1.0 — release candidate
 
 - Provide native contract bindings for Go, TypeScript, Python, Rust, Swift, C++, Java and Haskell.
