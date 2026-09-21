@@ -50,7 +50,13 @@ from a Nightseam Haskell implementation.
 
 ## Build and package checks
 
-From this directory, with GHC and cabal-install available:
+With Node.js, GHC, cabal-install and `tar` available, the repository check is:
+
+```text
+node wire/hs/check.mjs
+```
+
+It runs the following commands in this directory:
 
 ```text
 cabal check
@@ -63,9 +69,18 @@ The test suite checks representation and consumer use, including return identity
 opaque Unicode paths, profile variants and precision-preserving JSON values.
 These checks do not establish runtime dispatch or composition conformance.
 
-`test/consumer` is a separate Cabal consumer. To check an actual source artifact,
-unpack the source distribution outside this checkout, copy that consumer to a
-second directory, and create a `cabal.project` listing the unpacked package and
-consumer. `cabal run bitwire-consumer` must work using only those copies. Release
-verification should repeat the consumer check against the published Hackage
-version with no source override.
+`test/consumer` is a separate Cabal consumer. The check script unpacks the actual
+source distribution into a temporary directory outside the checkout and copies
+that packaged consumer to a second directory. A `cabal.project` lists only the
+unpacked package and consumer, and `cabal run bitwire-consumer` verifies those
+copies. The script safely removes its own temporary directory afterward.
+
+To retain the exact validated archive for publication, provide an empty artifact
+directory. The script leaves that directory intact:
+
+```text
+node wire/hs/check.mjs --artifact-dir /path/to/artifacts
+```
+
+Release verification should repeat the consumer check against the published
+Hackage version with no source override.
