@@ -75,6 +75,8 @@ outside the checkout, installs the built JAR and POM into a fresh temporary Mave
 repository, resolves the example by its coordinates, and executes it. It does not
 publish. Unit tests cover the public data model; neither these tests nor the
 example establish runtime behavioral conformance.
+After publication, `node wire/java/check-consumer.mjs --registry` performs the
+same check using only Maven Central resolution in a fresh local repository.
 
 The build creates the binary, sources and Javadoc JARs. Binary and source artifacts
 include the Apache-2.0 license and Nightseam attribution. Publishing uses the
@@ -101,3 +103,8 @@ uploads and waits for publication. Run it only as part of the repository's
 coordinated release. See the
 [Central Maven publisher documentation](https://central.sonatype.org/publish/publish-portal-maven/)
 for account and signing setup.
+
+The repository's `publish-java` GitHub Actions workflow performs that publication
+for an explicitly selected, already published immutable GitHub release tag. It
+requires a public repository and matching POM version, runs the package checks,
+then verifies installation from Maven Central. It creates no tag or GitHub release.

@@ -1,0 +1,122 @@
+name: publish-java
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing immutable public release tag (for example v0.1.0)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-java-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - name: Require an immutable public release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Expected a vX.Y.Z release tag.'; exit 1; }
+          [[ "$(gh api "repos/$GITHUB_REPOSITORY" --jq .visibility)" == public ]] || { echo 'The repository must be public.'; exit 1; }
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" > "$RUNNER_TEMP/bitwire-java-release.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          release = json.loads((Path(os.environ["RUNNER_TEMP"]) / "bitwire-java-release.json").read_text())
+          if release.get("draft") is not False or release.get("immutable") is not True:
+              raise SystemExit("Publishing requires an existing published immutable GitHub release.")
+          if release.get("tag_name") != os.environ["RELEASE_TAG"]:
+              raise SystemExit("Release tag does not match the requested tag.")
+          PY
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - name: Match the package to the release
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+          p = ET.parse("wire/java/pom.xml").getroot()
+          ns = {"m": "http://maven.apache.org/POM/4.0.0"}
+          def field(name):
+              return p.findtext("m:" + name, namespaces=ns)
+          version = field("version")
+          if (field("groupId"), field("artifactId")) != ("com.bitspark", "bitwire"):
+              raise SystemExit("Unexpected Maven package coordinates.")
+          if "v" + version != os.environ["RELEASE_TAG"]:
+              raise SystemExit("The POM version must match the immutable release tag.")
+          if p.findtext("m:scm/m:tag", namespaces=ns) != os.environ["RELEASE_TAG"]:
+              raise SystemExit("The POM source tag must match the immutable release tag.")
+          with open(os.environ["GITHUB_ENV"], "a") as f:
+              f.write("BITWIRE_VERSION=" + version + "\n")
+          PY
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: false
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Check the shared contract and Java package
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm install --frozen-lockfile
+          if [[ -f scripts/check.mjs ]]; then node scripts/check.mjs; fi
+          mvn -B -ntp -f wire/java/pom.xml verify
+          node wire/java/check-consumer.mjs
+      - name: Import the release signing key
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+          overwrite-settings: false
+          gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+        env:
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+      - name: Publish signed artifacts to Maven Central
+        working-directory: wire/java
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${MAVEN_CENTRAL_USERNAME:?Configure the Central Portal user-token username.}"
+          : "${MAVEN_CENTRAL_PASSWORD:?Configure the Central Portal user-token password.}"
+          : "${MAVEN_GPG_PASSPHRASE:?Configure the signing-key passphrase.}"
+          mvn -B -ntp -s release-settings.xml -Prelease deploy
+      - name: Verify the public registry consumer
+        shell: bash
+        run: |
+          set -euo pipefail
+          pom="https://repo.maven.apache.org/maven2/com/bitspark/bitwire/$BITWIRE_VERSION/bitwire-$BITWIRE_VERSION.pom"
+          for attempt in {1..20}; do
+            if curl --fail --silent --show-error --max-time 20 "$pom" -o /dev/null; then break; fi
+            if [[ "$attempt" == 20 ]]; then echo 'Published Maven coordinates did not become readable in time.'; exit 1; fi
+            sleep 15
+          done
+          node wire/java/check-consumer.mjs --registry
