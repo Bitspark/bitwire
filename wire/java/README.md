@@ -1,6 +1,6 @@
 # Bitwire for Java
 
-`dev.bitspark:bitwire:0.1.0` presents the shared relative-path Wire contract
+`dev.bitspark:bitwire:0.2.0` presents the shared relative-path Wire contract
 for Java 21. It has no runtime dependencies. The public Java package and automatic
 module name are both `dev.bitspark.bitwire`.
 
@@ -11,7 +11,7 @@ that the artifact is already available on Maven Central.
 <dependency>
   <groupId>dev.bitspark</groupId>
   <artifactId>bitwire</artifactId>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
 </dependency>
 ```
 
@@ -25,9 +25,12 @@ void request(Wire endpoint, Wire replies) {
 }
 ```
 
-The three operations are `send(List<String>, Message)`,
-`receive(List<String>, Receiver)` and `close(int, String)`. `receive` returns an
-idempotent `Runnable` detach operation. The endpoint implementation admits or
+`Wire` exposes only `send(List<String>, Message)`. `Endpoint extends Wire` adds
+`receive(Receiver)` and `close(int, String)` for the endpoint owner. Only one
+receiver may be attached; duplicates are refused. It receives every delivered
+relative path and the complete message. `receive` returns an idempotent `Runnable`
+detach operation that cannot remove a replacement receiver. Path matching is a
+separate routing policy. The endpoint implementation admits or
 refuses work and owns asynchronous dispatch, bounds and termination. This package
 does not implement a runtime, selection, mounting, forwarding or a codec.
 

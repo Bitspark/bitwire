@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Version to rehearse, such as v0.1.0. A manual run never publishes.'
+        description: 'Version to rehearse, such as v0.2.0. A manual run never publishes.'
         type: string
         required: true
       provenance:
@@ -59,7 +59,7 @@ jobs:
         run: node scripts/release-prepare.mjs "$TAG" $REQUIRE_TAG
       - run: pnpm install --frozen-lockfile
       - run: node scripts/check.mjs
-      - name: Exercise independent Wire observations against the pinned implementation
+      - name: Exercise historical 0.1 Wire observations against the pinned implementation
         run: node scripts/conformance.mjs
       - name: Install npm and Go artifacts outside the checkout
         run: node scripts/smoke-packed.mjs

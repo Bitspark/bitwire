@@ -7,13 +7,23 @@ private struct RefusingWire: Wire {
     enum Refusal: Error { case unavailable }
 
     func send(path: [String], message: Message) throws { throw Refusal.unavailable }
-    func receive(path: [String], receiver: Receiver) throws -> Detach {
-        throw Refusal.unavailable
-    }
+}
+
+private struct RefusingEndpoint: Endpoint {
+    func send(path: [String], message: Message) throws { throw RefusingWire.Refusal.unavailable }
+    func receive(receiver: Receiver) throws -> Detach { throw RefusingWire.Refusal.unavailable }
     func close(code: Int, reason: String) throws {}
 }
 
 final class ContractTests: XCTestCase {
+    func testEndpointControlIsSeparateFromSendAccess() {
+        let endpoint: any Endpoint = RefusingEndpoint()
+        let access: any Wire = endpoint
+        XCTAssertFalse(RefusingWire() is any Endpoint)
+        XCTAssertThrowsError(try endpoint.receive(receiver: Receiver(message: { _, _ in })))
+        XCTAssertThrowsError(try access.send(path: [], message: Message(frame: ProfileFrame(kind: .event)) ))
+    }
+
     func testReturnCapabilityKeepsReferenceIdentityAcrossMessageCopies() {
         let first = ReturnAddress(wire: RefusingWire())
         let second = ReturnAddress(wire: RefusingWire())
@@ -50,7 +60,7 @@ final class ContractTests: XCTestCase {
 
     func testContractValuesCanCrossSendableBoundary() {
         func accept<T: Sendable>(_ value: T) {}
-        let receiver = Receiver(namespace: true, message: { _, _ in })
+        let receiver = Receiver(message: { _, _ in })
         let detach: Detach = {}
 
         accept(RefusingWire())

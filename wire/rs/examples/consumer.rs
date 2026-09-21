@@ -1,7 +1,7 @@
 //! A consumer of only the public contract: no Nightseam or async runtime.
 use bitwire::{
-    Detach, Message, Payload, ProfileFrame, ProfileKind, PublicError, Receiver, ReturnAddress,
-    SharedWire, Wire,
+    Message, Payload, ProfileFrame, ProfileKind, PublicError, Receiver, ReturnAddress, SharedWire,
+    Wire,
 };
 use std::sync::Arc;
 
@@ -12,14 +12,6 @@ struct Unavailable;
 impl Wire for Unavailable {
     fn send(&self, _path: &[String], _message: Message) -> Result<(), PublicError> {
         Err(PublicError::new("disconnected", "endpoint unavailable").unpublished())
-    }
-
-    fn receive(&self, _path: &[String], _receiver: Receiver) -> Result<Detach, PublicError> {
-        Err(PublicError::new("disconnected", "endpoint unavailable"))
-    }
-
-    fn close(&self, _code: u16, _reason: &str) -> Result<(), PublicError> {
-        Ok(())
     }
 }
 
@@ -61,6 +53,5 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap_err();
     assert!(refused.is_unpublished());
     assert!(!refused.without_unpublished_proof().is_unpublished());
-    endpoint.close(1000, "done")?;
     Ok(())
 }

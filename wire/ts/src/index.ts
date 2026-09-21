@@ -1,6 +1,5 @@
 /**
- * Bitwire access contract, adapted from Nightseam's duplex/ts/src/wire.ts and
- * reviewed at 1c63f1c4d7e4b5987d4bd32e294177645c92ed8f. Implementations provide
+ * Bitwire 0.2 access contract. Implementations provide
  * dispatch, codecs and carriers; this module declares only the shared boundary.
  */
 
@@ -72,23 +71,33 @@ export interface Message {
   readonly return?: ReturnAddress;
 }
 
-/** Receives deliveries relative to its wire's origin, and an ending. */
+/**
+ * Receives complete deliveries relative to its endpoint's origin, and an ending.
+ * Path dispatch policy belongs to a composed dispatcher, not this receiver.
+ */
 export interface Receiver {
-  /** Capture descendants too; exact routes win, then the longest namespace prefix. */
-  namespace?: boolean;
   message?: (path: Path, message: Message) => void | Promise<void>;
   closed?: (code: number, reason: string) => void;
 }
 
 /**
- * An endpoint with an origin. Receive registers an exact dispatch path and
- * refuses a duplicate; detach is idempotent. Roots own bounded asynchronous
- * dispatch and carrier closure. Selection and mounting allocate neither peers
- * nor channels, and never invoke destination handlers inside send.
+ * Send access to an origin, without receive attachment or lifecycle control.
+ * Send never invokes destination handlers on the sender's stack or waits for
+ * their results. The implementing endpoint owns asynchronous dispatch.
  * Successful send means admission, not completion of an application effect.
  */
 export interface Wire {
   send(path: Path, message: Message): void;
-  receive(path: Path, receiver: Receiver): () => void;
+}
+
+/**
+ * Send access, receive attachment and lifecycle control combined. Receive
+ * attaches one owning receiver for every relative path; a second attachment
+ * is refused until the first is detached. Detach is idempotent and does not
+ * close the endpoint. Sharing among selected views requires an explicit
+ * composition that defines dispatch policy.
+ */
+export interface Endpoint extends Wire {
+  receive(receiver: Receiver): () => void;
   close(code?: number, reason?: string): void;
 }

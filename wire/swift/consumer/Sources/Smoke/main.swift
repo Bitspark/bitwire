@@ -5,10 +5,6 @@ import Foundation
 struct RefusingWire: Wire {
     enum Refusal: Error { case unavailable }
     func send(path: [String], message: Message) throws { throw Refusal.unavailable }
-    func receive(path: [String], receiver: Receiver) throws -> Detach {
-        throw Refusal.unavailable
-    }
-    func close(code: Int, reason: String) throws {}
 }
 
 let wire: any Wire = RefusingWire()
@@ -22,5 +18,5 @@ let message = Message(
 precondition(message.returnAddress === address)
 precondition(message.frame.params == payload)
 precondition(message.frame.meta?.entries.count == 2)
-try wire.close(code: 1000, reason: "consumer check")
+// Send-only access needs no receiver registration or lifecycle implementation.
 print("Standalone Bitwire Swift consumer passed.")

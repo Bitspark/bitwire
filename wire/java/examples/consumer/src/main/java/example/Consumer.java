@@ -3,7 +3,6 @@ package example;
 import dev.bitspark.bitwire.JsonValue;
 import dev.bitspark.bitwire.Message;
 import dev.bitspark.bitwire.ProfileFrame;
-import dev.bitspark.bitwire.Receiver;
 import dev.bitspark.bitwire.ReturnAddress;
 import dev.bitspark.bitwire.Wire;
 import java.util.List;
@@ -38,10 +37,5 @@ public final class Consumer {
             this.message = message;
         }
 
-        @Override public Runnable receive(List<String> path, Receiver receiver) {
-            throw new UnsupportedOperationException("the example does not implement receiving");
-        }
-
-        @Override public void close(int code, String reason) {}
     }
 }

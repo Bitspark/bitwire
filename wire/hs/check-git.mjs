@@ -7,10 +7,23 @@ import { fileURLToPath } from 'node:url';
 import { cleanup, scratch } from '../../scripts/release-lib.mjs';
 
 const source = fileURLToPath(new URL('./', import.meta.url));
+// Default CI evidence remains the already published 0.1.0 release. After a new
+// immutable tag exists, explicitly verify it with --tag v0.2.0 --version 0.2.0.
+const args = process.argv.slice(2);
+if (args.length !== 0 && (args.length !== 4 || args[0] !== '--tag' || args[2] !== '--version')) {
+  throw new Error('Usage: node wire/hs/check-git.mjs [--tag <tag-or-sha> --version <version>]');
+}
+const version = args[3] ?? '0.1.0';
+const revision = args[1] ?? '9f45a2e0e9dc576db34237e5ad3aaaa0266a276b';
+if (!/^[0-9]+\.[0-9]+\.[0-9]+$/.test(version) || !/^(?:v[0-9]+\.[0-9]+\.[0-9]+|[a-f0-9]{40})$/.test(revision)) {
+  throw new Error('Expected an exact release version and a release tag or full commit SHA.');
+}
 const directory = scratch('haskell-git');
 try {
-  cpSync(join(source, 'test/consumer'), join(directory, 'consumer'), { recursive: true });
-  cpSync(join(source, 'test/git-consumer.project'), join(directory, 'cabal.project'));
+  cpSync(join(source, version === '0.1.0' ? 'test/consumer-010' : 'test/consumer'), join(directory, 'consumer'), { recursive: true });
+  const consumerManifest = join(directory, 'consumer/bitwire-consumer.cabal');
+  writeFileSync(consumerManifest, readFileSync(consumerManifest, 'utf8').replace(/bitspark-bitwire == [0-9.]+/, `bitspark-bitwire == ${version}`));
+  writeFileSync(join(directory, 'cabal.project'), readFileSync(join(source, 'test/git-consumer.project'), 'utf8').replace(/  tag: .*/, `  tag: ${revision}`));
   const cabalDirectory = join(directory, 'cabal');
   mkdirSync(cabalDirectory);
   const config = join(cabalDirectory, 'config');
@@ -36,8 +49,8 @@ try {
   const plan = JSON.parse(readFileSync(join(directory, 'dist-newstyle/cache/plan.json'), 'utf8'));
   const library = plan['install-plan'].filter(pkg => pkg['pkg-name'] === 'bitspark-bitwire');
   assert.ok(library.length > 0, 'The consumer must build Bitwire.');
-  assert.ok(library.every(pkg => pkg['pkg-version'] === '0.1.0'), 'The consumer must resolve Bitwire 0.1.0.');
-  console.log('Haskell public Git consumer passed: release 0.1.0, fresh Cabal store, no local library override or Git credentials.');
+  assert.ok(library.every(pkg => pkg['pkg-version'] === version), `The consumer must resolve Bitwire ${version}.`);
+  console.log(`Haskell public Git consumer passed: release ${version}, fresh Cabal store, no local library override or Git credentials.`);
 } finally {
   cleanup(directory);
 }

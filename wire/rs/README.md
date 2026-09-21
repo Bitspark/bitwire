@@ -6,7 +6,7 @@ contains no executor, routing implementation, queue, codec or transport.
 
 ```toml
 [dependencies]
-bitwire = { package = "bitspark-bitwire", version = "0.1.0" }
+bitwire = { package = "bitspark-bitwire", version = "0.2.0" }
 ```
 
 The crate is named `bitspark-bitwire` on crates.io; the Rust library is `bitwire`.
@@ -25,9 +25,13 @@ fn notify(wire: &dyn Wire) -> Result<(), PublicError> {
 ```
 
 `Wire: Send + Sync` is object-safe, and `SharedWire` is `Arc<dyn Wire>`.
-`send` and `receive` return admission/registration errors synchronously. They do
-not await replies or execute destination application code in `send`.
-`Receiver` supplies thread-safe callbacks, and `Detach` is an idempotent callback.
+`Wire` exposes only `send`, returning admission errors synchronously without
+awaiting replies or executing destination application code. `Endpoint: Wire`
+adds `receive(receiver)` and `close(code, reason)` as endpoint-owner operations.
+Only one receiver may be attached; duplicates are refused. `Receiver` supplies
+thread-safe callbacks for every delivered relative path and complete message.
+`Detach` is idempotent and cannot detach a replacement receiver. Path matching and
+shared routing are separate compositions, not obligations of the access trait.
 
 Paths are opaque Unicode-scalar segments, not delimited strings. `ReturnAddress`
 uses `Arc` identity; message cloning and forwarding preserve that same allocation.

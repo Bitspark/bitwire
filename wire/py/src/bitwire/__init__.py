@@ -25,6 +25,7 @@ __all__ = [
     "Message",
     "Receiver",
     "Wire",
+    "Endpoint",
 ]
 
 # Opaque Unicode-scalar segments: [] != [""] != ["a/b"] != ["a", "b"].
@@ -111,30 +112,39 @@ class Message:
 
 @dataclass(frozen=True)
 class Receiver:
-    """Callbacks receive paths relative to the Wire on which they registered.
+    """Callbacks receive every path relative to their attached endpoint.
 
-    Exact routes win, then the longest namespace segment prefix wins. A receiver
-    may be synchronous or awaitable; endpoint implementations own dispatch.
+    A receiver may be synchronous or awaitable; endpoints own dispatch.
     """
 
-    namespace: bool = False
     message: Callable[[Path, Message], None | Awaitable[None]] | None = None
     closed: Callable[[int, str], None] | None = None
 
 
 @runtime_checkable
 class Wire(Protocol):
-    """Access to an origin with synchronous admission and asynchronous dispatch.
+    """Send-only access with synchronous admission and asynchronous dispatch.
 
     send returns on acceptance or raises on refusal, without running destination
-    application code on the sender's stack. receive refuses duplicate paths and
-    returns an idempotent detach. A root owns dispatch, bounds and closure; a
-    selected view shares that closure, while a mount owns only its registrations
-    and routing. Structural protocol matching alone does not prove these laws.
+    application code on the sender's stack. It grants no receiving or closure
+    authority. Structural protocol matching alone does not prove these laws.
     """
 
     def send(self, path: Path, message: Message) -> None: ...
 
-    def receive(self, path: Path, receiver: Receiver) -> Callable[[], None]: ...
+
+@runtime_checkable
+class Endpoint(Wire, Protocol):
+    """Owning endpoint access with one receive attachment and endpoint closure.
+
+    receive refuses a second active attachment or a closed endpoint and returns
+    an idempotent detach. A stale detach cannot remove a later attachment. Callbacks receive the complete
+    message and its relative path; routing policy belongs above this boundary.
+    Detach preserves captured return access and does not close the endpoint.
+    Closing notifies the active receiver once; detached receivers are not notified.
+    Closing twice has no additional effect and does not release live bindings.
+    """
+
+    def receive(self, receiver: Receiver) -> Callable[[], None]: ...
 
     def close(self, code: int = 1000, reason: str = "") -> None: ...

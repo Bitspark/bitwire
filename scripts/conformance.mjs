@@ -86,7 +86,7 @@ try {
     compare('ts', run(process.execPath, ['--experimental-strip-types', driver, fixturePath], source, true));
   }
   console.log(`Behavioral observations match ${fixture.cases.length} independent cases per selected driver.`);
-  console.log('This is pre-adoption runtime evidence; it does not establish published-package adoption or full profile conformance.');
+  console.log('Historical 0.1.0 runtime evidence, including its dispatcher policy; not Bitwire 0.2 conformance, published-package adoption or full profile conformance.');
 } finally {
   if (args.includes('--keep-scratch')) console.log(`Retained scratch: ${scratch}`);
   else {

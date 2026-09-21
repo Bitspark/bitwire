@@ -74,7 +74,72 @@ final class ContractTest {
         assertEquals(paths, endpoint.paths);
         assertEquals(5, endpoint.paths.stream().distinct().count());
         assertTrue(endpoint.messages.stream().allMatch(delivered -> delivered == message));
-        assertThrows(IllegalStateException.class, () -> endpoint.receive(List.of(), new Receiver(false, null, null)));
+        assertFalse(Endpoint.class.isInstance(endpoint));
+    }
+
+    @Test void endpointAttachmentHasExplicitOwnership() {
+        RecordingEndpoint endpoint = new RecordingEndpoint();
+        List<List<String>> paths = new ArrayList<>();
+        List<Message> messages = new ArrayList<>();
+        Receiver receiver = new Receiver((path, message) -> {
+            paths.add(path);
+            messages.add(message);
+        }, null);
+        Runnable detach = endpoint.receive(receiver);
+        assertThrows(IllegalStateException.class, () -> endpoint.receive(receiver));
+        Message message = new Message(new ProfileFrame.Event(new JsonValue("null")),
+            new ReturnAddress(new RecordingWire()));
+        endpoint.receiver.message().accept(List.of("a", ""), message);
+        assertEquals(List.of(List.of("a", "")), paths);
+        assertSame(message, messages.getFirst());
+        detach.run();
+        detach.run();
+        Receiver second = new Receiver(null, null);
+        Runnable secondDetach = endpoint.receive(second);
+        detach.run();
+        assertSame(second, endpoint.receiver);
+        secondDetach.run();
+        assertNull(endpoint.receiver);
+    }
+
+    @Test void closeNotifiesOnlyActiveAttachmentOnce() {
+        RecordingEndpoint endpoint = new RecordingEndpoint();
+        List<String> observed = new ArrayList<>();
+        endpoint.receive(new Receiver(null, (code, reason) -> observed.add("detached"))).run();
+        endpoint.receive(new Receiver(null, (code, reason) -> observed.add(code + ":" + reason)));
+        endpoint.close(1000, "done");
+        endpoint.close(1001, "again");
+        assertEquals(List.of("1000:done"), observed);
+        assertThrows(IllegalStateException.class, () -> endpoint.receive(new Receiver(null, null)));
+    }
+
+    /** Attachment fixture only; it provides no asynchronous runtime. */
+    private static final class RecordingEndpoint implements Endpoint {
+        Receiver receiver;
+        Object attachment;
+        boolean closed;
+        @Override public void send(List<String> path, Message message) {}
+        @Override public Runnable receive(Receiver next) {
+            if (closed) throw new IllegalStateException("endpoint closed");
+            if (attachment != null) throw new IllegalStateException("receiver already attached");
+            Object token = new Object();
+            attachment = token;
+            receiver = next;
+            return () -> {
+                if (attachment == token) {
+                    attachment = null;
+                    receiver = null;
+                }
+            };
+        }
+        @Override public void close(int code, String reason) {
+            if (closed) return;
+            closed = true;
+            Receiver active = receiver;
+            receiver = null;
+            attachment = null;
+            if (active != null && active.closed() != null) active.closed().accept(code, reason);
+        }
     }
 
     /** This recording fixture deliberately provides no dispatch implementation. */
@@ -85,16 +150,11 @@ final class ContractTest {
             paths.add(List.copyOf(path));
             messages.add(message);
         }
-        @Override public Runnable receive(List<String> path, Receiver receiver) {
-            throw new IllegalStateException("this fixture has no receiving endpoint");
-        }
-        @Override public void close(int code, String reason) {}
+
     }
 
     private static final class EqualWire implements Wire {
         @Override public void send(List<String> path, Message message) {}
-        @Override public Runnable receive(List<String> path, Receiver receiver) { return () -> {}; }
-        @Override public void close(int code, String reason) {}
         @Override public boolean equals(Object other) { return other instanceof EqualWire; }
         @Override public int hashCode() { return 1; }
     }

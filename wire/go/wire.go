@@ -1,5 +1,4 @@
-// Package wire declares the Bitwire access contract, adapted from Nightseam's
-// duplex/go/wire.go and reviewed at 1c63f1c4d7e4b5987d4bd32e294177645c92ed8f.
+// Package wire declares the Bitwire 0.2 access contract.
 // It defines the shared boundary; dispatch, codecs and carriers belong to
 // implementations. Paths are relative sequences of Unicode-scalar strings,
 // without normalization or interpretation of dots, slashes or empty segments.
@@ -65,25 +64,30 @@ type Message struct {
 	Return *ReturnAddress `json:"-"`
 }
 
-// Receiver receives deliveries relative to its wire's origin, and an ending.
-// A root owns asynchronous dispatch; composition does not invoke Message itself.
+// Receiver receives complete deliveries relative to its endpoint's origin, and
+// an ending. The endpoint owns asynchronous dispatch. Receiver contains no
+// routing policy; a dispatcher may interpret paths after delivery.
 type Receiver struct {
-	// Namespace matches this path and every descendant. Exact registrations
-	// take precedence; otherwise the longest segment prefix wins.
-	Namespace bool
-	Message   func(path []string, message Message)
-	Closed    func(code Code, reason string)
+	Message func(path []string, message Message)
+	Closed  func(code Code, reason string)
 }
 
-// Wire is an endpoint with an origin. Receive registers an exact relative
-// dispatch path; duplicate registrations are refused. Its detach is idempotent.
+// Wire is send access to an origin. It grants neither receive attachment nor
+// endpoint lifecycle control.
 // Send returns when accepted or refused, without running a destination handler
 // on the sender's stack or waiting for its result. Success means admission,
 // not completion of an application effect.
-// A root owns queue bounds, dispatch and carrier closure. A selected view shares
-// that ownership; a mount only owns its routing and registrations.
 type Wire interface {
 	Send(path []string, message Message) error
-	Receive(path []string, receiver Receiver) (detach func(), err error)
+}
+
+// Endpoint combines send access with receive attachment and lifecycle control.
+// Receive attaches one owning receiver for every relative path. A second
+// attachment is refused until the first is detached. Detach is idempotent and
+// does not close the endpoint. Path dispatch and sharing among selected views
+// belong to an explicit composition, not this primitive.
+type Endpoint interface {
+	Wire
+	Receive(receiver Receiver) (detach func(), err error)
 	Close(code Code, reason string) error
 }

@@ -15,8 +15,12 @@ void publish(bitwire::Wire& wire) {
 }
 ```
 
-`Wire::send`, `receive` and `close` retain the existing Nightseam C++ interface
-shape. Paths contain opaque UTF-8 segments. Payload fields are optional raw JSON
+`Wire` grants only `send(path, message)`. `Endpoint` extends it with
+`receive(receiver)` and `close`; one receiver may be attached at a time, and
+its detach action is idempotent. A second active attachment is refused.
+Receiver callbacks receive the relative path and complete message; routing
+and matching policy belong to a separate dispatcher. A `ReturnAddress` holds
+send-only `Wire` access. Paths contain opaque UTF-8 segments. Payload fields are optional raw JSON
 strings; they preserve numeric spelling and distinguish absence from JSON null.
 Return addresses use shared pointer identity and remain local capabilities.
 Holding or destroying a pointer is distinct from calling `close` or releasing a
@@ -47,7 +51,7 @@ Consumers select the install prefix with `CMAKE_PREFIX_PATH` and link the export
 target:
 
 ```cmake
-find_package(Bitwire 0.1 CONFIG REQUIRED)
+find_package(Bitwire 0.2 CONFIG REQUIRED)
 target_link_libraries(my_application PRIVATE Bitwire::wire)
 ```
 
@@ -56,6 +60,6 @@ contains no compiled runtime library and fetches no dependencies. Embedded sourc
 consumers can instead use `add_subdirectory` and the same target; tests default to
 off when Bitwire is a subproject.
 
-The first version is 0.1.0. Availability in a package registry is not implied by
-this source package. The [notice](NOTICE) records the adapted declarations and
+The 0.2.0 source package separates access from endpoint control. Availability
+of a source release is recorded in the repository delivery documentation. The [notice](NOTICE) records the adapted declarations and
 their source revision; the project uses the [Apache-2.0 license](../../LICENSE).

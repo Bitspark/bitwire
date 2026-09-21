@@ -1,6 +1,26 @@
 # Conformance
 
-**Status: executable access-composition baseline, before consumer adoption.**
+**Status: 0.2 reference composition plus a preserved historical 0.1.0 runtime baseline.**
+
+## Current 0.2 composition reference
+
+Run `node scripts/composition.mjs` for the [Go and TypeScript reference proof](reference/README.md).
+It exercises one receive owner, sibling and overlapping selections through an
+explicit dispatcher, nested selection/mount/forward preservation, and borrowed
+endpoint lifetime. Actual selected Endpoint views share that root attachment,
+exercise nested receive/send paths, detach/rebind and closure notification, and
+preserve a captured return capability after their teardown. This is test-only
+composition evidence, not Nightseam adoption
+or a claim about generated generic adapters. The reference's longest-prefix rule
+is dispatcher policy; the primitive endpoint has no registration paths or matching
+mode. The independent [oracle](reference/expected.json) is shared by both drivers.
+
+## Historical 0.1.0 runtime baseline
+
+The remaining sections describe the **unchanged 0.1.0 contract** at the pinned
+Nightseam revision. Its registration precedence and close behavior are historical
+observations, not obligations on Bitwire 0.2's send-only Wire. Keeping these cases
+runnable prevents migration from silently rewriting the previous evidence.
 
 Run the independent cases against the Go and TypeScript Nightseam implementations:
 
@@ -18,7 +38,7 @@ and access to public source/dependency registries. `--language=go` or
 `--language=ts` selects a driver; `--keep-scratch` retains the fetched tree for
 diagnosis. Temporary dependency files never become Bitwire package dependencies.
 
-## What the baseline establishes
+### What the historical baseline establishes
 
 | Cases | Observable requirement |
 | --- | --- |
@@ -61,7 +81,7 @@ the observers compare before/after selection, mounting or forwarding, never
 across a new local pair's admission boundary. The response itself is exercised
 end to end through the mapped capability.
 
-## What remains distinct
+### What remains distinct
 
 This is evidence about the pinned implementation **before adoption**. The Go
 driver uses Nightseam's nominal native types. The TypeScript driver also imports
@@ -76,7 +96,7 @@ release. Those are explicit remaining conformance/profile obligations, not
 guarantees inferred from these ten cases. Runtime-specific coverage stays with
 its owner. Declaration compilation alone is never behavioral conformance.
 
-## Adapter integration
+## Adapter integration still required
 
 The next layer compares a declared model used directly and through local,
 selected, mounted and remote wires. Generic cases vary a slot between data and

@@ -1,9 +1,9 @@
 # Wire contract
 
-This page specifies the shared access contract for Bitwire 0.1. The
+This page specifies the shared access contract for Bitwire 0.2. The
 [conformance work](../../conformance/README.md) records executable evidence
 separately; declarations compiling does not establish behavioral conformance.
-The interface and these obligations were reviewed against Nightseam at
+The 0.1 baseline was reviewed against Nightseam at
 [`1c63f1c4`](https://github.com/Bitspark/nightseam/tree/1c63f1c4d7e4b5987d4bd32e294177645c92ed8f).
 
 ## Surface and scope
@@ -11,8 +11,15 @@ The interface and these obligations were reviewed against Nightseam at
 | Operation | Go | TypeScript |
 | --- | --- | --- |
 | Send at a relative path | `Send(path []string, message Message) error` | `send(path: Path, message: Message): void` |
-| Install a receiver | `Receive(path []string, receiver Receiver) (detach func(), err error)` | `receive(path: Path, receiver: Receiver): () => void` |
-| End an endpoint | `Close(code Code, reason string) error` | `close(code?: number, reason?: string): void` |
+| Attach an Endpoint receiver | `Receive(receiver Receiver) (detach func(), err error)` | `receive(receiver: Receiver): () => void` |
+| End an Endpoint | `Close(code Code, reason string) error` | `close(code?: number, reason?: string): void` |
+
+`Wire` contains only Send. `Endpoint` extends Wire with Receive and Close.
+Passing Wire access does not require receiver or closure authority. A runtime
+requiring enforced attenuation exposes a send-only facade; a static type alone
+does not hide extra operations on an underlying object. A return address holds
+Wire access. The [decision](../decisions/0002-delivery-dispatch-and-ownership.md)
+explains this separation and the breaking migration from 0.1.
 
 The supporting declarations are in [Go](../../wire/go/wire.go) and
 [TypeScript](../../wire/ts/src/index.ts). Other native presentations must preserve
@@ -21,7 +28,7 @@ need not be identical.
 
 A Wire is access to an origin, not a serialized address. `Wire[A]` in a model
 description means this access interpreted through contract `A`; the base
-interface itself is type-erased. Bitwire 0.1 carries the four structured frame
+interface itself is type-erased. Bitwire 0.2 carries the four structured frame
 kinds defined in the [profile boundary](profile.md). It is independent of the
 carrier, runtime and generator, but is not an arbitrary-payload or
 profile-polymorphic interface.
@@ -35,12 +42,13 @@ different sequences unless their scalar values are identical. A native string
 type that compares after normalization must use an exact representation for
 path keys.
 
-Selecting an origin prepends its prefix to sent and registered paths, then
-removes that prefix from delivered paths. Mounting chooses a borrowed child
-using exactly one segment, removes it on delegation and restores it for delivery
-to a receiver registered on the mount. An empty string is a valid child key.
-The mount has no destination at the empty path; a namespace receiver at that
-origin may register across its children.
+Selecting access prepends its prefix to sent paths. A receiving view supplied by
+a shared dispatcher removes the same prefix from delivered paths. Mounting
+chooses a borrowed child using exactly one segment and removes it on delegation.
+A receiving mount restores that segment when delivering a child's message. An
+empty string is a valid child key. The mount has no destination at the empty
+path. Receive capability requires the corresponding endpoint attachments;
+send-only access alone cannot provide it.
 
 Path validity does not promise a destination or admission by every profile.
 The pinned Nightseam profile requires a nonempty request/event path at a peer
@@ -56,14 +64,28 @@ owns asynchronous dispatch. Successful admission says nothing about completion
 of an application effect. Bounds, request correlation and termination policy are
 provided by the selected profile's implementation.
 
-Receivers select an exact path unless namespace matching is enabled. Exact
-matches win; otherwise the longest matching segment prefix wins. Duplicate
-registrations in the same matching mode are refused. Exact and namespace
-registrations at one path may coexist. Callbacks see paths relative to the Wire
-on which they registered, not relative to the registration's matching prefix.
+An Endpoint has at most one active receive attachment. A second attachment is
+refused without replacing the first. Receive has no matching-path argument and
+Receiver has no namespace flag. Its callback sees the destination path relative
+to that endpoint's origin, with the complete Message. It is not a sender address,
+return address or correlation identifier. Delivery is not implicit broadcast.
+
+An attachment receives the endpoint's incoming application deliveries; internal
+response correlation and cancellation handling remain the profile's responsibility.
+Attaching to a closed endpoint is refused. Closing an endpoint ends its active
+attachment and notifies its Closed callback, if present, at most once. A detached
+receiver receives no later closure notification from that attachment.
+
+A dispatcher may own that attachment and provide many routed receiving views or
+handler registrations. Exact/prefix matching, precedence and duplicate-path rules
+belong to its explicit policy, not to Wire or Endpoint. Sibling selected views
+share that dispatcher; they cannot each attach an independent root receiver.
+Overlapping views require a stated selection policy. The dispatcher can expose
+Wire access and Endpoint views without exposing its routing table to callers.
 
 The returned detach action is idempotent. It prevents new dispatch through that
-registration; already admitted requests retain the return and cancellation path
+attachment; a later attachment may be installed. Already admitted requests retain
+the return and cancellation path
 they captured. Detaching is distinct from closing an endpoint, cancelling an
 admitted request or releasing a live binding.
 
@@ -71,7 +93,7 @@ admitted request or releasing a live binding.
 
 The following are obligations on compositions, not additional primitive methods
 or claims that this package implements them. For valid paths and otherwise
-equivalent registrations:
+equivalent dispatcher policies and attachments:
 
 ```text
 at(w, [])                  ≃ w
@@ -83,8 +105,11 @@ Equivalence means equal routing, delivered relative paths, frame meaning, local
 capability identity and associated received context. It includes equivalent
 admission or refusal and need not mean the same language object. The mount law
 applies while the mount remains open and does not identify lifecycle ownership:
-closing a mount leaves borrowed children usable. Closing a selected view closes
-the endpoint it selects, including the mount when the selected origin is a mount.
+closing a mount releases its own attachments and leaves borrowed children usable.
+Send-only selection has no Close. A selected Endpoint supplied by a dispatcher
+owns its route, not the borrowed root's closure. An explicitly shared owning
+endpoint capability can close that endpoint; it must be identified as such,
+rather than inferred from equivalent send paths.
 
 Selection and mounting create no new peer, channel, request correlation or
 message queue, including on first use. A forwarder passes messages through the
@@ -128,12 +153,13 @@ live-reference and publication obligations.
 
 ## Lifetime
 
-A root owns its endpoint's closure; selected views share it. A mount owns its
-registrations and routing, not its borrowed children. Closing a mount detaches
-its registrations and notifies its receivers without closing those children.
+A root Endpoint owns its closure. Wire access does not imply that ownership.
+A dispatcher owns its root attachment and routes, not a borrowed root's closure.
+A mount owns its attachments and routing, not its borrowed children. Closing a
+mount detaches its attachments and notifies its receivers without closing those children.
 Closing or detaching twice has no additional effect on ownership.
 
-Closing a Wire is not release of a live binding. Scope nonces, checked reference
+Closing an Endpoint is not release of a live binding. Scope nonces, checked reference
 import, owner ledgers and release barriers belong to the live profile. A Wire
 implementation claiming that profile must preserve them when presenting access
 through this contract. Moving a type declaration does not transfer those runtime

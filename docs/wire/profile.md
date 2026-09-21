@@ -1,6 +1,6 @@
 # Message profile and interoperability
 
-Bitwire 0.1 defines shared relative-path access and its structured message
+Bitwire 0.2 defines shared relative-path access and its structured message
 vocabulary. The network profile remains **`nightseam.duplex/1`**. No
 `bitwire.duplex/1` profile is introduced, and importing Bitwire alone does not
 implement the network profile, declaration interpretation or live references.
@@ -48,7 +48,7 @@ preservation and explains how native presentations can carry them.
 
 | Bitwire specifies | The selected Nightseam profile supplies |
 | --- | --- |
-| Relative paths, receiver matching, admission surface and detach | Physical framing, canonical path encoding, carrier behavior and close codes |
+| Relative paths, single receive attachment, admission surface and detach | Physical framing, canonical path encoding, carrier behavior and close codes |
 | Structured frame vocabulary and preservation of represented data | Complete envelope validation, id minting/correlation, cancellation and configured bounds |
 | Stable local capability identity and received-context preservation | Creation, validation and recognition of invocation context, tracing and observation |
 | Selection/mount/forwarding observations and borrowed endpoint lifetime | Declaration identity checks, preparation, live-value conversion, scopes and release barriers |
@@ -60,7 +60,9 @@ The pinned profile sources are:
 - [Network profile and interpretation identity](https://github.com/Bitspark/nightseam/blob/1c63f1c4d7e4b5987d4bd32e294177645c92ed8f/docs/wire/profile.md).
 - [Live-reference profile](https://github.com/Bitspark/nightseam/blob/1c63f1c4d7e4b5987d4bd32e294177645c92ed8f/docs/wire/live.md).
 
-These public references version the retained obligations. They are not package
+These public references version the retained profile obligations. Their older
+path-based receive registration is superseded by the 0.2 access contract; handler
+matching belongs to a composed dispatcher. They are not package
 dependencies. Bitwire conformance cases may exercise a pinned Nightseam driver;
 Bitwire libraries do not depend on its runtime.
 

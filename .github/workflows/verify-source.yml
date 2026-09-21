@@ -1,0 +1,69 @@
+name: verify-source
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing immutable public release tag (for example v0.2.0)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-source-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      sha: ${{ steps.release.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Resolve immutable public release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: node scripts/verify-source.mjs resolve "$RELEASE_TAG"
+  consumers:
+    needs: resolve
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [swift, cpp, haskell]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Import Swift signing keys
+        if: matrix.language == 'swift'
+        run: curl --fail --silent --show-error --location --compressed https://www.swift.org/keys/all-keys.asc | gpg --import -
+      - uses: swift-actions/setup-swift@d8e84bc3a450686a95474d7d6fa4a3301498debc
+        if: matrix.language == 'swift'
+        with:
+          swift-version: '6.1.3'
+      - uses: haskell-actions/setup@v2
+        if: matrix.language == 'haskell'
+        with:
+          ghc-version: '9.6.7'
+          cabal-version: '3.12.1.0'
+      - name: Verify an anonymous public source consumer
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_SHA: ${{ needs.resolve.outputs.sha }}
+          LANGUAGE: ${{ matrix.language }}
+        run: node scripts/verify-source.mjs verify "$RELEASE_TAG" "$RELEASE_SHA" "$LANGUAGE"
