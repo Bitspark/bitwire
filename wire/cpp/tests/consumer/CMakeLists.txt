@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.21)
+project(BitwireInstalledConsumer LANGUAGES CXX)
+find_package(Bitwire 0.1 CONFIG REQUIRED)
+add_executable(consumer main.cpp)
+target_link_libraries(consumer PRIVATE Bitwire::wire)
+enable_testing()
+add_test(NAME installed-consumer COMMAND consumer)
