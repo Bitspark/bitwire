@@ -6,6 +6,7 @@
 
 - Publish Java 0.1.0 on Maven Central and verify an independent public registry consumer.
 - Add a manual Maven authentication diagnostic that checks secret formatting and effective settings without exposing credentials or publishing artifacts.
+- Check heading anchors in local documentation links, not only the destination file.
 
 ## 0.2.0 — 2026-09-21
 
