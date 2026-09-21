@@ -39,6 +39,35 @@ types must also match. An upstream alias/import migration or an explicit adapter
 is still required. TypeScript structural compatibility likewise does not prove
 behavior or protocol compatibility.
 
+## Open review findings
+
+Reviewing [Nightseam PR444](https://github.com/Bitspark/nightseam/pull/444)
+against [#20](https://github.com/Bitspark/bitwire/issues/20) raises two
+shared-meaning questions this repository owns. Both are recorded before that
+evidence is accepted. Neither claims a defect in the released 0.2.0 declarations,
+and neither is settled by the upstream implementation choosing an answer.
+
+**The return capability's path space.** The frozen lifecycle form presents an
+admitted invocation as its return capability and carries lifecycle participation
+on that capability's non-empty paths, reserving the whole space for the
+invocation. The [access contract](wire/contract.md#local-capabilities-and-context)
+states only that the capability supports its response. Whether a return
+capability has an addressable path space, and whether a profile may reserve it,
+is shared meaning that belongs here rather than in one profile's documentation.
+Record the answer in the contract before closing #20.
+
+**In-place tightening of the pinned profile.** The request-serial rule constrains
+the published request identifiers on one connection and direction, and ends the
+connection when violated. It tightens `nightseam.duplex/1` in place rather than
+introducing a new profile version.
+[Decision 0003](decisions/0003-public-invocation-lifecycle.md) requires an explicit
+compatibility or profile-version decision for changed wire semantics. The
+[ownership table](wire/profile.md#ownership-of-the-specifications) already assigns
+identifier minting and correlation to the profile, so the rule itself is the
+profile's to make; its compatibility disposition is a separate obligation and is
+not yet recorded. Accepting an in-place tightening requires its own stated
+reasoning, not silence.
+
 ## Intended dependency direction
 
 ```text

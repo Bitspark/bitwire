@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Record two open contract review findings against the invocation lifecycle
+  evidence: ownership of the return capability's path space, and the compatibility
+  disposition of tightening the pinned profile in place.
+
 - Record verified 0.2.0 Go/npm/Rust/Python/Java registry consumers and Swift/C++/Haskell anonymous source consumers, plus Nightseam's released-contract handover.
 
 - Publish Java 0.1.0 on Maven Central and verify an independent public registry consumer.
