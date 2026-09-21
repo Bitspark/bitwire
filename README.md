@@ -74,7 +74,7 @@ Haskell. See the [language bindings](docs/languages.md) and
 | [wire/rs](wire/rs/README.md) | Rust contract crate and outside-checkout consumer. |
 | [wire/swift](wire/swift/README.md) | SwiftPM `Bitwire` product and native contract. |
 | [wire/cpp](wire/cpp/README.md) | C++20 header and installable `Bitwire::wire` CMake target. |
-| [wire/java](wire/java/README.md) | Java 21 `com.bitspark:bitwire` Maven artifact. |
+| [wire/java](wire/java/README.md) | Java 21 `dev.bitspark:bitwire` Maven artifact. |
 | [wire/hs](wire/hs/README.md) | Haskell `Bitwire` module and Cabal source package. |
 | [docs](docs/README.md) | Purpose, contract, profile boundary, decisions and integration plan. |
 | [conformance](conformance/README.md) | Independent cases and pinned public Nightseam drivers. |

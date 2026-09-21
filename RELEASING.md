@@ -59,12 +59,12 @@ source. Account setup does not block the first Go/TypeScript handover.
 | Workflow | Distribution | Actions configuration |
 | --- | --- | --- |
 | `publish-python.yml` | PyPI `bitspark-bitwire` | Environment `pypi`; trusted publishing preferred, optional `PYPI_API_TOKEN` |
-| `publish-java.yml` | Maven Central `com.bitspark:bitwire` | `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD`, `MAVEN_GPG_PRIVATE_KEY`, `MAVEN_GPG_PASSPHRASE` |
+| `publish-java.yml` | Maven Central `dev.bitspark:bitwire` | `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD`, `MAVEN_GPG_PRIVATE_KEY`, `MAVEN_GPG_PASSPHRASE` |
 | `publish-haskell.yml` | Hackage `bitspark-bitwire` | Environment `hackage`; `HACKAGE_AUTH_TOKEN` |
 
 Store credentials in repository Actions secrets for `Bitspark/bitwire`, never
 source files. Maven credentials are the generated Central Portal token pair,
-not a login password. Verify `com.bitspark` through the `bitspark.com` DNS
+not a login password. Verify `dev.bitspark` through the `bitspark.dev` DNS
 challenge and supply a signing key satisfying Central's signature requirements.
 
 For a pending PyPI trusted publisher, use project `bitspark-bitwire`, owner
