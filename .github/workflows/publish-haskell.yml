@@ -54,7 +54,7 @@ jobs:
       - run: cabal update
       - name: Build, test and consume the exact source package outside the checkout
         run: node wire/hs/check.mjs --artifact-dir "$RUNNER_TEMP/haskell-dist"
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: haskell-distribution
           path: ${{ runner.temp }}/haskell-dist/*.tar.gz
