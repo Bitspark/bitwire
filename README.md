@@ -58,6 +58,10 @@ The [ownership decision](docs/decisions/0001-shared-wire-contract.md) records th
 scope. [Integration status](docs/integration.md) distinguishes the intended
 dependency direction from today's implementations.
 
+The complete scope includes Go, TypeScript, Python, Rust, Swift, C++, Java and
+Haskell. See the [language bindings](docs/languages.md) and
+[first delivery plan](docs/delivery.md) for package coordinates and readiness.
+
 ## Layout
 
 | Path | Contents |

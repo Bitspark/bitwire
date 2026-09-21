@@ -5,7 +5,8 @@ Read [COLLABORATION.md](COLLABORATION.md), the
 [contract](docs/wire/contract.md) before changing this tree.
 
 - Keep Wire's contract independent of runtime and generator implementations.
-- Change Go and TypeScript declarations together when shared meaning changes.
+- Keep every delivered language presentation and the shared conformance cases
+  aligned when shared meaning changes; track pending bindings explicitly.
 - Distinguish draft specifications, implemented checks and consumer adoption.
 - Run `node scripts/check.mjs` before committing; install dependencies with
   `pnpm install --frozen-lockfile` first.
