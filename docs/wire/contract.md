@@ -1,11 +1,12 @@
 # Wire contract
 
-**Status: draft, seeded from Nightseam at
-`5217cc60fdf8dd8d6b88e7ebb15bfcc98bb1d515`.** The language declarations compile;
-this repository has not yet executed the behavioral laws against a runtime.
-The [integration plan](../integration.md) records the remaining work.
+This page specifies the shared access contract for Bitwire 0.1. The
+[conformance work](../../conformance/README.md) records executable evidence
+separately; declarations compiling does not establish behavioral conformance.
+The interface and these obligations were reviewed against Nightseam at
+[`1c63f1c4`](https://github.com/Bitspark/nightseam/tree/1c63f1c4d7e4b5987d4bd32e294177645c92ed8f).
 
-## Surface
+## Surface and scope
 
 | Operation | Go | TypeScript |
 | --- | --- | --- |
@@ -13,20 +14,64 @@ The [integration plan](../integration.md) records the remaining work.
 | Install a receiver | `Receive(path []string, receiver Receiver) (detach func(), err error)` | `receive(path: Path, receiver: Receiver): () => void` |
 | End an endpoint | `Close(code Code, reason string) error` | `close(code?: number, reason?: string): void` |
 
-The full supporting declarations are in [Go](../../wire/go/wire.go) and
-[TypeScript](../../wire/ts/src/index.ts). A Wire is access to an origin, not a
-serialized address. `Wire[A]` in a model description means this access interpreted
-through contract `A`; the base interface itself is type-erased.
+The supporting declarations are in [Go](../../wire/go/wire.go) and
+[TypeScript](../../wire/ts/src/index.ts). Other native presentations must preserve
+the same observable behavior; native spelling, ownership and error mechanisms
+need not be identical.
+
+A Wire is access to an origin, not a serialized address. `Wire[A]` in a model
+description means this access interpreted through contract `A`; the base
+interface itself is type-erased. Bitwire 0.1 carries the four structured frame
+kinds defined in the [profile boundary](profile.md). It is independent of the
+carrier, runtime and generator, but is not an arbitrary-payload or
+profile-polymorphic interface.
 
 ## Paths
 
 A path is a sequence of opaque Unicode scalar strings. There is no separator
 parsing, normalization or permission inheritance. `[]`, `[""]`, `["a/b"]` and
-`["a", "b"]` are different paths. A selected view prepends its prefix. A mount
-consumes exactly one segment to select a child; the empty string is a valid key.
-The mount has no destination at the empty path.
+`["a", "b"]` are different paths. Canonically equivalent Unicode spellings remain
+different sequences unless their scalar values are identical. A native string
+type that compares after normalization must use an exact representation for
+path keys.
 
-The intended composition laws are:
+Selecting an origin prepends its prefix to sent and registered paths, then
+removes that prefix from delivered paths. Mounting chooses a borrowed child
+using exactly one segment, removes it on delegation and restores it for delivery
+to a receiver registered on the mount. An empty string is a valid child key.
+The mount has no destination at the empty path; a namespace receiver at that
+origin may register across its children.
+
+Path validity does not promise a destination or admission by every profile.
+The pinned Nightseam profile requires a nonempty request/event path at a peer
+root. Selecting `[]` is nevertheless valid and preserves the root's behavior,
+including that refusal. A nonempty selection can turn an empty relative suffix
+into a nonempty root path.
+
+## Sending and receiving
+
+Send completes on admission or refusal; it does not await a response or execute
+destination application code on the sender's stack. The endpoint implementation
+owns asynchronous dispatch. Successful admission says nothing about completion
+of an application effect. Bounds, request correlation and termination policy are
+provided by the selected profile's implementation.
+
+Receivers select an exact path unless namespace matching is enabled. Exact
+matches win; otherwise the longest matching segment prefix wins. Duplicate
+registrations in the same matching mode are refused. Exact and namespace
+registrations at one path may coexist. Callbacks see paths relative to the Wire
+on which they registered, not relative to the registration's matching prefix.
+
+The returned detach action is idempotent. It prevents new dispatch through that
+registration; already admitted requests retain the return and cancellation path
+they captured. Detaching is distinct from closing an endpoint, cancelling an
+admitted request or releasing a live binding.
+
+## Preservation laws
+
+The following are obligations on compositions, not additional primitive methods
+or claims that this package implements them. For valid paths and otherwise
+equivalent registrations:
 
 ```text
 at(w, [])                  ≃ w
@@ -34,42 +79,62 @@ at(at(w, a), b)             ≃ at(w, a ++ b)
 at(mount({k: w}), [k])      ≃ w    (routing and message observations)
 ```
 
-The last equivalence is about access, not identical lifecycle ownership: closing
-a mount detaches its routing and leaves borrowed children usable. Selecting or
-mounting introduces no new peer, channel or message queue.
+Equivalence means equal routing, delivered relative paths, frame meaning, local
+capability identity and associated received context. It includes equivalent
+admission or refusal and need not mean the same language object. The mount law
+applies while the mount remains open and does not identify lifecycle ownership:
+closing a mount leaves borrowed children usable. Closing a selected view closes
+the endpoint it selects, including the mount when the selected origin is a mount.
 
-## Sending and receiving
+Selection and mounting create no new peer, channel, request correlation or
+message queue, including on first use. A forwarder passes messages through the
+existing endpoints and preserves their order, capabilities and context; it does
+not inspect or convert references hidden in payloads. Detaching a forwarder
+leaves its borrowed endpoints usable.
 
-Send completes on admission or refusal. Go reports refusal as an error;
-TypeScript throws. Send does not await a response or run destination application
-code on the sender's stack. The endpoint implementation owns asynchronous
-dispatch, bounds, correlation and termination as required by the chosen profile.
+## Local capabilities and context
 
-Receivers select an exact path unless `Namespace` / `namespace` is enabled.
-Exact matches win, otherwise the longest matching segment prefix wins. Receiver
-callbacks see paths relative to the Wire on which they registered. Duplicate
-registrations are refused. Detachment is idempotent and prevents new dispatch;
-already admitted requests retain their captured return and cancellation path.
+A local Message comprises a structured frame and optional local delivery
+capability/context. A request's return capability supports its response;
+correlation uses both that capability's identity and the request identifier.
+Composition must retain capability identity, not construct a new wrapper merely
+pointing to the same endpoint. Native bindings may represent stable identity by
+a pointer, an object or another opaque identity token.
 
-## Messages and return access
+The receiving runtime may associate invocation context with that capability or
+with an opaque local context field. An event can carry received context without
+acquiring a callable reply, request identifier or response waiter. Go and
+TypeScript need no public context member: the runtime's private association with
+the local capability is sufficient. Another native presentation may expose an
+opaque carrier for the same obligation.
 
-The initial Message contains a profile frame and an optional local return
-capability. Composition preserves frame content and the identity of that
-capability. The return capability is never serialized into a network envelope.
-The [profile boundary](profile.md) says which additional agreements make generated
-operations interoperable.
+Local selection, mounting, forwarding and pair dispatch preserve context already
+established by the receiving runtime. They must not discard it by reconstructing
+a message from its visible fields alone. A caller-supplied context field or
+metadata map does not, by its presence, establish verified invocation context;
+the runtime must recognize the evidence it created or validated. Bitwire does
+not define an authentication system or a public constructor for trusted proof.
 
-## Lifetime and context
+Frame payloads, local capability identity and any associated context must remain
+stable after admission. A sender does not mutate admitted messages. An
+implementation that snapshots data must preserve its meaning and any local
+associations; plain structural copying is not always sufficient.
 
-A selected view shares its endpoint's closure. A mount owns its registrations
-and routing, not its borrowed children. Detaching forwarding leaves both borrowed
-endpoints usable. Closing a Wire is not the release of a live binding.
+Only profile fields cross a physical hop. Local capability objects and received
+context are never serialized. The next receiving runtime establishes its own
+incoming context. Incoming metadata is not implicitly copied into reverse calls
+or events. The [profile boundary](profile.md) identifies the remaining identity,
+live-reference and publication obligations.
 
-Scope nonces, checked reference import, owner ledgers, release barriers and
-verified invocation context must survive a conforming presentation. Moving an
-interface cannot erase these obligations. Their current machinery remains in
-Nightseam. The first extraction must specify which guarantees are in the common
-contract and which remain explicit profile obligations, with cases for both.
+## Lifetime
 
-The scaffold provides no implementation of selection, mounting, forwarding,
-dispatch, identity exchange or live-reference conversion.
+A root owns its endpoint's closure; selected views share it. A mount owns its
+registrations and routing, not its borrowed children. Closing a mount detaches
+its registrations and notifies its receivers without closing those children.
+Closing or detaching twice has no additional effect on ownership.
+
+Closing a Wire is not release of a live binding. Scope nonces, checked reference
+import, owner ledgers and release barriers belong to the live profile. A Wire
+implementation claiming that profile must preserve them when presenting access
+through this contract. Moving a type declaration does not transfer those runtime
+responsibilities or establish consumer adoption.
