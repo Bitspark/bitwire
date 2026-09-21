@@ -94,6 +94,25 @@ pure composition. Detach does not destroy the captured return/cancellation paths
 of already admitted requests. Existing invocation and live-binding obligations
 remain with their runtime/profile implementation.
 
+In particular, a callback returning does not mean an asynchronous invocation has
+finished. The smaller primitive deliberately supplies no completion signal.
+An invocation-aware dispatcher must share the runtime's explicit admission and
+terminal-state ledger to retain and retire cancellation associations. Its key
+includes the original return identity and request ID, so equal IDs on distinct
+return capabilities remain distinct. Rebinding a route cannot retarget an admitted
+invocation. A standalone router cannot infer those states from Wire alone, and
+wrapping a return capability to observe completion would violate preservation.
+This integration is a runtime/profile obligation, not hidden generic routing
+behavior. Nightseam's combined acceptance must exercise bounded retention and
+retirement with delayed responses and cancellation after detach/rebind.
+
+One realization keeps the selected route in the existing runtime-owned context
+of each admitted invocation, associated with the unchanged return capability.
+Cancellation retrieves that capture; normal terminal-state cleanup retires the
+context. This requires neither a global perpetual router map nor another Wire
+method. It is a proposed runtime integration, whose actual implementation and
+generated/physical acceptance remain Nightseam's responsibility.
+
 ## Migration and evidence
 
 All eight bindings change together. `Wire.receive(path, receiver)` becomes an

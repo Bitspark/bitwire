@@ -253,6 +253,45 @@ let rootReceiveRefused = false, viewAfterRootCloseRefused = false;
 try { viewRoot.receive({}); } catch { rootReceiveRefused = true; }
 try { bView.receive({}); } catch { viewAfterRootCloseRefused = true; }
 bView.close(); // Does not notify a second time after root closure.
+
+// Two independent callers may use the same request ID. Keep each admitted
+// request's original return capability across route replacement; do not wrap it
+// or infer invocation completion from the receiver callback returning.
+const [identityClient, identityRoot] = pair(scheduler);
+const identityRouter = new TestRouter(identityRoot);
+const identityView = identityRouter.select(['service']);
+const capturedRequests: Message[] = [];
+const detachIdentity = identityView.receive({ message: (_path, message) => { capturedRequests.push(message); } });
+const lateReplies: string[] = [];
+const replyIDs: string[] = [];
+const originalReturns: ReturnAddress[] = [];
+for (const [label, payload] of [['left', 'first'], ['right', 'second']] as const) {
+  const [replyAccess, replyReceiver] = pair(scheduler);
+  replyReceiver.receive({ message: (_path, message) => {
+    if (message.frame.kind !== 'response') throw new Error('expected a response');
+    lateReplies.push(`${label}:${message.frame.result}`);
+    replyIDs.push(message.frame.id);
+  } });
+  const original: ReturnAddress = { wire: replyAccess };
+  originalReturns.push(original);
+  at(identityClient, ['service']).send(['call'], {
+    frame: { version: 1, kind: 'request', id: 'same-id', params: payload }, return: original,
+  });
+}
+scheduler.drain();
+const capturedReturnIdentities = capturedRequests.map((message, index) => message.return === originalReturns[index]);
+detachIdentity(); identityView.close();
+const replacementDeliveries: string[] = [];
+identityRouter.select(['service']).receive({ message: (_path, message) => {
+  if (message.frame.kind !== 'event') throw new Error('old request/reply reached replacement receiver');
+  replacementDeliveries.push(String(message.frame.data));
+} });
+identityClient.send(['service', 'probe'], { frame: { version: 1, kind: 'event', data: 'probe' } });
+for (const captured of [...capturedRequests].reverse()) {
+  if (captured.frame.kind !== 'request') throw new Error('expected request');
+  captured.return!.wire.send([], { frame: { version: 1, kind: 'response', id: captured.frame.id, result: captured.frame.params } });
+}
+scheduler.drain();
 if (Object.keys(composed).join(',') !== 'send') throw new Error('Selected access must not grant endpoint ownership');
 console.log(JSON.stringify({
   siblings: { deliveries, receiverRanDuringSend, duplicateEndpointAttachmentRefused, attachmentReusableAfterDetach },
@@ -263,4 +302,5 @@ console.log(JSON.stringify({
   selectedEndpoints: { nestedPath, selectedSendPath, duplicateReceiveRefused, notifications,
     closedReceiveRefused, closedSendRefused, rootReceiveRefused, viewAfterRootCloseRefused,
     siblingAfterViewClose, routeReusable },
+  sameIDDelayedReplies: { capturedReturnIdentities, lateReplies, replyIDs, replacementDeliveries },
 }));

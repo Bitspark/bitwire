@@ -37,6 +37,7 @@ particular, it need not reproduce 0.1's exact-versus-namespace registration tabl
 | Borrowed endpoint lifetime | Detaching the forwarder leaves both endpoints usable. Send-only selected/mounted access does not expose endpoint close. |
 | Selected Endpoint attachment and closure | Nested receiving and sending paths remain relative to the view. Duplicate receive is refused; detach/rebind works, including stale detach. Closing an active view notifies once; closing a detached view never notifies its old receiver. |
 | Shared root and sibling ownership | A closed view refuses Send and Receive, but its route can be reused by a fresh view and its sibling still receives. Root closure notifies the remaining active sibling once, refuses new root/view attachment, and repeated close does not notify again. |
+| Equal request IDs with distinct return identities | Two callers both use `same-id`; their original return capabilities survive receiver detach, view closure and route replacement. Delayed replies sent in reverse order reach the corresponding original callers. The replacement receiver sees only its new probe event. |
 | Opaque paths | Empty segments, a slash within one segment, two segments, and composed/decomposed Unicode reach distinct destinations. |
 
 The scheduler is intentionally explicit and drained by the test. It establishes
@@ -45,6 +46,13 @@ queue bounds, physical transport or concurrent lifetime behavior. Go passes the
 Message value unchanged and compares its entire frame and return pointer;
 TypeScript additionally checks message and frame object identity. The context
 association is a test-owned private map, not authentication evidence.
+
+The delayed-reply case is deliberately bounded. A receiving callback returning
+does not establish completion of the asynchronous invocation. The reference
+captures the original return capabilities unchanged; it neither wraps them nor
+builds a cancellation or completion ledger. Runtime/profile-owned cancellation
+association, terminal completion, cleanup and concurrent lifetime interleavings
+remain unproved here and require explicit integration in the runtime.
 
 ## What this establishes and what comes next
 

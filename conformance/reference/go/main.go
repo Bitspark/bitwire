@@ -404,12 +404,68 @@ func main() {
 	_, rootReceiveErr := viewRoot.Receive(wire.Receiver{})
 	_, viewRootReceiveErr := bView.Receive(wire.Receiver{})
 	must(bView.Close(0, "done"))
+
+	// Equal request IDs from independent callers still retain distinct original
+	// return capabilities after route replacement. No completion ledger is inferred.
+	identityClient, identityRoot := pair(s)
+	identityRouter := newRouter(identityRoot)
+	identityView := identityRouter.selectView([]string{"service"})
+	capturedRequests := []wire.Message{}
+	detachIdentity, err := identityView.Receive(wire.Receiver{Message: func(_ []string, message wire.Message) { capturedRequests = append(capturedRequests, message) }})
+	must(err)
+	lateReplies, replyIDs := []string{}, []string{}
+	originalReturns := []*wire.ReturnAddress{}
+	for _, caller := range []struct{ label, payload string }{{"left", "first"}, {"right", "second"}} {
+		replyAccess, replyReceiver := pair(s)
+		_, err := replyReceiver.Receive(wire.Receiver{Message: func(_ []string, message wire.Message) {
+			if message.Frame.Kind != wire.ProfileResponse {
+				panic("expected a response")
+			}
+			var result string
+			must(json.Unmarshal(message.Frame.Result, &result))
+			lateReplies = append(lateReplies, caller.label+":"+result)
+			replyIDs = append(replyIDs, message.Frame.ID)
+		}})
+		must(err)
+		original := &wire.ReturnAddress{Wire: replyAccess}
+		originalReturns = append(originalReturns, original)
+		payload, err := json.Marshal(caller.payload)
+		must(err)
+		must(at(identityClient, []string{"service"}).Send([]string{"call"}, wire.Message{Frame: wire.ProfileFrame{Version: 1, Kind: wire.ProfileRequest, ID: "same-id", Params: payload}, Return: original}))
+	}
+	s.drain()
+	capturedReturnIdentities := []bool{}
+	for index, message := range capturedRequests {
+		capturedReturnIdentities = append(capturedReturnIdentities, message.Return == originalReturns[index])
+	}
+	detachIdentity()
+	must(identityView.Close(0, "done"))
+	replacementDeliveries := []string{}
+	_, err = identityRouter.selectView([]string{"service"}).Receive(wire.Receiver{Message: func(_ []string, message wire.Message) {
+		if message.Frame.Kind != wire.ProfileEvent {
+			panic("old request/reply reached replacement receiver")
+		}
+		var result string
+		must(json.Unmarshal(message.Frame.Data, &result))
+		replacementDeliveries = append(replacementDeliveries, result)
+	}})
+	must(err)
+	must(identityClient.Send([]string{"service", "probe"}, wire.Message{Frame: wire.ProfileFrame{Version: 1, Kind: wire.ProfileEvent, Data: json.RawMessage(`"probe"`)}}))
+	for index := len(capturedRequests) - 1; index >= 0; index-- {
+		captured := capturedRequests[index]
+		if captured.Frame.Kind != wire.ProfileRequest {
+			panic("expected request")
+		}
+		must(captured.Return.Wire.Send(nil, wire.Message{Frame: wire.ProfileFrame{Version: 1, Kind: wire.ProfileResponse, ID: captured.Frame.ID, Result: captured.Frame.Params}}))
+	}
+	s.drain()
 	output := map[string]any{
-		"siblings":          map[string]any{"deliveries": deliveries, "receiverRanDuringSend": receiverRanDuringSend, "duplicateEndpointAttachmentRefused": duplicateErr != nil, "attachmentReusableAfterDetach": attachmentReusable},
-		"overlap":           map[string]any{"deliveries": overlapDeliveries, "duplicateRouteRefused": duplicateRouteErr != nil},
-		"composition":       map[string]any{"deliveredPath": deliveredPath, "framePreserved": framePreserved, "returnIdentityPreserved": returnIdentityPreserved, "associatedContextPreserved": associatedContextPreserved, "reply": reply, "borrowedEndpointUsableAfterDetach": sourceUsable && targetUsable},
-		"opaquePaths":       opaquePaths,
-		"selectedEndpoints": map[string]any{"nestedPath": nestedPath, "selectedSendPath": selectedSendPath, "duplicateReceiveRefused": duplicateViewErr != nil, "notifications": notifications, "closedReceiveRefused": closedReceiveErr != nil, "closedSendRefused": closedSendErr != nil, "rootReceiveRefused": rootReceiveErr != nil, "viewAfterRootCloseRefused": viewRootReceiveErr != nil, "siblingAfterViewClose": siblingAfterViewClose, "routeReusable": routeReusable},
+		"siblings":             map[string]any{"deliveries": deliveries, "receiverRanDuringSend": receiverRanDuringSend, "duplicateEndpointAttachmentRefused": duplicateErr != nil, "attachmentReusableAfterDetach": attachmentReusable},
+		"overlap":              map[string]any{"deliveries": overlapDeliveries, "duplicateRouteRefused": duplicateRouteErr != nil},
+		"composition":          map[string]any{"deliveredPath": deliveredPath, "framePreserved": framePreserved, "returnIdentityPreserved": returnIdentityPreserved, "associatedContextPreserved": associatedContextPreserved, "reply": reply, "borrowedEndpointUsableAfterDetach": sourceUsable && targetUsable},
+		"opaquePaths":          opaquePaths,
+		"selectedEndpoints":    map[string]any{"nestedPath": nestedPath, "selectedSendPath": selectedSendPath, "duplicateReceiveRefused": duplicateViewErr != nil, "notifications": notifications, "closedReceiveRefused": closedReceiveErr != nil, "closedSendRefused": closedSendErr != nil, "rootReceiveRefused": rootReceiveErr != nil, "viewAfterRootCloseRefused": viewRootReceiveErr != nil, "siblingAfterViewClose": siblingAfterViewClose, "routeReusable": routeReusable},
+		"sameIDDelayedReplies": map[string]any{"capturedReturnIdentities": capturedReturnIdentities, "lateReplies": lateReplies, "replyIDs": replyIDs, "replacementDeliveries": replacementDeliveries},
 	}
 	encoded, err := json.Marshal(output)
 	must(err)

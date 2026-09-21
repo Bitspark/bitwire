@@ -89,6 +89,20 @@ the return and cancellation path
 they captured. Detaching is distinct from closing an endpoint, cancelling an
 admitted request or releasing a live binding.
 
+Returning from a Message callback is not invocation completion. The primitive
+provides no generic terminal-invocation signal. An invocation-aware dispatcher
+therefore integrates explicitly with its profile runtime's admission, correlation
+and terminal-state ledger. That owner retains a captured route/cancellation
+association for an admitted invocation, keyed by return-capability identity and
+request ID, until its profile-defined terminal state permits retirement. Detach
+or rebind must not retarget that invocation to a new receiver. A pure router
+cannot infer this lifetime from callback return or observe it by wrapping the
+return capability; the latter would violate identity preservation. Bounds and
+retirement belong to that explicit runtime integration, not an unbounded table
+silently introduced by Wire selection. The reference composition experiment
+checks retained replies; full cancellation/retirement acceptance remains with
+the implementing profile.
+
 ## Preservation laws
 
 The following are obligations on compositions, not additional primitive methods
