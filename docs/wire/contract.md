@@ -160,6 +160,11 @@ leaves its borrowed endpoints usable.
 A local Message comprises a structured frame and optional local delivery
 capability/context. A request's return capability supports its response;
 correlation uses both that capability's identity and the request identifier.
+Whether a profile may also address that capability on non-empty paths, reserving
+its path space for the invocation, is an
+[open review finding](../integration.md#open-review-findings) under
+[#20](https://github.com/Bitspark/bitwire/issues/20). The released 0.2.0
+declarations neither grant nor refuse it.
 Composition must retain capability identity, not construct a new wrapper merely
 pointing to the same endpoint. Native bindings may represent stable identity by
 a pointer, an object or another opaque identity token.
