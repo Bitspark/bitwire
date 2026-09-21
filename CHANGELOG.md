@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Publish Java 0.1.0 on Maven Central and verify an independent public registry consumer.
+- Add a manual Maven authentication diagnostic that checks secret formatting and effective settings without exposing credentials or publishing artifacts.
+
 ## 0.2.0 — 2026-09-21 (candidate)
 
 - Separate send-only Wire from Endpoint receive attachment and closure in all eight native bindings.

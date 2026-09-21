@@ -7,6 +7,10 @@ on:
         description: Existing immutable public release tag (for example v0.2.0)
         required: true
         type: string
+      diagnose:
+        description: Check credential handling without uploading or publishing
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -16,7 +20,89 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  diagnose:
+    if: ${{ inputs.diagnose }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Check secret formatting, Maven resolution and Portal authentication
+        working-directory: wire/java
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+        shell: python
+        run: |
+          import base64, os, subprocess, tempfile
+          import urllib.request, urllib.error
+          import xml.etree.ElementTree as ET
+
+          username = os.environ['MAVEN_CENTRAL_USERNAME']
+          password = os.environ['MAVEN_CENTRAL_PASSWORD']
+          for label, value in [('username', username), ('password', password)]:
+              print(f'{label}: present={bool(value)}, surrounding_whitespace={value != value.strip()}, contains_control={any(ord(c) < 32 for c in value)}')
+          if not username or not password:
+              raise SystemExit('A required credential is missing.')
+          # Never emit effective settings, process output, headers or response bodies.
+          with tempfile.TemporaryDirectory() as directory:
+              output = os.path.join(directory, 'settings.xml')
+              result = subprocess.run([
+                  'mvn', '-B', '-ntp', '-s', 'release-settings.xml',
+                  'org.apache.maven.plugins:maven-help-plugin:3.5.1:effective-settings',
+                  '-DshowPasswords=true', '-Doutput=' + output,
+              ], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+              if result.returncode:
+                  raise SystemExit('Could not calculate effective settings; output withheld.')
+              ns = {'m': 'http://maven.apache.org/SETTINGS/1.2.0'}
+              root = ET.parse(output).getroot()
+              # Maven may serialize effective settings using another schema version.
+              ns['m'] = root.tag.split('}')[0][1:]
+              servers = [s for s in root.findall('m:servers/m:server', ns)
+                         if s.findtext('m:id', namespaces=ns) == 'central']
+              if len(servers) != 1:
+                  raise SystemExit('Expected exactly one central server.')
+              server = servers[0]
+              matches = (server.findtext('m:username', namespaces=ns) == username
+                         and server.findtext('m:password', namespaces=ns) == password)
+              print(f'Maven effective credentials exactly match GitHub secrets: {matches}')
+              if not matches:
+                  raise SystemExit('Maven altered or failed to resolve the credentials.')
+
+          # Read-only status query for a nonexistent deployment, never an upload.
+          # Compare with an anonymous control; a 404 alone is not publication evidence.
+          url = 'https://central.sonatype.com/api/v1/publisher/status?id=00000000-0000-0000-0000-000000000000'
+          def probe(label, pair=None):
+              headers = {}
+              if pair is not None:
+                  token = base64.b64encode((':'.join(pair)).encode()).decode()
+                  headers['Authorization'] = 'Bearer ' + token
+              request = urllib.request.Request(url, data=b'', headers=headers, method='POST')
+              class NoRedirect(urllib.request.HTTPRedirectHandler):
+                  def redirect_request(self, *args, **kwargs):
+                      return None
+              try:
+                  with urllib.request.build_opener(NoRedirect()).open(request, timeout=30) as response:
+                      status = response.status
+              except urllib.error.HTTPError as error:
+                  status = error.code
+                  error.close()
+              except Exception:
+                  raise SystemExit('Portal probe failed; diagnostic details withheld.')
+              print(f'{label}: HTTP {status}')
+          probe('Anonymous control')
+          probe('Configured credentials', (username, password))
+          if username != username.strip() or password != password.strip():
+              probe('Surrounding whitespace removed in memory only', (username.strip(), password.strip()))
+
   publish:
+    if: ${{ !inputs.diagnose }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:

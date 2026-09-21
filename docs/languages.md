@@ -48,7 +48,7 @@ verified independently for each distribution:
 | Python | [`bitspark-bitwire==0.1.0`](https://pypi.org/project/bitspark-bitwire/0.1.0/) | Tests passed against the public PyPI installation, following wheel/source and exact-wheel consumer checks. |
 | Swift | Public Git dependency, exact version `0.1.0` | Standalone Swift 6.1.3 consumer resolved the tag, compiled and ran. |
 | C++ | Public tagged source and installed `Bitwire::wire` | GNU 13.3 installed-package consumer compiled and passed CTest. |
-| Java | Maven Central publication pending | Build, tests, sources, Javadoc, installed consumer and signing passed; Central rejected upload with HTTP 401, tracked in [#10](https://github.com/Bitspark/bitwire/issues/10). |
+| Java | [`dev.bitspark:bitwire:0.1.0`](https://repo.maven.apache.org/maven2/dev/bitspark/bitwire/0.1.0/) on Maven Central | Signed binary, POM, sources and Javadoc published; an independent consumer resolved Central into a fresh Maven repository, compiled and ran. |
 | Haskell | Public Git dependency pinned to the 0.1.0 release commit | Cabal build/tests, source-package consumer and anonymous Git consumer with a fresh store; [installation instructions](../wire/hs/README.md#install-from-git). Hackage publication is deferred in [#11](https://github.com/Bitspark/bitwire/issues/11). |
 
 The [core release run](https://github.com/Bitspark/bitwire/actions/runs/35577033829)
@@ -56,6 +56,8 @@ records Go, npm and Rust registry checks. Swift and C++ public source checks use
 disposable environments, anonymous HTTPS fetch and no source checkout mounts.
 The [Python publication run](https://github.com/Bitspark/bitwire/actions/runs/35578328647)
 records the upload and subsequent PyPI installation tests.
+The [Java publication run](https://github.com/Bitspark/bitwire/actions/runs/35587654781)
+records signed publication and the clean public Maven Central consumer.
 The [Haskell publication run](https://github.com/Bitspark/bitwire/actions/runs/35578334722)
 records successful artifact checks and the subsequent authorization refusal.
 The supported Haskell distribution now uses the public Git release; the
