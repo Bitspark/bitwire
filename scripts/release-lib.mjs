@@ -57,11 +57,27 @@ export function checkTag(tag) {
   if (tag !== `v${version}`) throw new Error(`Tag ${tag} disagrees with npm version ${version}.`);
 }
 
-export async function publicJSON(url, absentOK = false) {
-  const response = await fetch(url, { headers: { 'User-Agent': 'bitwire-release (github.com/Bitspark/bitwire)' }, signal: AbortSignal.timeout(30000) });
+export async function publicJSON(url, absentOK = false, headers = {}) {
+  const response = await fetch(url, { headers: { 'User-Agent': 'bitwire-release (github.com/Bitspark/bitwire)', ...headers }, signal: AbortSignal.timeout(30000) });
   if (absentOK && response.status === 404) return undefined;
   if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
   return response.json();
+}
+
+// npm installs use a separately cached abbreviated packument. A visible version
+// endpoint alone does not establish that the install metadata has propagated.
+export async function npmInstallReady(name, requiredVersion, readJSON = publicJSON) {
+  const metadata = await readJSON(`${npmRegistry}/${name.replace('/', '%2f')}`, true, {
+    Accept: 'application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*',
+  });
+  if (!metadata) return false;
+  if (!metadata.versions || typeof metadata.versions !== 'object') throw new Error('npm install metadata has no versions map.');
+  const release = metadata.versions[requiredVersion];
+  if (!release) return false;
+  if (release.name !== name || release.version !== requiredVersion || !release.dist?.tarball || !release.dist?.integrity) {
+    throw new Error(`npm install metadata is invalid for ${name}@${requiredVersion}.`);
+  }
+  return true;
 }
 
 export function pack(directory) {

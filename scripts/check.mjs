@@ -14,6 +14,7 @@ if (!existsSync(compiler)) {
 }
 
 run(process.execPath, ['scripts/links.mjs']);
+run(process.execPath, ['--test', 'scripts/registry-readiness.test.mjs']);
 const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], {
   cwd: root, encoding: 'utf8',
 }).split('\0').filter(path => path.endsWith('.go'));
