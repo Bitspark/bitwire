@@ -103,6 +103,14 @@ silently introduced by Wire selection. The reference composition experiment
 checks retained replies; full cancellation/retirement acceptance remains with
 the implementing profile.
 
+Implementing Endpoint alone does not supply a particular runtime's invocation
+lifecycle association. An invocation-aware dispatcher requires that explicit
+profile integration, including when an endpoint is wrapped opaquely; it must
+refuse an unmanaged invocation that cannot satisfy its advertised lifecycle
+guarantees. It must not silently substitute current route lookup. Generic
+addressed delivery and pure routing remain usable without that runtime-specific
+invocation facility.
+
 ## Preservation laws
 
 The following are obligations on compositions, not additional primitive methods
