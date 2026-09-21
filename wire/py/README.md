@@ -65,6 +65,28 @@ For release artifacts at a chosen location:
 python -m build --outdir dist
 ```
 
+## Optional PyPI publication
+
+The manual `publish-python.yml` workflow publishes an existing immutable public
+release tag. It is separate from the Go/TypeScript release and does not gate that
+handover. Its default authentication is a PyPI trusted publisher. Configure these
+fields under the PyPI account's **Publishing** page for a pending project:
+
+| Field | Value |
+| --- | --- |
+| PyPI project name | `bitspark-bitwire` |
+| Owner | `Bitspark` |
+| Repository name | `bitwire` |
+| Workflow name | `publish-python.yml` |
+| Environment name | `pypi` |
+
+For an existing project, add the same publisher under the project's publishing
+settings. As a bootstrap fallback, store an API token in the repository or `pypi`
+environment secret named `PYPI_API_TOKEN`, then select `api-token` when dispatching
+the workflow from `main`. Tokens are passed only to publication steps. Revoke the
+bootstrap token after trusted publishing is configured. The workflow verifies the
+packaged artifact before upload and installs the published PyPI package afterward.
+
 The binding is adapted from Nightseam's Python Wire declarations at commit
 [`1c63f1c4`](https://github.com/Bitspark/nightseam/blob/1c63f1c4d7e4b5987d4bd32e294177645c92ed8f/duplex/py/nightseam/duplex/wire.py)
 under Apache-2.0. See the included `LICENSE` and `NOTICE` files.

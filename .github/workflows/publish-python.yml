@@ -1,0 +1,115 @@
+name: publish-python
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing immutable public release tag
+        required: true
+        default: v0.1.0
+        type: string
+      authentication:
+        description: Prefer a configured PyPI trusted publisher; token is a bootstrap fallback
+        required: true
+        default: trusted-publisher
+        type: choice
+        options: [trusted-publisher, api-token]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-python-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.release.outputs.sha }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: node scripts/publish-extra.mjs resolve python "$RELEASE_TAG"
+
+  build:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release.outputs.sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: node scripts/publish-extra.mjs verify python "$RELEASE_TAG"
+      - run: python -m pip install -r wire/py/requirements-dev.txt
+      - run: python wire/py/check.py
+      - run: python -m build wire/py --outdir dist/python
+      - name: Consume the exact wheel to publish outside the checkout
+        run: |
+          python -m venv "$RUNNER_TEMP/python-publish-consumer"
+          "$RUNNER_TEMP/python-publish-consumer/bin/python" -m pip install --no-index --no-deps dist/python/*.whl
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/python-publish-consumer/bin/python" -m unittest discover -s "$GITHUB_WORKSPACE/wire/py/tests" -p 'test_*.py' -v
+      - uses: actions/upload-artifact@v6
+        with:
+          name: python-distributions
+          path: dist/python/*
+          if-no-files-found: error
+
+  publish:
+    needs: [release, build]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/bitspark-bitwire/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v6
+        with:
+          name: python-distributions
+          path: dist
+      - name: Check token fallback configuration
+        if: inputs.authentication == 'api-token'
+        env:
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: test -n "$PYPI_API_TOKEN" || { echo 'Configure the PYPI_API_TOKEN repository or pypi environment secret.'; exit 1; }
+      - name: Publish through the PyPI trusted publisher
+        if: inputs.authentication == 'trusted-publisher'
+        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Publish using the bootstrap API token
+        if: inputs.authentication == 'api-token'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          attestations: false
+
+  verify:
+    needs: [release, publish]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release.outputs.sha }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - env:
+          VERSION: ${{ needs.release.outputs.version }}
+        run: python -m pip install --no-deps --index-url https://pypi.org/simple "bitspark-bitwire==$VERSION"
+      - run: python -m unittest discover -s wire/py/tests -p 'test_*.py' -v
