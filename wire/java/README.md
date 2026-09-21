@@ -4,13 +4,11 @@
 for Java 21. It has no runtime dependencies. The public Java package and automatic
 module name are both `dev.bitspark.bitwire`.
 
-The examples below target the unpublished 0.2.0 candidate. Use version 0.1.0
-for the existing release and its [original API documentation](https://github.com/Bitspark/bitwire/blob/v0.1.0/wire/java/README.md).
-
-Version 0.1.0 is available on [Maven Central](https://repo.maven.apache.org/maven2/dev/bitspark/bitwire/0.1.0/).
-The [publication run](https://github.com/Bitspark/bitwire/actions/runs/35587654781)
+Version 0.2.0 is available on [Maven Central](https://repo.maven.apache.org/maven2/dev/bitspark/bitwire/0.2.0/).
+The [publication run](https://github.com/Bitspark/bitwire/actions/runs/35589087610)
 signed and published the binary, POM, sources and Javadoc, then compiled and ran
 an independent consumer using only Central resolution in a fresh Maven repository.
+The immutable 0.1.0 release retains its [original API](https://github.com/Bitspark/bitwire/blob/v0.1.0/wire/java/README.md).
 
 ```xml
 <dependency>

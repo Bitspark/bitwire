@@ -2,6 +2,9 @@
 
 **Status:** accepted, 2026-09-21. **Contract version:** 0.2.0, breaking 0.1.0.
 
+[Decision 0003](0003-public-invocation-lifecycle.md) sharpens the required public
+profile lifecycle integration; private storage alone is not the integration API.
+
 ## Decision
 
 A Wire provides send access to a relative origin. An Endpoint additionally

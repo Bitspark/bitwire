@@ -24,46 +24,46 @@ recipes can be added without changing the access contract.
 
 ## Current delivery
 
-The working tree targets **0.2.0**, a breaking minor release. Wire provides Send;
-Endpoint adds a single Receive attachment and Close. All eight native bindings,
-package consumers and the Go/TypeScript reference composition experiment use that
-contract. Publication of this candidate is pending; the table below records the
-existing 0.1.0 distributions, not availability of 0.2.0. See the
+**0.2.0 is released**, a breaking minor revision. Wire provides Send; Endpoint
+adds a single Receive attachment and Close. All eight native bindings and package
+consumers use that contract. See the
 [decision and migration](decisions/0002-delivery-dispatch-and-ownership.md).
 
-All eight 0.1.0 native bindings are implemented. Go/TypeScript have independent
-behavioral observations against pinned Nightseam; native bindings have type,
-representation and packaged-consumer checks. The latter do not establish that
-their runtime implementations conform.
+The immutable [v0.2.0 source release](https://github.com/Bitspark/bitwire/releases/tag/v0.2.0)
+identifies commit `616a2fc5e3a0972f67f40331a9d9ca102bc9698d`. Distribution
+availability is verified independently:
 
-The immutable [v0.1.0 source release](https://github.com/Bitspark/bitwire/releases/tag/v0.1.0)
-identifies commit `9f45a2e0e9dc576db34237e5ad3aaaa0266a276b`. Availability is
-verified independently for each distribution:
-
-| Language | Public delivery of 0.1.0 | Installation evidence |
+| Language | Public delivery of 0.2.0 | Installation evidence |
 | --- | --- | --- |
-| Go | `github.com/Bitspark/bitwire@v0.1.0` through the public Go proxy | Clean module consumer, checksum database enabled, no replacements. |
-| TypeScript | [`@bitspark/bitwire@0.1.0`](https://www.npmjs.com/package/@bitspark/bitwire/v/0.1.0) with provenance | Clean npm install, TypeScript compilation and runtime entry-point import. |
-| Rust | [`bitspark-bitwire@0.1.0`](https://crates.io/crates/bitspark-bitwire/0.1.0) | Clean Cargo registry consumer compiled and ran. |
-| Python | [`bitspark-bitwire==0.1.0`](https://pypi.org/project/bitspark-bitwire/0.1.0/) | Tests passed against the public PyPI installation, following wheel/source and exact-wheel consumer checks. |
-| Swift | Public Git dependency, exact version `0.1.0` | Standalone Swift 6.1.3 consumer resolved the tag, compiled and ran. |
-| C++ | Public tagged source and installed `Bitwire::wire` | GNU 13.3 installed-package consumer compiled and passed CTest. |
-| Java | [`dev.bitspark:bitwire:0.1.0`](https://repo.maven.apache.org/maven2/dev/bitspark/bitwire/0.1.0/) on Maven Central | Signed binary, POM, sources and Javadoc published; an independent consumer resolved Central into a fresh Maven repository, compiled and ran. |
-| Haskell | Public Git dependency pinned to the 0.1.0 release commit | Cabal build/tests, source-package consumer and anonymous Git consumer with a fresh store; [installation instructions](../wire/hs/README.md#install-from-git). Hackage publication is deferred in [#11](https://github.com/Bitspark/bitwire/issues/11). |
+| Go | `github.com/Bitspark/bitwire@v0.2.0` through the public Go proxy | Clean module consumer, checksum database enabled, no replacements. |
+| TypeScript | [`@bitspark/bitwire@0.2.0`](https://www.npmjs.com/package/@bitspark/bitwire/v/0.2.0) with provenance | Clean npm install, TypeScript compilation and runtime entry-point import. |
+| Rust | [`bitspark-bitwire@0.2.0`](https://crates.io/crates/bitspark-bitwire/0.2.0) | Clean Cargo registry consumer compiled and ran. |
+| Python | [`bitspark-bitwire==0.2.0`](https://pypi.org/project/bitspark-bitwire/0.2.0/) | Tests passed against the public PyPI installation after wheel/source and exact-wheel consumer checks. |
+| Swift | Public Git dependency, exact version `0.2.0` | Fresh SwiftPM URL consumer compiled and ran; resolved version and commit equal the immutable release. |
+| C++ | Public tagged source and installed `Bitwire::wire` | Anonymous release checkout matched its SHA; an external installed-package consumer passed. |
+| Java | [`dev.bitspark:bitwire:0.2.0`](https://repo.maven.apache.org/maven2/dev/bitspark/bitwire/0.2.0/) on Maven Central | Signed binary, POM, sources and Javadoc published; an independent public Central consumer compiled and ran with a fresh Maven repository. |
+| Haskell | Public Git dependency pinned to the 0.2.0 release commit | Anonymous Git consumer built and ran with a fresh Cabal store; Hackage remains deferred in [#11](https://github.com/Bitspark/bitwire/issues/11). |
 
-The [core release run](https://github.com/Bitspark/bitwire/actions/runs/35577033829)
-records Go, npm and Rust registry checks. Swift and C++ public source checks used
-disposable environments, anonymous HTTPS fetch and no source checkout mounts.
-The [Python publication run](https://github.com/Bitspark/bitwire/actions/runs/35578328647)
-records the upload and subsequent PyPI installation tests.
-The [Java publication run](https://github.com/Bitspark/bitwire/actions/runs/35587654781)
-records signed publication and the clean public Maven Central consumer.
-The [Haskell publication run](https://github.com/Bitspark/bitwire/actions/runs/35578334722)
-records successful artifact checks and the subsequent authorization refusal.
-The supported Haskell distribution now uses the public Git release; the
-`bindings` workflow checks that installation separately from the current source.
-Every binding at that release carries contract revision `0.1.0`; registry availability and
-Nightseam adoption remain separate facts.
+The [exact-commit public rehearsal](https://github.com/Bitspark/bitwire/actions/runs/35588663413)
+and [core publication](https://github.com/Bitspark/bitwire/actions/runs/35588831224)
+passed. The latter verifies Go, npm and Rust registry consumers.
+[Python publication and verification](https://github.com/Bitspark/bitwire/actions/runs/35589245306)
+used the configured API-token route; installation passed after registry propagation.
+[Java publication and clean Central verification](https://github.com/Bitspark/bitwire/actions/runs/35589087610)
+passed with the configured signing key and corrected Portal credentials.
+[Swift/C++/Haskell source verification](https://github.com/Bitspark/bitwire/actions/runs/35589088118)
+passed against the immutable release, with an isolated anonymous consumer for each.
+
+The [reference composition experiment](../conformance/reference/README.md) exercises
+0.2 in Go and TypeScript; it is not a shipped runtime or proof of Nightseam's
+adoption. The separate pinned Nightseam baseline remains historical 0.1 evidence.
+[Capture-retirement issue #20](https://github.com/Bitspark/bitwire/issues/20) stays
+open for actual profile/runtime acceptance. Public packages, reference evidence
+and consumer adoption are distinct results.
+
+The immutable [0.1.0 release](https://github.com/Bitspark/bitwire/releases/tag/v0.1.0)
+and its API remain available. Hackage publication is deferred by operator decision;
+Git is the supported Haskell delivery route.
 
 ## Native representations
 
@@ -82,7 +82,7 @@ the current upstream rollout.
 ## Adoption
 
 [Nightseam #439](https://github.com/Bitspark/nightseam/issues/439) now owns the
-approved 0.2.0 API and dispatcher migration in parallel with publication.
+0.2.0 API and dispatcher migration following the verified public handover.
 [Nightseam #421](https://github.com/Bitspark/nightseam/issues/421) received the
 verified public Go/TypeScript handover for 0.6.0; its import migration and
 post-adoption acceptance are coordinated with #439. Its other-language rollout is separately

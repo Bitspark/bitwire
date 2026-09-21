@@ -120,6 +120,13 @@ a fixed timeout or weak map is not evidence of terminal retirement. See
 [capture-retirement issue #20](https://github.com/Bitspark/bitwire/issues/20)
 for the required runtime observations and their upstream ownership.
 
+[Decision 0003](../decisions/0003-public-invocation-lifecycle.md) requires the
+profile lifecycle integration to be public and testable by independent endpoint
+implementations. It separates already admitted stale controls from newly arriving
+ambiguous controls, specifies per-traversal capture obligations, and requires
+bounded accounting beyond the request count. The exact lifecycle facility is a
+profile API, not another method silently added to Wire.
+
 ## Preservation laws
 
 The following are obligations on compositions, not additional primitive methods
