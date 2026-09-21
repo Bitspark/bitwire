@@ -2,10 +2,12 @@
 
 ## Unreleased
 
+- Record verified 0.2.0 Go/npm/Rust/Python/Java registry consumers and Swift/C++/Haskell anonymous source consumers, plus Nightseam's released-contract handover.
+
 - Publish Java 0.1.0 on Maven Central and verify an independent public registry consumer.
 - Add a manual Maven authentication diagnostic that checks secret formatting and effective settings without exposing credentials or publishing artifacts.
 
-## 0.2.0 — 2026-09-21 (candidate)
+## 0.2.0 — 2026-09-21
 
 - Separate send-only Wire from Endpoint receive attachment and closure in all eight native bindings.
 - Replace path-based receive registration with one owning receiver; move matching and overlap policy to composed dispatchers.

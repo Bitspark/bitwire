@@ -1,6 +1,6 @@
 # Releases
 
-The current candidate is `0.2.0`; `0.1.0` remains immutable. A release identifies the shared contract revision,
+The current release is `0.2.0`; `0.1.0` remains immutable. A release identifies the shared contract revision,
 native bindings and independent cases. The [language matrix](docs/languages.md)
 records implementation, package validation, registry publication and consumer
 adoption separately. A source tag does not claim an upload to every registry.
@@ -84,12 +84,18 @@ For a pending PyPI trusted publisher, use project `bitspark-bitwire`, owner
 `pypi`. This route needs no PyPI API token. The pending publisher does not reserve
 the package name until publication. Binding READMEs describe package checks.
 
+The verified 0.2.0 PyPI upload used the existing API-token route; trusted publishing
+is not yet configured. Until it is configured, invoke
+`gh workflow run publish-python.yml --ref main -f tag=v0.2.0 -f authentication=api-token`.
+An upload followed by an installation miss can reflect index propagation; rerun
+the failed verification job after checking publication, without re-uploading.
+
 Hackage also requires the token's account to belong to its Uploaders group.
 The first 0.1.0 upload was refused for that missing authorization; the server
 directs the account owner to `hackage-trustees@haskell.org` for approval. See
 [#11](https://github.com/Bitspark/bitwire/issues/11) before retrying. The operator
 will request that approval later; Git consumption is the current delivery path.
-Java 0.1.0 is published on Central with a verified public consumer; see
+Java 0.2.0 is published on Central with a verified public consumer; see
 [#10](https://github.com/Bitspark/bitwire/issues/10). The Java workflow's optional
 `diagnose` mode checks credential formatting, Maven substitution and a read-only
 Portal status request without uploading artifacts or displaying credentials.

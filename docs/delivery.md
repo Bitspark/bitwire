@@ -2,6 +2,16 @@
 
 ## Subsequent 0.2.0 delivery
 
+The immutable [v0.2.0 release](https://github.com/Bitspark/bitwire/releases/tag/v0.2.0)
+is commit `616a2fc5e3a0972f67f40331a9d9ca102bc9698d`. Its
+[public rehearsal](https://github.com/Bitspark/bitwire/actions/runs/35588663413)
+and [core publication/registry consumers](https://github.com/Bitspark/bitwire/actions/runs/35588831224)
+passed. The [language matrix](languages.md) records each additional distribution.
+The [Nightseam handover](https://github.com/Bitspark/nightseam/issues/439#issuecomment-5759045944)
+supplies verified coordinates. [Issue #20](https://github.com/Bitspark/bitwire/issues/20)
+remains open for actual capture-retirement evidence in Nightseam; publication and
+the reference composition experiment do not close it.
+
 The [accepted separation](decisions/0002-delivery-dispatch-and-ownership.md)
 updates all eight bindings, adds a test-only composition experiment, and requires
 a new immutable minor release. The delivery sequence is package and composition

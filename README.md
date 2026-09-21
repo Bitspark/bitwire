@@ -10,12 +10,15 @@ runtime that carries its interactions. A wire gives access to an origin;
 selecting a path or mounting several origins must preserve that same interface.
 The contract is shared across languages, generators and runtime implementations.
 
-**Status: 0.2.0 candidate; [0.1.0 remains released](https://github.com/Bitspark/bitwire/releases/tag/v0.1.0).**
+**Status: [0.2.0 released](https://github.com/Bitspark/bitwire/releases/tag/v0.2.0).**
 All eight bindings separate send access from receive attachment and closure.
 A test-only Go/TypeScript composition experiment exercises shared dispatch,
 relative paths and preservation. The earlier ten Nightseam cases remain a pinned
 0.1.0 baseline. The [language matrix](docs/languages.md) records publication and
-adoption separately. No production endpoint runtime is included.
+adoption separately. Nightseam's migration is tracked in
+[#439](https://github.com/Bitspark/nightseam/issues/439); runtime capture-retirement
+acceptance remains open in [#20](https://github.com/Bitspark/bitwire/issues/20).
+No production endpoint runtime is included.
 
 ## The interface
 

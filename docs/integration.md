@@ -2,14 +2,17 @@
 
 ## Current state
 
-The approved **0.2.0 candidate** separates send-only Wire from Endpoint receive
+The released **0.2.0 contract** separates send-only Wire from Endpoint receive
 attachment/closure and dispatcher routing. The
 [decision](decisions/0002-delivery-dispatch-and-ownership.md) records the reasoning,
 shared receive ownership and migration. New reference composition checks are
 test-only evidence; they do not establish actual Nightseam adoption.
 [Nightseam #439](https://github.com/Bitspark/nightseam/issues/439) owns the runtime
-and generated-adapter migration, coordinated with #421. Candidate publication
-and post-adoption acceptance remain separate gates.
+and generated-adapter migration, coordinated with #421. The verified
+[public handover](https://github.com/Bitspark/nightseam/issues/439#issuecomment-5759045944)
+provides the immutable source and Go/npm coordinates. Publication and
+post-adoption acceptance remain separate gates; [capture retirement](https://github.com/Bitspark/bitwire/issues/20)
+still requires actual runtime evidence.
 
 The [0.1.0 release](https://github.com/Bitspark/bitwire/releases/tag/v0.1.0) provides eight native contract bindings, package checks and
 ten independent access-composition cases executed in Go and TypeScript against
@@ -60,7 +63,7 @@ Bitlink's older whole-runtime description still needs reconciliation.
 
 ## Next steps
 
-1. Release 0.2.0 and migrate Nightseam's public Wire/Endpoint definitions to it,
+1. Migrate Nightseam's public Wire/Endpoint definitions to released 0.2.0,
    moving handler registration into a shared dispatcher while preserving
    generated APIs, identity checks, scoped references and composition behavior.
 2. Exercise the same generated model over a local origin, a mounted/selected
