@@ -2,9 +2,11 @@
 
 ## Current state
 
-The scaffold establishes an independently owned Wire contract project. It has
-Go and TypeScript declarations adapted from Nightseam's public implementation,
-documentation and repository checks. It does not change any consumer dependency.
+The 0.1.0 candidate provides eight native contract bindings, package checks and
+ten independent access-composition cases executed in Go and TypeScript against
+public Nightseam revision `1c63f1c4d7e4b5987d4bd32e294177645c92ed8f`. The
+[language matrix](languages.md) records publication separately. These changes do
+not themselves migrate any consumer dependency.
 
 Nightseam still defines and implements its own Wire. Its generated adapters use
 Nightseam's runtime context and value environment in addition to Wire. Bitlink's
@@ -48,17 +50,15 @@ Bitlink's older whole-runtime description still needs reconciliation.
 
 ## Next steps
 
-1. Review the draft against the pinned Nightseam behavior and identify the exact
-   common contract and required profile obligations.
-2. Extract independent behavioral cases and a driver that exercises existing
-   implementations. Keep each case's expected observations separate from runtime
-   code. Do not require a second runtime before this can be useful.
-3. Migrate Nightseam's public Wire definitions to the agreed package, preserving
+1. Complete the [public handover](delivery.md): rehearse the exact contract
+   artifacts and publish the versioned packages, retaining the independent
+   baseline and the explicit remaining profile/behavioral obligations.
+2. Migrate Nightseam's public Wire definitions to the agreed package, preserving
    generated APIs, identity checks, scoped references and composition behavior.
-4. Exercise the same generated model over a local origin, a mounted/selected
+3. Exercise the same generated model over a local origin, a mounted/selected
    origin and a physical carrier; compare their observations.
-5. As Bitlink gains an implementation, exercise both generators against the same
+4. As Bitlink gains an implementation, exercise both generators against the same
    declared contract and profile, including generic slots containing callbacks.
 
-The [conformance plan](../conformance/README.md) distinguishes these observations
-from the compilation and documentation checks that run today.
+The [conformance baseline](../conformance/README.md) distinguishes the executable
+observations from remaining runtime/profile obligations and declaration checks.

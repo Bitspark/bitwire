@@ -41,9 +41,12 @@ interoperability with another language's numeric types. The fixed profile versio
 is `PROFILE_VERSION`; a codec supplies and validates that encoded field.
 
 `PublicError` is the Rust presentation of public profile error data and local
-refusals. Its unpublished-admission proof is local-only: serializing or receiving
-an error does not transfer the proof. Forwarding after admission must clear it.
-Bitwire does not supply the runtime machinery that establishes this proof.
+refusals. Its `unpublished` marker is a local provider assertion, not
+self-authenticating proof. It is meaningful only when established by the
+admitting runtime's own direct observation. Handler errors, received errors and
+application-controlled markers do not establish non-publication. Serialization
+omits it; handler, response and already-admitted forwarding boundaries must clear
+it. Bitwire does not supply that runtime admission machinery.
 
 See the [Wire contract](https://github.com/Bitspark/bitwire/blob/main/docs/wire/contract.md)
 and [profile boundary](https://github.com/Bitspark/bitwire/blob/main/docs/wire/profile.md).

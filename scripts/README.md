@@ -16,3 +16,9 @@ own location. It runs identically on Windows and Linux:
 The link check checks local destinations, not remote URLs or heading fragments.
 The command does not claim behavioral conformance; see the
 [conformance plan](../conformance/README.md).
+
+`node scripts/conformance.mjs` executes independent access cases through pinned
+public Nightseam implementations. `node scripts/smoke-packed.mjs` installs npm
+and Go artifacts outside the checkout. These are separate from declaration checks.
+The [release procedure](../RELEASING.md) describes rehearsal and public registry
+verification; native binding READMEs describe their package-consumer checks.

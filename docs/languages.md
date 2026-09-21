@@ -14,7 +14,7 @@ boundary. It does not require Bitwire to own their execution machinery.
 | Rust | `wire/rs` | `bitspark-bitwire` on crates.io | `bitwire` | [#6](https://github.com/Bitspark/bitwire/issues/6) |
 | Swift | `wire/swift` | SwiftPM product `Bitwire` | `Bitwire` | [#8](https://github.com/Bitspark/bitwire/issues/8) |
 | C++ | `wire/cpp` | CMake package `Bitwire`, target `Bitwire::wire` | `<bitwire/wire.hpp>`, namespace `bitwire` | [#9](https://github.com/Bitspark/bitwire/issues/9) |
-| Java | `wire/java` | Maven `io.github.bitspark:bitwire` | `io.github.bitspark.bitwire` | [#10](https://github.com/Bitspark/bitwire/issues/10) |
+| Java | `wire/java` | Maven `com.bitspark:bitwire` | `com.bitspark.bitwire` | [#10](https://github.com/Bitspark/bitwire/issues/10) |
 | Haskell | `wire/hs` | `bitspark-bitwire` on Hackage | `Bitwire` | [#11](https://github.com/Bitspark/bitwire/issues/11) |
 
 Coordinates are release targets until verified in the named registry. Swift uses
@@ -24,9 +24,11 @@ recipes can be added without changing the access contract.
 
 ## Current delivery
 
-Go and TypeScript declarations are present. The six additional bindings and
-their package checks are being implemented under the issues above. No registry
-publication or Nightseam import migration is claimed by this matrix yet.
+All eight native bindings are implemented. Go/TypeScript have independent
+behavioral observations against pinned Nightseam; native bindings have type,
+representation and packaged-consumer checks. The latter do not establish that
+their runtime implementations conform. No registry publication or Nightseam
+import migration is claimed by this candidate matrix yet.
 
 The initial release target is contract revision `0.1.0`. Every published binding
 must identify its contract revision. A source tag, a compiled artifact, a

@@ -75,7 +75,12 @@ The admitting runtime owns such evidence, its validation and conversion
 rollback. A binding may preserve an opaque local error association, but must
 not turn untrusted error data into proof. Public frame errors contain only
 profile data. Extracting their declarations into Bitwire does not require moving
-Nightseam's proof constructors, private markers or rollback implementation here.
+Nightseam's verification or rollback implementation here. A native local error
+presentation may retain a provider assertion such as Rust's `unpublished`
+marker. Such a publicly constructible marker is not self-authenticating evidence:
+the admitting runtime establishes meaning from its own direct observation and
+clears application, handler, response and already-admitted forwarding assertions.
+The marker is absent from serialized profile errors.
 
 ## What two adapters must agree on
 

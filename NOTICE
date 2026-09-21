@@ -8,3 +8,9 @@ Apache License, Version 2.0:
 Copyright 2026 Bitspark and the Nightseam contributors.
 Source revision: 5217cc60fdf8dd8d6b88e7ebb15bfcc98bb1d515.
 The adapted declarations live in wire/go/wire.go and wire/ts/src/index.ts.
+
+The Python, Rust, Swift, C++ and Java contract presentations are also derived
+from Nightseam's native Wire surfaces at revision
+1c63f1c4d7e4b5987d4bd32e294177645c92ed8f. Their package NOTICE files identify
+the source files and extraction changes. The Haskell presentation is derived
+from the common Bitwire specification.

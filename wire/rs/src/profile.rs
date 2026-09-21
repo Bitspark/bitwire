@@ -80,15 +80,19 @@ impl PublicError {
         }
     }
 
-    /// Mark a failure as proof that this operation was refused before admission.
-    /// This is a local fact; an error received in a response cannot supply it.
+    /// Attach the provider's local assertion of refusal before admission.
+    ///
+    /// This flag is not self-authenticating proof. The admitting runtime must
+    /// establish it from its own direct observation and clear application,
+    /// handler, response and already-admitted forwarding assertions. It is never
+    /// serialized into a profile error.
     pub fn unpublished(mut self) -> Self {
         self.unpublished = true;
         self
     }
 
-    /// Whether the failing operation is proven not to have been published.
-    /// Error codes and messages alone never establish this fact.
+    /// Read the local provider assertion, subject to the admission boundary's
+    /// validation. Neither this public flag nor error data alone proves refusal.
     pub fn is_unpublished(&self) -> bool {
         self.unpublished
     }

@@ -1,22 +1,82 @@
 # Releases
 
-There are no Bitwire releases yet. The repository starts private, and the
-TypeScript package is deliberately marked `private: true`. CI builds and checks
-the tree; it does not publish artifacts or change repository visibility.
+The initial target is `0.1.0`. A release identifies the shared contract revision,
+native bindings and independent cases. The [language matrix](docs/languages.md)
+records implementation, package validation, registry publication and consumer
+adoption separately. A source tag does not claim an upload to every registry.
 
-## Before the first release
+## Compatibility and readiness
 
-Establish the normative common contract and profile boundary, execute the agreed
-behavioral cases against an implementation, and validate the packages from a
-clean consumer checkout. Reconcile the ownership records with Nightseam and
-record what integration has actually landed. See [integration](docs/integration.md).
+Before 1.0, a breaking contract or native API change increments the minor version;
+a compatible correction increments the patch version. Published artifacts and
+tags are immutable. Preserve `nightseam.duplex/1` unless a separately specified
+protocol change requires a new identifier. Published libraries do not depend on
+Nightseam; test-only drivers use the public revision in `conformance/nightseam.json`.
 
-Agree the initial compatibility promise before choosing a release version.
-Versioned interface packages, specification and applicable conformance cases must
-identify the same contract revision. A runtime's adoption version is a separate
-fact and must be recorded explicitly.
+The required core, behavioral, package and native-binding CI checks must pass.
+Independent cases report their explicit scope and remaining obligations.
+Package versions, licenses and provenance must agree. Consumers install prepared
+artifacts outside the checkout; registry checks repeat installation from the
+actual published versions. Merge the candidate and record the exact release SHA.
 
-Prepare package license/notice files, public metadata and release notes before
-enabling package publication. A public repository does not by itself mean a
-package has been published. Preserve the existing Nightseam profile identifier
-unless a separately specified protocol change requires a new one.
+## Go, npm and Rust handover
+
+The `release.yml` workflow rehearses on manual invocation and publishes only on
+a `v*` tag push. Publication requires a successful public provenance rehearsal
+of that exact commit and version.
+
+1. Run `pnpm install --frozen-lockfile`, `node scripts/check.mjs`,
+   `node scripts/conformance.mjs`, `node scripts/release-prepare.mjs v0.1.0`,
+   `node scripts/smoke-packed.mjs` and `node wire/rs/check-package.mjs`.
+2. Optionally rehearse the merged commit privately:
+   `gh workflow run release.yml --ref main -f tag=v0.1.0 -f provenance=false`.
+3. For the public launch, make the repository public and enable immutable
+   GitHub releases. The organization's release-tag rule already protects `v*`.
+   Run `gh workflow run release.yml --ref main -f tag=v0.1.0 -f provenance=true`.
+   Verify the successful run's SHA and stored rehearsal receipt. A source change
+   requires a new rehearsal; an earlier run does not validate a later commit.
+4. Tag that exact merged commit as `v0.1.0` and push the tag once. The workflow
+   repeats checks, publishes `@bitspark/bitwire` with provenance and the Rust
+   crate when present, verifies public npm/Go/Rust installation and creates the
+   GitHub release. Go's module `github.com/Bitspark/bitwire` is distributed by
+   the tag; import `github.com/Bitspark/bitwire/wire/go`.
+5. Send the verified version, source SHA and conformance invocation to
+   [Nightseam #421](https://github.com/Bitspark/nightseam/issues/421), which owns
+   imports/re-exports and post-adoption generated-adapter acceptance.
+
+Both npm's registry and the `@bitspark` scope are explicitly set to
+`https://registry.npmjs.org`; local GitHub Packages settings cannot redirect the
+upload. Initial publication uses `NPM_TOKEN`; later trusted publishing can replace
+it. Rust uses `CARGO_REGISTRY_TOKEN`. The npm workspace root remains private.
+
+## Additional registries
+
+Swift consumes the root SwiftPM package through the public Git URL and tag.
+C++ consumes tagged source and the installed CMake package. Additional registry
+workflows select an existing stable immutable public release and build its exact
+source. Account setup does not block the first Go/TypeScript handover.
+
+| Workflow | Distribution | Actions configuration |
+| --- | --- | --- |
+| `publish-python.yml` | PyPI `bitspark-bitwire` | Environment `pypi`; trusted publishing preferred, optional `PYPI_API_TOKEN` |
+| `publish-java.yml` | Maven Central `com.bitspark:bitwire` | `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD`, `MAVEN_GPG_PRIVATE_KEY`, `MAVEN_GPG_PASSPHRASE` |
+| `publish-haskell.yml` | Hackage `bitspark-bitwire` | Environment `hackage`; `HACKAGE_AUTH_TOKEN` |
+
+Store credentials in repository Actions secrets for `Bitspark/bitwire`, never
+source files. Maven credentials are the generated Central Portal token pair,
+not a login password. Verify `com.bitspark` through the `bitspark.com` DNS
+challenge and supply a signing key satisfying Central's signature requirements.
+
+For a pending PyPI trusted publisher, use project `bitspark-bitwire`, owner
+`Bitspark`, repository `bitwire`, workflow `publish-python.yml`, environment
+`pypi`. This route needs no PyPI API token. The pending publisher does not reserve
+the package name until publication. Binding READMEs describe package checks.
+
+## Recovery
+
+If publication partially succeeds, preserve the tag and existing artifacts.
+Inspect registry state before retrying; npm compares existing integrity and Rust
+verifies existing packaged content. Never replace a published version with changed
+source. A failed consumer check after upload does not mean the upload failed.
+Record existing artifacts and remaining work, and report a registry as available
+only after its public installation check passes.

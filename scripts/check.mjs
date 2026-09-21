@@ -23,5 +23,5 @@ run('go', ['vet', './...']);
 run('go', ['test', './...']);
 run(process.execPath, [compiler, '-p', 'wire/ts/tsconfig.check.json']);
 run(process.execPath, [compiler, '-p', 'wire/ts/tsconfig.build.json']);
-console.log('Scaffold checks passed: documentation, Go and TypeScript declarations.');
-console.log('Behavioral Wire conformance is not implemented yet.');
+console.log('Core checks passed: documentation, Go and TypeScript declarations.');
+console.log('Runtime conformance and native package installation are separate CI gates.');
