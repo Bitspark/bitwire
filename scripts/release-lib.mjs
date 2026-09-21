@@ -103,15 +103,17 @@ export function checkNpmConsumer(directory, dependency) {
   const actual = JSON.parse(readFileSync(join(installed, 'package.json'), 'utf8'));
   if (actual.version !== version) throw new Error(`Consumer installed ${actual.version}, expected ${version}.`);
   writeJSON(join(directory, 'tsconfig.json'), { compilerOptions: { target: 'ES2022', module: 'NodeNext', strict: true, skipLibCheck: false, outDir: 'dist' }, include: ['index.ts'] });
-  writeFileSync(join(directory, 'index.ts'), `import type { Wire, Path, Message, Receiver, ProfileFrame, ProfileKind, ProfileError, ReturnAddress } from '@bitspark/bitwire';
+  writeFileSync(join(directory, 'index.ts'), `import type { Wire, Endpoint, Path, Message, Receiver, ProfileFrame, ProfileKind, ProfileError, ReturnAddress } from '@bitspark/bitwire';
 const frame: ProfileFrame = { version: 1, kind: 'event', data: null };
 const path: Path = ['example', ''];
 const message: Message = { frame };
 const receiver: Receiver = { message: (_path, _message) => {} };
 const kind: ProfileKind = frame.kind;
 const error: ProfileError = { code: 'example', message: 'example' };
-function consume(wire: Wire): ReturnAddress { const detach = wire.receive(path, receiver); wire.send(path, message); detach(); wire.close(); return { wire }; }
-void [kind, error, consume];
+const access: Wire = { send: (_path, _message) => {} };
+function consume(wire: Wire): ReturnAddress { wire.send(path, message); return { wire }; }
+function attach(endpoint: Endpoint): void { const detach = endpoint.receive(receiver); detach(); endpoint.close(); }
+void [kind, error, consume(access), attach];
 await import('@bitspark/bitwire');
 console.log('Installed Bitwire declarations and runtime entry point loaded.');
 `);
@@ -132,12 +134,17 @@ func main() {
   frame := wire.ProfileFrame{Version: 1, Kind: wire.ProfileEvent}
   message := wire.Message{Frame: frame}
   receiver := wire.Receiver{Message: func(path []string, message wire.Message) {}}
-  var endpoint wire.Wire
+  var endpoint wire.Endpoint
   _ = wire.ReturnAddress{Wire: endpoint}
   _ = wire.ProfileError{Code: "example", Message: "example"}
   _ = wire.Code(0)
-  fmt.Println("Installed Bitwire Go declarations loaded.", message.Frame.Version, receiver.Namespace)
+  access := sendOnly{}
+  var _ wire.Wire = access
+  _ = access.Send([]string{"example"}, message)
+  fmt.Println("Installed Bitwire Go declarations loaded.", message.Frame.Version, receiver.Message != nil)
 }
+type sendOnly struct{}
+func (sendOnly) Send(path []string, message wire.Message) error { return nil }
 `);
   const env = { ...process.env, GOENV: 'off', GOWORK: 'off', GOPRIVATE: '', GONOPROXY: 'none', GONOSUMDB: 'none', GOFLAGS: '-modcacherw', GOMODCACHE: join(directory, 'module-cache'), ...environment };
   run('go', ['mod', 'download', moduleName], { cwd: directory, env });

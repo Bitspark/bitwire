@@ -16,8 +16,6 @@ main = do
   observed <- newIORef []
   let sink = Wire
         { send = \path message -> modifyIORef' observed ((path, message) :)
-        , receive = \_ _ -> ioError (userError "fixture has no dispatcher")
-        , close = \_ _ -> pure ()
         }
       raw = JsonPayload "{\"integer\":9007199254740993,\"decimal\":0.1234567890123456789}"
       trace = Trace (Just "trace-parent") (Just "trace-state")
@@ -44,7 +42,8 @@ main = do
                ]
   assert "all logical frame variants remain available"
     (map profileKind frames == [RequestKind, ResponseKind, ResponseKind, EventKind, CancelKind])
-  refused <- try (receive sink [] (Receiver False Nothing Nothing)) :: IO (Either IOException (IO ()))
+  let endpoint = Endpoint sink (\_ -> ioError (userError "fixture has no dispatcher")) (\_ _ -> pure ())
+  refused <- try (receive endpoint (Receiver Nothing Nothing)) :: IO (Either IOException (IO ()))
   case refused of
     Left _ -> pure ()
     Right _ -> fail "fixture refusal should be observable through IO"

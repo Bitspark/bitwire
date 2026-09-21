@@ -6,8 +6,6 @@ main :: IO ()
 main = do
   let access = Wire
         { send = \_ _ -> pure ()
-        , receive = \_ _ -> pure (pure ())
-        , close = \_ _ -> pure ()
         }
   first <- newReturnAddress access
   second <- newReturnAddress access

@@ -6,7 +6,7 @@ The package contains typed declarations and supporting values; endpoint runtimes
 carriers, codecs and routing helpers belong to implementations.
 
 ```python
-from bitwire import Message, Receiver, ReturnAddress, Wire
+from bitwire import Endpoint, Message, Receiver, ReturnAddress, Wire
 
 
 def call(endpoint: Wire, replies: Wire) -> None:
@@ -19,18 +19,22 @@ def call(endpoint: Wire, replies: Wire) -> None:
     )
 
 
-def listen(endpoint: Wire):
+def listen(endpoint: Endpoint):
     def receive(path, message):
         print(path, message.frame)
 
-    return endpoint.receive([], Receiver(namespace=True, message=receive))
+    return endpoint.receive(Receiver(message=receive))
 ```
 
-`Wire` is a structural `Protocol`; implementations do not need to inherit from
-it. `send` accepts or refuses synchronously; the implementation schedules delivery.
-Receivers may return an awaitable. `receive` returns an idempotent detach function.
+`Wire` is a send-only structural `Protocol`; implementations do not need to inherit
+from it. `send` accepts or refuses synchronously; the implementation schedules
+delivery. `Endpoint` extends it with `receive(receiver)` and `close`, keeping
+attachment and closure authority separate from send access. One receive attachment
+is allowed at a time; duplicates are refused. Receivers may return an awaitable.
+`receive` returns an idempotent detach function that cannot remove a replacement.
+Path matching belongs to routing compositions, not to these interfaces.
 Paths are sequences of opaque Unicode-scalar strings and retain empty segments.
-Receiver paths are relative to the Wire on which they registered.
+Receiver paths are relative to the attached endpoint.
 
 `ReturnAddress` uses object identity, including when its Wire cannot be compared
 or hashed. Preserve this object during routing. The return address is local

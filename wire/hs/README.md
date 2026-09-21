@@ -4,13 +4,15 @@
 The package contains declarations and a local return-identity constructor. It
 contains no endpoint runtime, router, transport, codec or generated adapters.
 
-Version 0.1.0 is available as a public Git dependency. Hackage publication is
-deferred; it is not needed for the installation below. This package does not
-claim adoption by a Nightseam Haskell implementation.
+The current source is 0.2.0; its release availability is recorded in the
+repository delivery documentation. Hackage publication remains deferred.
+The already published 0.1.0 Git release is checked separately as historical
+delivery evidence. This package does not claim Nightseam Haskell adoption.
 
 ## Install from Git
 
-Add the release commit to your application's `cabal.project`:
+After the immutable 0.2.0 release is published, add its tag to your
+application's `cabal.project`:
 
 ```cabal
 packages: .
@@ -18,12 +20,12 @@ packages: .
 source-repository-package
   type: git
   location: https://github.com/Bitspark/bitwire.git
-  tag: 9f45a2e0e9dc576db34237e5ad3aaaa0266a276b
+  tag: v0.2.0
   subdir: wire/hs
 ```
 
-This is the commit of immutable release `v0.1.0`. Add
-`bitspark-bitwire == 0.1.0` to your executable or library's `build-depends` in
+The exact release tag selects the 0.2.0 source. Add
+`bitspark-bitwire == 0.2.0` to your executable or library's `build-depends` in
 its `.cabal` file, then run `cabal build`. No Hackage publisher account or GitHub
 credentials are required. Cabal may still download other dependencies from
 Hackage. The repository location belongs in the consuming project's
@@ -36,17 +38,20 @@ describes this supported installation mechanism.
 ```haskell
 import Bitwire
 
--- An application receives access from an implementation of this record:
--- send    :: Wire -> Path -> Message -> IO ()
--- receive :: Wire -> Path -> Receiver -> IO (IO ())
--- close   :: Wire -> Code -> Text -> IO ()
+-- Send-only access and endpoint control are distinct records:
+-- send         :: Wire -> Path -> Message -> IO ()
+-- endpointWire :: Endpoint -> Wire
+-- receive      :: Endpoint -> Receiver -> IO (IO ())
+-- close        :: Endpoint -> Code -> Text -> IO ()
 ```
 
 ## Representation
 
-- A `Wire` is a record of `IO` operations. Admission and registration refusals
-  are observable as exceptions in `IO`. Receiving returns an `IO ()` detach
-  action; the implementation must make that action idempotent.
+- `Wire` contains only send access. `Endpoint` bundles a `Wire` with receive
+  attachment and closure. Admission and attachment refusals are observable as
+  exceptions in `IO`. Receive attaches one receiver and refuses another while
+  it is active. Its `IO ()` detach action must be idempotent. Receiver callbacks
+  see the relative path and complete message; dispatch policy is separate.
 - Receiver callbacks also run in `IO`. The endpoint implementation schedules
   them; `send` must not run destination application code on its caller's stack.
 - `Path` is `[Text]`, a sequence of Unicode-scalar strings using `text >= 2.0`.
@@ -108,13 +113,19 @@ directory. The script leaves that directory intact:
 node wire/hs/check.mjs --artifact-dir /path/to/artifacts
 ```
 
-To verify the public Git installation with the existing release pin:
+To verify the already published 0.1.0 Git release (historical evidence):
 
 ```text
 node wire/hs/check-git.mjs
 ```
 
-This check copies only the consumer fixture into a temporary directory, uses a
+After publishing 0.2.0, verify the updated public interface explicitly:
+
+```text
+node wire/hs/check-git.mjs --tag v0.2.0 --version 0.2.0
+```
+
+This check copies only the matching consumer fixture into a temporary directory, uses a
 fresh Cabal configuration and store, disables inherited Git configuration and
 credentials, and builds Bitwire from the pinned public repository. CI runs it
 alongside the current source-package check. These checks serve different

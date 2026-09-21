@@ -5,6 +5,7 @@ from typing import assert_type
 from bitwire import (
     CancelFrame,
     ErrorFrame,
+    Endpoint,
     EventFrame,
     Message,
     Path,
@@ -18,7 +19,7 @@ from bitwire import (
 )
 
 
-def consume(wire: Wire, frame: ProfileFrame) -> None:
+def consume(wire: Wire, endpoint: Endpoint, frame: ProfileFrame) -> None:
     address = ReturnAddress(wire)
     wire.send(["scope", ""], Message(frame, address))
     assert_type(address.wire, Wire)
@@ -30,7 +31,9 @@ def consume(wire: Wire, frame: ProfileFrame) -> None:
     async def delivered(path: Path, message: Message) -> None:
         assert_type(message.return_address, ReturnAddress | None)
 
-    wire.receive([], Receiver(namespace=True, message=delivered))()
+    endpoint.receive(Receiver(message=delivered))()
+    wire.receive(Receiver())  # type: ignore[attr-defined]
+    wire.close()  # type: ignore[attr-defined]
     wire.send([42], Message(frame))  # type: ignore[list-item]
 
 

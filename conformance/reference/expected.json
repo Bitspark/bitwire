@@ -1,0 +1,39 @@
+{
+  "siblings": {
+    "deliveries": ["a:run", "b:run", "b:after-detach"],
+    "receiverRanDuringSend": false,
+    "duplicateEndpointAttachmentRefused": true,
+    "attachmentReusableAfterDetach": true
+  },
+  "overlap": {
+    "deliveries": ["deep:run", "parent:b/run"],
+    "duplicateRouteRefused": true
+  },
+  "composition": {
+    "deliveredPath": ["run", ""],
+    "framePreserved": true,
+    "returnIdentityPreserved": true,
+    "associatedContextPreserved": true,
+    "reply": "answer",
+    "borrowedEndpointUsableAfterDetach": true
+  },
+  "opaquePaths": ["empty", "slash", "split", "composed", "decomposed"],
+  "selectedEndpoints": {
+    "nestedPath": ["in"],
+    "selectedSendPath": ["scope", "a", "out"],
+    "duplicateReceiveRefused": true,
+    "notifications": { "active": 1, "detached": 0, "sibling": 1 },
+    "closedReceiveRefused": true,
+    "closedSendRefused": true,
+    "rootReceiveRefused": true,
+    "viewAfterRootCloseRefused": true,
+    "siblingAfterViewClose": true,
+    "routeReusable": true
+  },
+  "sameIDDelayedReplies": {
+    "capturedReturnIdentities": [true, true],
+    "lateReplies": ["right:second", "left:first"],
+    "replyIDs": ["same-id", "same-id"],
+    "replacementDeliveries": ["probe"]
+  }
+}

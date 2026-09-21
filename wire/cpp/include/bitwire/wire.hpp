@@ -63,24 +63,26 @@ struct Message {
 };
 
 struct Receiver {
-    // Exact routes win; otherwise the longest namespace segment prefix wins.
-    bool namespace_ = false;
-    // Paths are relative to the origin on which this receiver registered.
+    // Paths are relative to the endpoint origin; dispatch policy is external.
     std::function<void(const Path&, const Message&)> message;
     std::function<void(Code, const std::string&)> closed;
 };
 
 // send admits or throws on refusal without invoking a destination handler on
 // the sender's stack. The implementation owns bounded asynchronous dispatch.
-// receive refuses duplicate registrations. Its returned detach is idempotent,
-// prevents new dispatch and preserves return/cancellation access already held
-// by admitted requests. Selection shares endpoint closure; mounts and forwarding
-// own their registrations but do not close borrowed endpoints on detachment.
+// Wire grants send access only; it does not grant attachment or closure rights.
 class Wire {
 public:
     virtual ~Wire() = default;
     virtual void send(const Path& path, const Message& message) = 0;
-    virtual Detach receive(const Path& path, Receiver receiver) = 0;
+};
+
+// An endpoint owns one active receive attachment. A second attachment is refused.
+// Detach is idempotent, prevents new dispatch, and retains admitted return access.
+// Receive and Close are separate capabilities from send-only Wire access.
+class Endpoint : public Wire {
+public:
+    virtual Detach receive(Receiver receiver) = 0;
     virtual void close(Code code = 1000, std::string reason = {}) = 0;
 };
 

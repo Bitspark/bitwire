@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.2.0 — 2026-09-21 (candidate)
+
+- Separate send-only Wire from Endpoint receive attachment and closure in all eight native bindings.
+- Replace path-based receive registration with one owning receiver; move matching and overlap policy to composed dispatchers.
+- Document shared receiving views, relative-path laws, capability separation and migration from 0.1.0.
+- Exercise the new boundary with a test-only Go/TypeScript composition experiment and independent expected observations; retain the pinned Nightseam 0.1.0 baseline as historical evidence.
+- Update packaged consumers to the new access and endpoint interfaces; coordinate runtime/generator migration in Nightseam #439.
+
 - Support Haskell installation directly from the pinned public Git release, with an anonymous fresh-store consumer check in CI; defer Hackage publication.
 - Record verified 0.1.0 distribution availability and the Nightseam handover.
 - Wait for npm's install metadata to contain the released version before checking public consumers.

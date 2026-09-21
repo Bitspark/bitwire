@@ -10,10 +10,6 @@ public:
         path = relative;
         message = value;
     }
-    bitwire::Detach receive(const bitwire::Path&, bitwire::Receiver) override {
-        return [] {};
-    }
-    void close(bitwire::Code, std::string) override {}
 };
 
 int main() {
@@ -28,6 +24,5 @@ int main() {
         && recorder->message.frame.data == message.frame.data
         && recorder->message.return_address.get() == reply.get();
     recorder->message.return_address.reset(); // Do not keep a fixture ownership cycle.
-    endpoint->close();
     return intact ? 0 : 1;
 }
