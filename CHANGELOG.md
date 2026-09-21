@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Support Haskell installation directly from the pinned public Git release, with an anonymous fresh-store consumer check in CI; defer Hackage publication.
 - Record verified 0.1.0 distribution availability and the Nightseam handover.
 - Wait for npm's install metadata to contain the released version before checking public consumers.
 - Resolve the public GitHub repository without a trailing slash in Python/Haskell publication checks.
