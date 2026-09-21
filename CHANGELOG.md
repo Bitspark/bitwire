@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add a manual Maven authentication diagnostic that checks secret formatting and effective settings without exposing credentials or publishing artifacts.
+
 - Support Haskell installation directly from the pinned public Git release, with an anonymous fresh-store consumer check in CI; defer Hackage publication.
 - Record verified 0.1.0 distribution availability and the Nightseam handover.
 - Wait for npm's install metadata to contain the released version before checking public consumers.
