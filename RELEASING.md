@@ -81,8 +81,8 @@ Hackage also requires the token's account to belong to its Uploaders group.
 The first 0.1.0 upload was refused for that missing authorization; the server
 directs the account owner to `hackage-trustees@haskell.org` for approval. See
 [#11](https://github.com/Bitspark/bitwire/issues/11) before retrying. The operator
-will request that approval later; Git consumption is the current delivery path. Java's
-signing setup is verified; Central authentication is the remaining blocker in
+will request that approval later; Git consumption is the current delivery path.
+Java 0.1.0 is published on Central with a verified public consumer; see
 [#10](https://github.com/Bitspark/bitwire/issues/10). The Java workflow's optional
 `diagnose` mode checks credential formatting, Maven substitution and a read-only
 Portal status request without uploading artifacts or displaying credentials.

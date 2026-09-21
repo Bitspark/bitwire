@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Publish Java 0.1.0 on Maven Central and verify an independent public registry consumer.
 - Add a manual Maven authentication diagnostic that checks secret formatting and effective settings without exposing credentials or publishing artifacts.
 
 - Support Haskell installation directly from the pinned public Git release, with an anonymous fresh-store consumer check in CI; defer Hackage publication.

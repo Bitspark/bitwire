@@ -4,17 +4,10 @@
 for Java 21. It has no runtime dependencies. The public Java package and automatic
 module name are both `dev.bitspark.bitwire`.
 
-The coordinates are prepared for publication; their presence here does not claim
-that the artifact is already available on Maven Central.
-
-Signing passed in CI. Publication currently receives HTTP 401 from Central;
-[the diagnostic run](https://github.com/Bitspark/bitwire/actions/runs/35586883193)
-confirmed that both secrets are present, have no surrounding whitespace or
-control characters, and reach Maven unchanged. A direct Portal status query
-using the same credentials also returned 401. This rules out Maven substitution
-as the cause, but does not distinguish an expired, revoked, mismatched or otherwise
-unaccepted token pair. [Issue #10](https://github.com/Bitspark/bitwire/issues/10)
-tracks resolution and public installation verification.
+Version 0.1.0 is available on [Maven Central](https://repo.maven.apache.org/maven2/dev/bitspark/bitwire/0.1.0/).
+The [publication run](https://github.com/Bitspark/bitwire/actions/runs/35587654781)
+signed and published the binary, POM, sources and Javadoc, then compiled and ran
+an independent consumer using only Central resolution in a fresh Maven repository.
 
 ```xml
 <dependency>

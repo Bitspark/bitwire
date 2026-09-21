@@ -10,7 +10,7 @@ The public, immutable [v0.1.0 release](https://github.com/Bitspark/bitwire/relea
 is commit `9f45a2e0e9dc576db34237e5ad3aaaa0266a276b`. The exact-commit
 [public rehearsal](https://github.com/Bitspark/bitwire/actions/runs/35576831304)
 and [registry installation checks](https://github.com/Bitspark/bitwire/actions/runs/35577033829)
-passed. Go, npm, Rust and Python are publicly installable; the
+passed. Go, npm, Rust, Python and Java are publicly installable; the
 [language matrix](languages.md) records all eight distribution statuses.
 
 The [Nightseam handover](https://github.com/Bitspark/nightseam/issues/421#issuecomment-5757542437)
