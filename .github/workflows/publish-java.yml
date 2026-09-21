@@ -56,7 +56,7 @@ jobs:
           def field(name):
               return p.findtext("m:" + name, namespaces=ns)
           version = field("version")
-          if (field("groupId"), field("artifactId")) != ("com.bitspark", "bitwire"):
+          if (field("groupId"), field("artifactId")) != ("dev.bitspark", "bitwire"):
               raise SystemExit("Unexpected Maven package coordinates.")
           if "v" + version != os.environ["RELEASE_TAG"]:
               raise SystemExit("The POM version must match the immutable release tag.")
@@ -113,7 +113,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          pom="https://repo.maven.apache.org/maven2/com/bitspark/bitwire/$BITWIRE_VERSION/bitwire-$BITWIRE_VERSION.pom"
+          pom="https://repo.maven.apache.org/maven2/dev/bitspark/bitwire/$BITWIRE_VERSION/bitwire-$BITWIRE_VERSION.pom"
           for attempt in {1..20}; do
             if curl --fail --silent --show-error --max-time 20 "$pom" -o /dev/null; then break; fi
             if [[ "$attempt" == 20 ]]; then echo 'Published Maven coordinates did not become readable in time.'; exit 1; fi

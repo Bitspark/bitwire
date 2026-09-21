@@ -47,7 +47,7 @@ try {
       `-Dfile=${join(root, 'target', `bitwire-${version}.jar`)}`, `-DpomFile=${join(root, 'pom.xml')}`], taskDirectory);
   }
   maven([`-Dbitwire.version=${version}`, 'package'], consumer);
-  const artifact = join(localRepository, 'com/bitspark/bitwire', version, `bitwire-${version}.jar`);
+  const artifact = join(localRepository, 'dev/bitspark/bitwire', version, `bitwire-${version}.jar`);
   execFileSync('java', ['-cp', [join(consumer, 'target/classes'), artifact].join(delimiter), 'example.Consumer'],
     { cwd: consumer, stdio: 'inherit' });
 } finally {

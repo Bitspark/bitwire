@@ -1,4 +1,4 @@
-package com.bitspark.bitwire;
+package dev.bitspark.bitwire;
 
 import java.util.List;
 

@@ -1,22 +1,22 @@
 # Bitwire for Java
 
-`com.bitspark:bitwire:0.1.0` presents the shared relative-path Wire contract
+`dev.bitspark:bitwire:0.1.0` presents the shared relative-path Wire contract
 for Java 21. It has no runtime dependencies. The public Java package and automatic
-module name are both `com.bitspark.bitwire`.
+module name are both `dev.bitspark.bitwire`.
 
 The coordinates are prepared for publication; their presence here does not claim
 that the artifact is already available on Maven Central.
 
 ```xml
 <dependency>
-  <groupId>com.bitspark</groupId>
+  <groupId>dev.bitspark</groupId>
   <artifactId>bitwire</artifactId>
   <version>0.1.0</version>
 </dependency>
 ```
 
 ```java
-import com.bitspark.bitwire.*;
+import dev.bitspark.bitwire.*;
 import java.util.List;
 
 void request(Wire endpoint, Wire replies) {
@@ -80,8 +80,8 @@ same check using only Maven Central resolution in a fresh local repository.
 
 The build creates the binary, sources and Javadoc JARs. Binary and source artifacts
 include the Apache-2.0 license and Nightseam attribution. Publishing uses the
-`release` profile and requires the `com.bitspark` namespace to be verified by the
-owner of `bitspark.com`, Central Portal credentials, and a signing key.
+`release` profile and requires the `dev.bitspark` namespace to be verified by the
+owner of `bitspark.dev`, Central Portal credentials, and a signing key.
 
 The release environment supplies these GitHub Actions secrets:
 

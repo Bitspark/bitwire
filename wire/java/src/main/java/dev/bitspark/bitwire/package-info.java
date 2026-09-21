@@ -12,4 +12,4 @@
  * vocabulary follows {@code nightseam.duplex/1}; identity and reference checks
  * remain explicit obligations of that profile.
  */
-package com.bitspark.bitwire;
+package dev.bitspark.bitwire;

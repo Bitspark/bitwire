@@ -1,11 +1,11 @@
 package example;
 
-import com.bitspark.bitwire.JsonValue;
-import com.bitspark.bitwire.Message;
-import com.bitspark.bitwire.ProfileFrame;
-import com.bitspark.bitwire.Receiver;
-import com.bitspark.bitwire.ReturnAddress;
-import com.bitspark.bitwire.Wire;
+import dev.bitspark.bitwire.JsonValue;
+import dev.bitspark.bitwire.Message;
+import dev.bitspark.bitwire.ProfileFrame;
+import dev.bitspark.bitwire.Receiver;
+import dev.bitspark.bitwire.ReturnAddress;
+import dev.bitspark.bitwire.Wire;
 import java.util.List;
 
 /** An application can use the public contract without depending on a runtime. */

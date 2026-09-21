@@ -1,4 +1,4 @@
-package com.bitspark.bitwire;
+package dev.bitspark.bitwire;
 
 /** The four logical frame kinds in the initial profile. */
 public enum ProfileKind {

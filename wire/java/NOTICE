@@ -9,5 +9,5 @@ Copyright 2026 Bitspark and the Nightseam contributors.
 Source revision: 1c63f1c4d7e4b5987d4bd32e294177645c92ed8f.
 Source directory: duplex/java/src/main/java/io/nightseam/duplex.
 
-The Bitwire adaptation uses the com.bitspark.bitwire namespace, typed logical
+The Bitwire adaptation uses the dev.bitspark.bitwire namespace, typed logical
 profile frames, raw JSON payloads and a local ReturnAddress identity wrapper.
