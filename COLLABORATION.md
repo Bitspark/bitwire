@@ -11,12 +11,15 @@ A new primitive needs an observable requirement and an explanation of why
 composition from the existing interface cannot satisfy it. Reuse alone does not
 justify moving a runtime, type system or application policy into this repository.
 
-## One meaning, two language presentations
+## One meaning, eight language presentations
 
-A shared contract change updates the specification and both Go and TypeScript
-declarations together. Once executable behavioral cases exist, the same change
-updates their expectations and demonstrates agreement. Do not label compilation
-as conformance or a draft as a released guarantee.
+A shared contract change updates the specification, every delivered language
+presentation and the applicable independent behavioral cases together. The target
+languages are Go, TypeScript, Python, Rust, Swift, C++, Java and Haskell. Native
+representations may differ while preserving the same observations. Track pending
+implementation, validation, registry publication and consumer adoption separately
+in the [language matrix](docs/languages.md). Do not label compilation as runtime
+conformance or a draft as a released guarantee.
 
 The packages have no runtime dependency on another Bitspark repository. Tests may
 exercise a pinned external implementation without changing that package boundary.

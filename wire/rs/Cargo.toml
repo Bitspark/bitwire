@@ -1,0 +1,19 @@
+[package]
+name = "bitspark-bitwire"
+description = "The shared relative-path Wire contract, independent of runtimes and generators."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["wire", "protocol", "interface", "messaging"]
+categories = ["network-programming"]
+include = ["src/**", "examples/**", "tests/**", "README.md", "LICENSE", "NOTICE"]
+
+[lib]
+name = "bitwire"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true

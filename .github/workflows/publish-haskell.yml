@@ -1,0 +1,104 @@
+name: publish-haskell
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing immutable public release tag
+        required: true
+        default: v0.1.0
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-haskell-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.release.outputs.sha }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: node scripts/publish-extra.mjs resolve haskell "$RELEASE_TAG"
+
+  build:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release.outputs.sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: haskell-actions/setup@v2
+        with:
+          ghc-version: '9.6.7'
+          cabal-version: '3.12.1.0'
+      - env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: node scripts/publish-extra.mjs verify haskell "$RELEASE_TAG"
+      - run: cabal update
+      - name: Build, test and consume the exact source package outside the checkout
+        run: node wire/hs/check.mjs --artifact-dir "$RUNNER_TEMP/haskell-dist"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: haskell-distribution
+          path: ${{ runner.temp }}/haskell-dist/*.tar.gz
+          if-no-files-found: error
+
+  publish:
+    needs: [release, build]
+    runs-on: ubuntu-latest
+    environment:
+      name: hackage
+      url: https://hackage.haskell.org/package/bitspark-bitwire
+    steps:
+      - uses: haskell-actions/setup@v2
+        with:
+          ghc-version: '9.6.7'
+          cabal-version: '3.12.1.0'
+      - uses: actions/download-artifact@v6
+        with:
+          name: haskell-distribution
+          path: dist
+      - name: Publish the checked source package
+        env:
+          HACKAGE_AUTH_TOKEN: ${{ secrets.HACKAGE_AUTH_TOKEN }}
+          VERSION: ${{ needs.release.outputs.version }}
+        run: |
+          test -n "$HACKAGE_AUTH_TOKEN" || { echo 'Configure the HACKAGE_AUTH_TOKEN repository or hackage environment secret.'; exit 1; }
+          cabal upload --publish --token="$HACKAGE_AUTH_TOKEN" "dist/bitspark-bitwire-$VERSION.tar.gz"
+
+  verify:
+    needs: [release, publish]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release.outputs.sha }}
+      - uses: haskell-actions/setup@v2
+        with:
+          ghc-version: '9.6.7'
+          cabal-version: '3.12.1.0'
+      - name: Consume the published Hackage package
+        run: |
+          cabal update
+          consumer="$(mktemp -d)"
+          cp -R wire/hs/test/consumer "$consumer/consumer"
+          printf 'packages: ./consumer\n' > "$consumer/cabal.project"
+          cd "$consumer"
+          cabal run bitwire-consumer

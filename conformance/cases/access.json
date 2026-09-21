@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "id": "empty-selection",
+      "kind": "access",
+      "prefix": [],
+      "selections": [[]],
+      "mountKey": null,
+      "path": ["call"],
+      "payload": {"value": "empty origin"},
+      "expected": {"rootPath": ["call"], "receiverPath": ["call"], "payload": {"value": "empty origin"}, "sendReturnIdentity": true, "receiveReturnIdentity": true}
+    },
+    {
+      "id": "empty-suffix-after-selection",
+      "kind": "access",
+      "prefix": ["service"],
+      "selections": [],
+      "mountKey": null,
+      "path": [],
+      "payload": "selected origin",
+      "expected": {"rootPath": ["service"], "receiverPath": [], "payload": "selected origin", "sendReturnIdentity": true, "receiveReturnIdentity": true}
+    },
+    {
+      "id": "nested-selection",
+      "kind": "access",
+      "prefix": ["private"],
+      "selections": [["nested"], ["😀", ""]],
+      "mountKey": null,
+      "path": ["call"],
+      "payload": {"value": [1, true, null, "round trip"]},
+      "expected": {"rootPath": ["private", "nested", "😀", "", "call"], "receiverPath": ["call"], "payload": {"value": [1, true, null, "round trip"]}, "sendReturnIdentity": true, "receiveReturnIdentity": true}
+    },
+    {
+      "id": "concatenated-selection",
+      "kind": "access",
+      "prefix": ["private"],
+      "selections": [["nested", "😀", ""]],
+      "mountKey": null,
+      "path": ["call"],
+      "payload": {"value": [1, true, null, "round trip"]},
+      "expected": {"rootPath": ["private", "nested", "😀", "", "call"], "receiverPath": ["call"], "payload": {"value": [1, true, null, "round trip"]}, "sendReturnIdentity": true, "receiveReturnIdentity": true}
+    },
+    {
+      "id": "selected-mounted-roundtrip",
+      "kind": "access",
+      "prefix": ["private", "a/b"],
+      "selections": [["nested"], ["service"]],
+      "mountKey": "public",
+      "path": ["call", ""],
+      "payload": {"hello": "é", "distinct": "é"},
+      "expected": {"rootPath": ["private", "a/b", "nested", "service", "call", ""], "receiverPath": ["call", ""], "payload": {"hello": "é", "distinct": "é"}, "sendReturnIdentity": true, "receiveReturnIdentity": true}
+    },
+    {
+      "id": "empty-mount-key",
+      "kind": "access",
+      "prefix": ["stored"],
+      "selections": [[]],
+      "mountKey": "",
+      "path": [""],
+      "payload": "empty keys are valid",
+      "expected": {"rootPath": ["stored", ""], "receiverPath": [""], "payload": "empty keys are valid", "sendReturnIdentity": true, "receiveReturnIdentity": true}
+    },
+    {
+      "id": "distinct-opaque-paths",
+      "kind": "routing",
+      "registrations": [
+        {"id": "origin", "path": [], "namespace": false, "result": "origin"},
+        {"id": "empty", "path": [""], "namespace": false, "result": "empty"},
+        {"id": "slash", "path": ["a/b"], "namespace": false, "result": "slash"},
+        {"id": "segments", "path": ["a", "b"], "namespace": false, "result": "segments"},
+        {"id": "composed", "path": ["é"], "namespace": false, "result": "composed"},
+        {"id": "decomposed", "path": ["é"], "namespace": false, "result": "decomposed"},
+        {"id": "scalar", "path": ["😀", "\u0000"], "namespace": false, "result": "scalar"}
+      ],
+      "calls": [{"path": [""]}, {"path": ["a/b"]}, {"path": ["a", "b"]}, {"path": ["é"]}, {"path": ["é"]}, {"path": ["😀", "\u0000"]}],
+      "profileRefusals": [[]],
+      "duplicate": {"registration": "empty"},
+      "expected": {"calls": [
+        {"result": "empty", "receiverPath": [""], "receiver": "empty"},
+        {"result": "slash", "receiverPath": ["a/b"], "receiver": "slash"},
+        {"result": "segments", "receiverPath": ["a", "b"], "receiver": "segments"},
+        {"result": "composed", "receiverPath": ["é"], "receiver": "composed"},
+        {"result": "decomposed", "receiverPath": ["é"], "receiver": "decomposed"},
+        {"result": "scalar", "receiverPath": ["😀", "\u0000"], "receiver": "scalar"}
+      ], "duplicateRefused": true, "requestRefusals": [{"path": [], "refused": true}]}
+    },
+    {
+      "id": "exact-then-longest-namespace",
+      "kind": "routing",
+      "registrations": [
+        {"id": "root", "path": [], "namespace": true, "result": "root"},
+        {"id": "prefix", "path": ["a"], "namespace": true, "result": "prefix"},
+        {"id": "longest", "path": ["a", "b"], "namespace": true, "result": "longest"},
+        {"id": "exact", "path": ["a", "b"], "namespace": false, "result": "exact"}
+      ],
+      "calls": [{"path": ["a", "b"]}, {"path": ["a", "b", "c"]}, {"path": ["a", "other"]}, {"path": ["ab"]}, {"path": ["other"]}],
+      "duplicate": {"registration": "exact"},
+      "expected": {"calls": [
+        {"result": "exact", "receiverPath": ["a", "b"], "receiver": "exact"},
+        {"result": "longest", "receiverPath": ["a", "b", "c"], "receiver": "longest"},
+        {"result": "prefix", "receiverPath": ["a", "other"], "receiver": "prefix"},
+        {"result": "root", "receiverPath": ["ab"], "receiver": "root"},
+        {"result": "root", "receiverPath": ["other"], "receiver": "root"}
+      ], "duplicateRefused": true}
+    },
+    {
+      "id": "detach-and-borrowed-mount-lifetime",
+      "kind": "lifetime",
+      "path": ["call"],
+      "payload": {"still": "usable"},
+      "expected": {"before": {"still": "usable"}, "afterDetach": {"still": "usable"}, "afterMountClose": {"still": "usable"}, "selectedCloseRefused": true, "mountOriginRefused": true, "mountCloseCount": 1, "detachCloseCount": 0, "mountRegistrationReleased": true}
+    },
+    {
+      "id": "forward-and-detach-borrowed-origins",
+      "kind": "forwarding",
+      "path": ["nested", "call"],
+      "payload": {"still": "connected"},
+      "expected": {"forwarded": {"still": "connected"}, "forwardReturnIdentity": true, "inboundAfterDetach": {"still": "connected"}, "outboundAfterDetach": {"still": "connected"}}
+    }
+  ]
+}

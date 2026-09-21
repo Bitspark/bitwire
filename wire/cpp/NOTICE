@@ -1,0 +1,13 @@
+Bitwire C++ contract binding
+Copyright 2026 Bitspark and the Bitwire contributors
+
+This binding adapts declarations from Nightseam, licensed under the
+Apache License, Version 2.0:
+Copyright 2026 Bitspark and the Nightseam contributors.
+Source revision: 1c63f1c4d7e4b5987d4bd32e294177645c92ed8f.
+Source path: duplex/cpp/include/nightseam/duplex/wire.hpp.
+Adapted declarations: include/bitwire/wire.hpp.
+
+The binding removes the runtime dependency, composition functions and path
+codec declarations, uses the bitwire namespace, and documents the shared
+contract's path, payload and local-capability semantics.

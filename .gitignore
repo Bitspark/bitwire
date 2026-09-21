@@ -1,4 +1,8 @@
 node_modules/
+/target/
+/.build/
+/.swiftpm/
+/.artifacts/
 **/dist/
 .worktrees/
 .agw.json

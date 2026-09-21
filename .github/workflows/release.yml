@@ -1,0 +1,122 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version to rehearse, such as v0.1.0. A manual run never publishes.'
+        type: string
+        required: true
+      provenance:
+        description: 'Rehearse public npm provenance after making the repository public.'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: read
+  id-token: write
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: release
+    timeout-minutes: 60
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: false
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - name: Detect the Rust binding
+        id: rust
+        run: |
+          if test -f wire/rs/Cargo.toml; then echo 'present=true' >> "$GITHUB_OUTPUT"; fi
+      - uses: dtolnay/rust-toolchain@stable
+        if: steps.rust.outputs.present == 'true'
+        with:
+          components: rustfmt, clippy
+      - name: Hold package versions to the candidate or immutable remote tag
+        env:
+          REQUIRE_TAG: ${{ github.event_name == 'push' && '--require-tag' || '' }}
+        run: node scripts/release-prepare.mjs "$TAG" $REQUIRE_TAG
+      - run: pnpm install --frozen-lockfile
+      - run: node scripts/check.mjs
+      - name: Exercise independent Wire observations against the pinned implementation
+        run: node scripts/conformance.mjs
+      - name: Install npm and Go artifacts outside the checkout
+        run: node scripts/smoke-packed.mjs
+      - name: Verify the Rust binding and its packaged consumer
+        if: steps.rust.outputs.present == 'true'
+        run: |
+          cargo fmt --all --check
+          cargo clippy --workspace --all-targets --locked -- -D warnings
+          cargo test --workspace --locked
+          node wire/rs/check-package.mjs
+      - name: Check public provenance prerequisites
+        if: github.event_name == 'push' || inputs.provenance
+        run: |
+          test "$(gh repo view "$GITHUB_REPOSITORY" --json visibility --jq .visibility)" = PUBLIC
+          test -n "$ACTIONS_ID_TOKEN_REQUEST_URL"
+      - name: Rehearse npm publication
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          PROVENANCE: ${{ inputs.provenance && '--provenance' || '' }}
+        run: node scripts/release-publish.mjs "$TAG" --dry-run $PROVENANCE
+      - name: Rehearse crate publication
+        if: github.event_name == 'workflow_dispatch' && steps.rust.outputs.present == 'true'
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: node scripts/release-crates.mjs "$TAG" --dry-run
+      - name: Record the successful public rehearsal
+        if: github.event_name == 'workflow_dispatch' && inputs.provenance
+        run: |
+          printf '%s\n%s\n' "$TAG" "$GITHUB_SHA" > "$RUNNER_TEMP/bitwire-rehearsal.txt"
+      - uses: actions/upload-artifact@v7
+        if: github.event_name == 'workflow_dispatch' && inputs.provenance
+        with:
+          name: provenance-rehearsal-${{ inputs.tag }}-${{ github.sha }}
+          path: ${{ runner.temp }}/bitwire-rehearsal.txt
+          retention-days: 30
+      - name: Publish the rehearsed npm artifact with provenance
+        if: github.event_name == 'push'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: node scripts/release-publish.mjs "$TAG" --provenance
+      - name: Publish the packaged Rust contract and verify public installation
+        if: github.event_name == 'push' && steps.rust.outputs.present == 'true'
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: node scripts/release-crates.mjs "$TAG"
+      - name: Install the public npm and Go release without checkout replacements
+        if: github.event_name == 'push'
+        run: node scripts/smoke-registry.mjs "$TAG"
+      - name: Create the verified GitHub release
+        if: github.event_name == 'push'
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "$TAG already has a release record."
+          else
+            gh release create "$TAG" --verify-tag --title "Bitwire $TAG" --generate-notes
+          fi
+      - name: Rehearsal result
+        if: github.event_name == 'workflow_dispatch'
+        run: echo 'The artifacts were checked and publication rehearsed. Nothing was published or tagged.'

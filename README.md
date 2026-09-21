@@ -10,11 +10,12 @@ runtime that carries its interactions. A wire gives access to an origin;
 selecting a path or mounting several origins must preserve that same interface.
 The contract is shared across languages, generators and runtime implementations.
 
-**Status: initial scaffold.** Go and TypeScript declarations are present, adapted
-from Nightseam's implemented Wire. The behavioral specification is a draft.
-There is no endpoint runtime, completed behavioral conformance suite, released
-package or consumer migration yet. The repository starts private; its sources
-and development checks require no other private repository.
+**Status: 0.1.0 release candidate.** Native bindings are present in eight
+languages. Ten independent access-composition cases execute against pinned
+Nightseam Go and TypeScript implementations. Every binding has package or
+consumer checks. Registry publication and Nightseam adoption are recorded
+separately in the [language matrix](docs/languages.md); neither is inferred from
+compiling a declaration. No endpoint runtime is included.
 
 ## The interface
 
@@ -38,7 +39,8 @@ at(at(w, a), b) ≃ at(w, a ++ b)
 at(w, [])      ≃ w
 ```
 
-These are contract laws; this scaffold does not yet implement `at` or `mount`.
+These are contract laws. Runtime implementations supply `at` and `mount`;
+Bitwire's independent cases check their observable behavior.
 
 ## Who owns what
 
@@ -58,14 +60,24 @@ The [ownership decision](docs/decisions/0001-shared-wire-contract.md) records th
 scope. [Integration status](docs/integration.md) distinguishes the intended
 dependency direction from today's implementations.
 
+The complete scope includes Go, TypeScript, Python, Rust, Swift, C++, Java and
+Haskell. See the [language bindings](docs/languages.md) and
+[first delivery plan](docs/delivery.md) for package coordinates and readiness.
+
 ## Layout
 
 | Path | Contents |
 | --- | --- |
 | [wire/go](wire/go/README.md) | Go contract declarations; standard library only. |
 | [wire/ts](wire/ts/README.md) | TypeScript contract declarations; no runtime dependencies. |
+| [wire/py](wire/py/README.md) | Typed Python contract and wheel/source package checks. |
+| [wire/rs](wire/rs/README.md) | Rust contract crate and outside-checkout consumer. |
+| [wire/swift](wire/swift/README.md) | SwiftPM `Bitwire` product and native contract. |
+| [wire/cpp](wire/cpp/README.md) | C++20 header and installable `Bitwire::wire` CMake target. |
+| [wire/java](wire/java/README.md) | Java 21 `dev.bitspark:bitwire` Maven artifact. |
+| [wire/hs](wire/hs/README.md) | Haskell `Bitwire` module and Cabal source package. |
 | [docs](docs/README.md) | Purpose, contract, profile boundary, decisions and integration plan. |
-| [conformance](conformance/README.md) | Behavioral acceptance plan; executable runtime cases are still to come. |
+| [conformance](conformance/README.md) | Independent cases and pinned public Nightseam drivers. |
 | [scripts](scripts/README.md) | Portable repository checks, also used in CI. |
 
 Components contain their language presentations, following Nightseam and Archon.
@@ -81,10 +93,12 @@ pnpm install --frozen-lockfile
 node scripts/check.mjs
 ```
 
-The check validates local documentation links, Go formatting and compilation,
-and the TypeScript declarations and build. It does **not** report wire behavior
-as conforming: no runtime is exercised yet. No credentials or sibling checkout
-are needed. The TypeScript package is marked private until its first release.
+The core check validates documentation, Go and TypeScript. Run
+`node scripts/conformance.mjs` for executable access observations, and
+`node scripts/smoke-packed.mjs` after building for installed npm/Go consumers.
+The native package checks and required toolchains are documented in each
+binding's README and exercised by CI. These commands need no private sibling
+checkout or registry publishing credentials.
 
 ## Documentation and contributions
 

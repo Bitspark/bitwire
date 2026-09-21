@@ -36,8 +36,10 @@ contract remains small and the consumers actually share it.
 
 ## Consequences
 
-Changes to meaning must update both language presentations, the specification
-and the shared cases together. Runtime-specific dependencies must not leak into
+The complete scope includes Go, TypeScript, Python, Rust, Swift, C++, Java and
+Haskell; Go and TypeScript were the initial scaffold. Changes to meaning must
+update every delivered presentation, the specification and shared cases together.
+Runtime-specific dependencies must not leak into
 the contract package. Shared method names alone do not establish interoperability;
 the required profile, identity and live-reference agreements remain explicit.
 

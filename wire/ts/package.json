@@ -1,7 +1,6 @@
 {
   "name": "@bitspark/bitwire",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "The shared contract for access through relative paths.",
   "license": "Apache-2.0",
   "type": "module",
@@ -14,6 +13,7 @@
   "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
   "files": ["dist", "README.md", "LICENSE", "NOTICE"],
   "sideEffects": false,
+  "publishConfig": { "registry": "https://registry.npmjs.org", "access": "public" },
   "scripts": {
     "check": "tsc -p tsconfig.check.json",
     "build": "tsc -p tsconfig.build.json"

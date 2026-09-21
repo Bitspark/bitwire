@@ -1,0 +1,14 @@
+Bitwire
+Copyright 2026 Bitspark and the Bitwire contributors
+
+This product includes software developed at Bitspark (https://github.com/Bitspark).
+
+The Rust Wire and supporting profile declarations are adapted from Nightseam,
+licensed under the Apache License, Version 2.0:
+Copyright 2026 Bitspark and the Nightseam contributors.
+Source revision: 1c63f1c4d7e4b5987d4bd32e294177645c92ed8f.
+Original files: duplex/rs/src/access.rs and duplex/rs/src/profile.rs.
+
+The adapted files are src/lib.rs and src/profile.rs. Routing and runtime
+implementations are excluded; crate documentation, a profile version constant,
+and binding/package tests are added.

@@ -28,7 +28,10 @@
         "do_not_enforce_on_create": false,
         "required_status_checks": [
           { "context": "check (ubuntu-latest)", "integration_id": 15368 },
-          { "context": "check (windows-latest)", "integration_id": 15368 }
+          { "context": "check (windows-latest)", "integration_id": 15368 },
+          { "context": "conformance", "integration_id": 15368 },
+          { "context": "packages", "integration_id": 15368 },
+          { "context": "bindings", "integration_id": 15368 }
         ]
       }
     }

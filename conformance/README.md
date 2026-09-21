@@ -1,31 +1,80 @@
 # Conformance
 
-**Status: acceptance plan. No executable Wire behavior suite exists here yet.**
+**Status: executable access-composition baseline, before consumer adoption.**
 
-The repository command, `node scripts/check.mjs`, checks documentation and
-language declarations. Passing it is not a statement that a runtime conforms.
+Run the independent cases against the Go and TypeScript Nightseam implementations:
 
-## The intended cases
+```sh
+node scripts/conformance.mjs
+```
 
-| Area | Observable requirement |
+The runner fetches the exact public revision in [nightseam.json](nightseam.json)
+into a temporary directory. It checks that revision, installs its pinned
+TypeScript dependencies, compiles the TypeScript driver, and runs both drivers.
+It compares every observation with [the shared cases](cases/access.json) and
+exits unsuccessfully on any missing, extra or mismatched result. No private
+sibling checkout is used. Requirements are Git, Go 1.26+, Node 24+, pnpm 12.4.1
+and access to public source/dependency registries. `--language=go` or
+`--language=ts` selects a driver; `--keep-scratch` retains the fetched tree for
+diagnosis. Temporary dependency files never become Bitwire package dependencies.
+
+## What the baseline establishes
+
+| Cases | Observable requirement |
 | --- | --- |
-| Paths | Empty paths, empty segments and embedded separators remain distinct; scalar Unicode is preserved. |
-| Selection | Nested selection agrees with concatenated selection; selecting the empty path preserves access. |
-| Mounting | One segment selects a child; detaching or closing the mount leaves borrowed children usable. |
-| Receiving | Exact match takes precedence over the longest namespace prefix; duplicate registration is refused. |
-| Dispatch | Admission does not execute the destination handler on the sender's stack. |
-| Return access | Selection, mounting and forwarding preserve local return identity. |
-| Lifetime | Detach is idempotent; admitted requests retain their return/cancellation path. |
-| Context and references | Composition retains checked context and scoped reference guarantees; closure is not binding release. |
+| Empty, nested and concatenated selection | The request arrives at the declared root path, the callback sees a path relative to its view, and the response returns unchanged. |
+| Selected mounted access and empty mount key | Mounting consumes one segment, including an empty key; the selected child remains the destination. |
+| Opaque paths | Empty segments, embedded separators, split segments, composed/decomposed Unicode and scalar/NUL strings remain distinguishable in actual dispatch. |
+| Exact and namespace routes | Exact match wins, otherwise the longest segment prefix wins; duplicate registration is refused. |
+| Return access | Selection, mounting and forwarding preserve capability identity at their own boundaries. |
+| Mount and registration lifetime | Detach is idempotent and releases registration; closing a mount notifies its own receiver once and frees its child registration; its borrowed child still answers. Closing a selected view closes its endpoint. |
+| Forwarding lifetime | Requests and responses traverse two local carriers; detaching forwarding leaves both borrowed origins usable. |
 
-Each future case supplies inputs and expected observations independently of an
-implementation. Language drivers exercise an implementation through its public
-surface. They must compare actual observations with the expected ones; matching
-declarations or importing a shared type is not enough.
+The [Go driver](drivers/nightseam/go/main.go) and
+[TypeScript driver](drivers/nightseam/ts/driver.ts) use the public runtime's real
+local pairs, selection, mounts and forwarding. Their observers delegate every
+operation; they supply no replacement routing, queue or return implementation.
+Drivers record actual results. Expectations are authored separately in the
+fixture and checked by [the runner](../scripts/conformance.mjs).
 
-Runtime implementations and their queues, sockets and scopes remain outside this
-repository. A driver may exercise Nightseam without making Nightseam a dependency
-of either contract package. Implementation-specific cases stay with their owner.
+The fixture has four scenario kinds: `access` specifies prefixes, nested
+selections, an optional mount key, a call path and payload; `routing` specifies
+registrations and calls; `lifetime` follows the detach/close sequence above;
+`forwarding` connects and detaches two real pairs. Each case has a unique `id`
+and an `expected` observation object. Drivers ignore `expected`; only the runner
+reads it. The same input and expected output are used in both languages.
+
+### Profile boundaries exposed by the cases
+
+Path validity does not guarantee admission of every frame. The retained
+`nightseam.duplex/1` profile requires a nonempty root path for requests and
+events. `[]` is a valid relative path but a root request there is refused;
+`[""]` is a nonempty path and reaches its distinct registered operation. The
+opaque-path case asserts both observations. Empty selection is tested with the
+supported `['call']` operation; a selected nonempty prefix may use `[]` as a
+suffix. See the pinned
+[profile](https://github.com/Bitspark/nightseam/blob/1c63f1c4d7e4b5987d4bd32e294177645c92ed8f/docs/wire/profile.md).
+
+Similarly, a new carrier may map a request's return capability to own its
+correlation and lifetime. The identity requirements concern pure composition:
+the observers compare before/after selection, mounting or forwarding, never
+across a new local pair's admission boundary. The response itself is exercised
+end to end through the mapped capability.
+
+## What remains distinct
+
+This is evidence about the pinned implementation **before adoption**. The Go
+driver uses Nightseam's nominal native types. The TypeScript driver also imports
+Nightseam's native declarations. Neither claims that Nightseam already imports
+or re-exports published Bitwire types. Adoption needs separate checks using the
+released artifacts and migrated consumer; then the drivers can use that version.
+
+The baseline does not yet cover every frame field, asynchronous admission laws,
+pending-request cancellation after detach, concurrent lifetime interleavings,
+remote carriers, checked invocation context, scoped references or reference
+release. Those are explicit remaining conformance/profile obligations, not
+guarantees inferred from these ten cases. Runtime-specific coverage stays with
+its owner. Declaration compilation alone is never behavioral conformance.
 
 ## Adapter integration
 
