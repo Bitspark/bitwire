@@ -65,7 +65,7 @@ jobs:
           "$RUNNER_TEMP/python-publish-consumer/bin/python" -m pip install --no-index --no-deps dist/python/*.whl
           cd "$RUNNER_TEMP"
           "$RUNNER_TEMP/python-publish-consumer/bin/python" -m unittest discover -s "$GITHUB_WORKSPACE/wire/py/tests" -p 'test_*.py' -v
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: python-distributions
           path: dist/python/*
