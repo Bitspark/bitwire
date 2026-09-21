@@ -47,5 +47,6 @@ their alternatives and a recommendation.
 
 Use repository-relative links internally and public, pinned sources for external
 provenance. No development or CI step may require a private sibling checkout or
-organization secret. The repository is private initially; changing its visibility
-and publishing packages are separate delivery steps from this scaffold.
+organization secret. The repository and the 0.1.0 source release are public.
+Publishing an additional language artifact and establishing consumer adoption
+remain separate delivery steps, recorded in the language matrix.

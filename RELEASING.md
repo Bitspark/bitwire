@@ -1,6 +1,6 @@
 # Releases
 
-The initial target is `0.1.0`. A release identifies the shared contract revision,
+The first public release is `0.1.0`. A release identifies the shared contract revision,
 native bindings and independent cases. The [language matrix](docs/languages.md)
 records implementation, package validation, registry publication and consumer
 adoption separately. A source tag does not claim an upload to every registry.

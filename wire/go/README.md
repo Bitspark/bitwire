@@ -1,6 +1,6 @@
 # Go Wire declarations
 
-Package `github.com/Bitspark/bitwire/wire/go`, named `wire`, presents the draft
+Package `github.com/Bitspark/bitwire/wire/go`, named `wire`, presents the 0.1
 [Wire contract](../../docs/wire/contract.md). It uses only the Go standard library.
 
 ```go
@@ -12,9 +12,17 @@ type Wire interface {
 ```
 
 [wire.go](wire.go) contains the supporting frame, return-address and receiver
-types. There is no endpoint implementation or published release yet. Existing
+types. Install the released module with:
+
+```console
+go get github.com/Bitspark/bitwire@v0.1.0
+```
+
+There is no endpoint implementation in this package. Existing
 Nightseam Go implementations require an adoption change or bridge because these
 declarations introduce distinct named types.
 
 From the repository root, `go vet ./...` and `go test ./...` compile the package.
-No behavioral tests are claimed by this declaration-only scaffold.
+The independent [conformance baseline](../../conformance/README.md) checks
+composition behavior through pinned public Nightseam implementations. Those
+drivers and the release's public Go installation check are separate evidence.

@@ -2,13 +2,13 @@
 
 ## Current state
 
-The 0.1.0 candidate provides eight native contract bindings, package checks and
+The [0.1.0 release](https://github.com/Bitspark/bitwire/releases/tag/v0.1.0) provides eight native contract bindings, package checks and
 ten independent access-composition cases executed in Go and TypeScript against
 public Nightseam revision `1c63f1c4d7e4b5987d4bd32e294177645c92ed8f`. The
 [language matrix](languages.md) records publication separately. These changes do
 not themselves migrate any consumer dependency.
 
-Nightseam still defines and implements its own Wire. Its generated adapters use
+At the baseline revision, Nightseam defines and implements its own Wire. Its generated adapters use
 Nightseam's runtime context and value environment in addition to Wire. Bitlink's
 protocol-generation model is design work; this repository supplies no Bitlink
 generator. Bitsystem's typed-space model is a consumer of the intended boundary.
@@ -41,23 +41,21 @@ The [Bitwire decision](decisions/0001-shared-wire-contract.md) selects a narrowe
 scope: shared contract and conformance here, runtime implementation in Nightseam.
 
 Nightseam has since approved that narrower boundary. Its required 0.6.0 adoption
-task, [#421](https://github.com/Bitspark/nightseam/issues/421), waits for a versioned,
-independently consumable contract and behavioral evidence. Public Nightseam builds
-and installation must not require private Bitwire access. The decision-record
+task, [#421](https://github.com/Bitspark/nightseam/issues/421), has received the
+public v0.1.0 coordinates and behavioral evidence. Go and npm registry consumers
+passed without checkout replacements in the [release run](https://github.com/Bitspark/bitwire/actions/runs/35577033829).
+Public Nightseam builds and installation require no private Bitwire access. The decision-record
 revision is tracked separately in [#422](https://github.com/Bitspark/nightseam/issues/422).
 This approval does not change the current imports or establish completed adoption.
 Bitlink's older whole-runtime description still needs reconciliation.
 
 ## Next steps
 
-1. Complete the [public handover](delivery.md): rehearse the exact contract
-   artifacts and publish the versioned packages, retaining the independent
-   baseline and the explicit remaining profile/behavioral obligations.
-2. Migrate Nightseam's public Wire definitions to the agreed package, preserving
+1. Migrate Nightseam's public Wire definitions to the released package, preserving
    generated APIs, identity checks, scoped references and composition behavior.
-3. Exercise the same generated model over a local origin, a mounted/selected
+2. Exercise the same generated model over a local origin, a mounted/selected
    origin and a physical carrier; compare their observations.
-4. As Bitlink gains an implementation, exercise both generators against the same
+3. As Bitlink gains an implementation, exercise both generators against the same
    declared contract and profile, including generic slots containing callbacks.
 
 The [conformance baseline](../conformance/README.md) distinguishes the executable
