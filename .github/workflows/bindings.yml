@@ -46,7 +46,7 @@ jobs:
           node-version: 24
       - name: Import Swift signing keys
         run: curl --fail --silent --show-error --location --compressed https://www.swift.org/keys/all-keys.asc | gpg --import -
-      - uses: swift-actions/setup-swift@d8e84bc3a450686a95474d7d6fa4a3301498debc
+      - uses: swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9
         with:
           swift-version: '6.1.3'
       - run: node wire/swift/check.mjs
