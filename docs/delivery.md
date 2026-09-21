@@ -4,6 +4,19 @@
 [milestone 0.1.0](https://github.com/Bitspark/bitwire/milestone/1) track the first
 public contract and the complete eight-language scope.
 
+## Delivered handover
+
+The public, immutable [v0.1.0 release](https://github.com/Bitspark/bitwire/releases/tag/v0.1.0)
+is commit `9f45a2e0e9dc576db34237e5ad3aaaa0266a276b`. The exact-commit
+[public rehearsal](https://github.com/Bitspark/bitwire/actions/runs/35576831304)
+and [registry installation checks](https://github.com/Bitspark/bitwire/actions/runs/35577033829)
+passed. Go, npm, Rust and Python are publicly installable; the
+[language matrix](languages.md) records all eight distribution statuses.
+
+The [Nightseam handover](https://github.com/Bitspark/nightseam/issues/421#issuecomment-5757542437)
+provides the pinned coordinates and independent driver invocation. Nightseam owns
+its import migration and the combined acceptance against the shared types.
+
 ## Work streams
 
 1. [Review the common contract](https://github.com/Bitspark/bitwire/issues/3),

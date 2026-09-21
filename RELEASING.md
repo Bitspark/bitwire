@@ -1,6 +1,6 @@
 # Releases
 
-The initial target is `0.1.0`. A release identifies the shared contract revision,
+The first public release is `0.1.0`. A release identifies the shared contract revision,
 native bindings and independent cases. The [language matrix](docs/languages.md)
 records implementation, package validation, registry publication and consumer
 adoption separately. A source tag does not claim an upload to every registry.
@@ -71,6 +71,12 @@ For a pending PyPI trusted publisher, use project `bitspark-bitwire`, owner
 `Bitspark`, repository `bitwire`, workflow `publish-python.yml`, environment
 `pypi`. This route needs no PyPI API token. The pending publisher does not reserve
 the package name until publication. Binding READMEs describe package checks.
+
+Hackage also requires the token's account to belong to its Uploaders group.
+The first 0.1.0 upload was refused for that missing authorization; the server
+directs the account owner to `hackage-trustees@haskell.org` for approval. See
+[#11](https://github.com/Bitspark/bitwire/issues/11) before retrying. Java's
+remaining signing setup is tracked in [#10](https://github.com/Bitspark/bitwire/issues/10).
 
 ## Recovery
 

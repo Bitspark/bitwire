@@ -1,6 +1,6 @@
 # 0001: The shared Wire contract has an independent home
 
-**Status:** accepted scope, 2026-09-21. **Delivery:** initial scaffold.
+**Status:** accepted scope, 2026-09-21. **Delivery:** [0.1.0](../delivery.md).
 
 ## Question
 
@@ -22,6 +22,10 @@ a replacement declaration language.
 The initial repository is private. Documentation, source and verification are
 organized for eventual public use, with no private dependencies or credentials.
 There is no package publication or release in this bootstrap.
+
+The subsequent 0.1.0 delivery made the repository and immutable source release
+public. The [language matrix](../languages.md) records verified package
+availability; the initial scope and runtime ownership remain unchanged.
 
 ## Why
 

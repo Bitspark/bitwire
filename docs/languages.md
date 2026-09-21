@@ -17,7 +17,7 @@ boundary. It does not require Bitwire to own their execution machinery.
 | Java | `wire/java` | Maven `dev.bitspark:bitwire` | `dev.bitspark.bitwire` | [#10](https://github.com/Bitspark/bitwire/issues/10) |
 | Haskell | `wire/hs` | `bitspark-bitwire` on Hackage | `Bitwire` | [#11](https://github.com/Bitspark/bitwire/issues/11) |
 
-Coordinates are release targets until verified in the named registry. Swift uses
+The delivery table below distinguishes published coordinates from pending ones. Swift uses
 a repository-root manifest so a Git dependency can resolve the public package.
 C++ initially uses tagged source and an installable CMake package; registry
 recipes can be added without changing the access contract.
@@ -27,14 +27,32 @@ recipes can be added without changing the access contract.
 All eight native bindings are implemented. Go/TypeScript have independent
 behavioral observations against pinned Nightseam; native bindings have type,
 representation and packaged-consumer checks. The latter do not establish that
-their runtime implementations conform. No registry publication or Nightseam
-import migration is claimed by this candidate matrix yet.
+their runtime implementations conform.
 
-The initial release target is contract revision `0.1.0`. Every published binding
-must identify its contract revision. A source tag, a compiled artifact, a
-registry upload and an adopted dependency are separate facts. Release notes
-record which languages were validated and where consumers can actually install
-them; an unavailable registry does not make a package published.
+The immutable [v0.1.0 source release](https://github.com/Bitspark/bitwire/releases/tag/v0.1.0)
+identifies commit `9f45a2e0e9dc576db34237e5ad3aaaa0266a276b`. Availability is
+verified independently for each distribution:
+
+| Language | Public delivery of 0.1.0 | Installation evidence |
+| --- | --- | --- |
+| Go | `github.com/Bitspark/bitwire@v0.1.0` through the public Go proxy | Clean module consumer, checksum database enabled, no replacements. |
+| TypeScript | [`@bitspark/bitwire@0.1.0`](https://www.npmjs.com/package/@bitspark/bitwire/v/0.1.0) with provenance | Clean npm install, TypeScript compilation and runtime entry-point import. |
+| Rust | [`bitspark-bitwire@0.1.0`](https://crates.io/crates/bitspark-bitwire/0.1.0) | Clean Cargo registry consumer compiled and ran. |
+| Python | [`bitspark-bitwire==0.1.0`](https://pypi.org/project/bitspark-bitwire/0.1.0/) | Tests passed against the public PyPI installation, following wheel/source and exact-wheel consumer checks. |
+| Swift | Public Git dependency, exact version `0.1.0` | Standalone Swift 6.1.3 consumer resolved the tag, compiled and ran. |
+| C++ | Public tagged source and installed `Bitwire::wire` | GNU 13.3 installed-package consumer compiled and passed CTest. |
+| Java | Maven Central publication pending | Build, tests, sources, Javadoc and installed consumer passed; signing secrets remain to be configured in [#10](https://github.com/Bitspark/bitwire/issues/10). |
+| Haskell | Hackage uploader approval pending | Cabal build/tests, source package and extracted-package consumer passed; Hackage rejected the upload because the account lacks uploader permission, tracked in [#11](https://github.com/Bitspark/bitwire/issues/11). |
+
+The [core release run](https://github.com/Bitspark/bitwire/actions/runs/35577033829)
+records Go, npm and Rust registry checks. Swift and C++ public source checks used
+disposable environments, anonymous HTTPS fetch and no source checkout mounts.
+The [Python publication run](https://github.com/Bitspark/bitwire/actions/runs/35578328647)
+records the upload and subsequent PyPI installation tests.
+The [Haskell publication run](https://github.com/Bitspark/bitwire/actions/runs/35578334722)
+records successful artifact checks and the subsequent authorization refusal.
+Every binding carries contract revision `0.1.0`; registry availability and
+Nightseam adoption remain separate facts.
 
 ## Native representations
 
@@ -50,8 +68,9 @@ runtime has not landed; that binding is derived from this shared contract.
 
 ## Adoption
 
-[Nightseam #421](https://github.com/Bitspark/nightseam/issues/421) requires the
-public Go/TypeScript handover for 0.6.0. Its other-language rollout is separately
+[Nightseam #421](https://github.com/Bitspark/nightseam/issues/421) has received the
+verified public Go/TypeScript handover for 0.6.0; its import migration and
+post-adoption acceptance are tracked there. Its other-language rollout is separately
 scheduled upstream. All eight Bitwire bindings remain in scope; no future
 runtime port or extra registry account silently becomes a prerequisite for the
 agreed Go/TypeScript handover. A binding can exist before a complete runtime or

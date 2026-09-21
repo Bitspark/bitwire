@@ -10,12 +10,13 @@ runtime that carries its interactions. A wire gives access to an origin;
 selecting a path or mounting several origins must preserve that same interface.
 The contract is shared across languages, generators and runtime implementations.
 
-**Status: 0.1.0 release candidate.** Native bindings are present in eight
+**Status: [0.1.0 released](https://github.com/Bitspark/bitwire/releases/tag/v0.1.0).** Native bindings are present in eight
 languages. Ten independent access-composition cases execute against pinned
 Nightseam Go and TypeScript implementations. Every binding has package or
-consumer checks. Registry publication and Nightseam adoption are recorded
-separately in the [language matrix](docs/languages.md); neither is inferred from
-compiling a declaration. No endpoint runtime is included.
+consumer checks. Go, npm, Rust and Python registry installations and public Swift/C++
+source consumers are verified. The [language matrix](docs/languages.md) records
+each publication status and Nightseam adoption separately. No endpoint runtime
+is included.
 
 ## The interface
 
