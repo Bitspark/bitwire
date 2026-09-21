@@ -14,6 +14,13 @@ provides the immutable source and Go/npm coordinates. Publication and
 post-adoption acceptance remain separate gates; [capture retirement](https://github.com/Bitspark/bitwire/issues/20)
 still requires actual runtime evidence.
 
+The [long-term interface requirements](decisions/0003-public-invocation-lifecycle.md)
+make a public, independently usable invocation lifecycle facility part of that
+delivery. Native private-context recognition alone is not completion. Exact
+profile API signatures and their executable acceptance remain Nightseam's work;
+the published Bitwire primitive is not frozen against a demonstrated need for a
+properly versioned improvement.
+
 The [0.1.0 release](https://github.com/Bitspark/bitwire/releases/tag/v0.1.0) provides eight native contract bindings, package checks and
 ten independent access-composition cases executed in Go and TypeScript against
 public Nightseam revision `1c63f1c4d7e4b5987d4bd32e294177645c92ed8f`. The
