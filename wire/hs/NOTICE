@@ -1,0 +1,10 @@
+Bitwire
+Copyright 2026 Bitspark and the Bitwire contributors
+
+This product includes software developed at Bitspark (https://github.com/Bitspark).
+
+The Haskell presentation was written from the shared Bitwire specification.
+That specification preserves the logical Wire boundary introduced in Nightseam,
+licensed under the Apache License, Version 2.0:
+Copyright 2026 Bitspark and the Nightseam contributors.
+Baseline source revision: 5217cc60fdf8dd8d6b88e7ebb15bfcc98bb1d515.

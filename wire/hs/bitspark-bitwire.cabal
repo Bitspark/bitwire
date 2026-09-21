@@ -1,0 +1,51 @@
+cabal-version:      3.0
+name:               bitspark-bitwire
+version:            0.1.0
+synopsis:           Shared relative-path Wire contract
+description:
+    Native Haskell types for Bitwire's relative-path Wire boundary and its
+    logical message profile. Implementations supply dispatch, codecs and
+    carriers; this package supplies no endpoint runtime.
+category:           Network
+license:            Apache-2.0
+license-file:       LICENSE
+author:             Bitspark and the Bitwire contributors
+maintainer:         https://github.com/Bitspark/bitwire/issues
+homepage:           https://github.com/Bitspark/bitwire
+bug-reports:        https://github.com/Bitspark/bitwire/issues
+build-type:         Simple
+tested-with:        GHC == 9.6.7
+extra-source-files:
+    README.md
+    NOTICE
+    test/consumer/bitwire-consumer.cabal
+    test/consumer/Main.hs
+
+source-repository head
+    type:           git
+    location:       https://github.com/Bitspark/bitwire.git
+    subdir:         wire/hs
+
+library
+    exposed-modules: Bitwire
+    hs-source-dirs:  src
+    build-depends:
+        base >= 4.14 && < 5,
+        bytestring >= 0.10 && < 0.13,
+        containers >= 0.6 && < 0.9,
+        text >= 2.0 && < 3
+    default-language: Haskell2010
+    ghc-options:     -Wall -Wcompat
+
+test-suite contract-values
+    type:           exitcode-stdio-1.0
+    main-is:        Main.hs
+    hs-source-dirs:  test
+    build-depends:
+        base >= 4.14 && < 5,
+        bitspark-bitwire,
+        bytestring >= 0.10 && < 0.13,
+        containers >= 0.6 && < 0.9,
+        text >= 2.0 && < 3
+    default-language: Haskell2010
+    ghc-options:     -Wall -Wcompat
