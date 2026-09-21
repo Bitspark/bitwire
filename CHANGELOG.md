@@ -3,6 +3,8 @@
 ## Unreleased
 
 - Record verified 0.1.0 distribution availability and the Nightseam handover.
+- Wait for npm's install metadata to contain the released version before checking public consumers.
+- Resolve the public GitHub repository without a trailing slash in Python/Haskell publication checks.
 
 ## 0.1.0 — 2026-09-21
 
