@@ -1,0 +1,13 @@
+Bitwire Swift binding
+Copyright 2026 Bitspark and the Bitwire contributors
+
+This binding includes declarations and supporting values adapted from Nightseam:
+Copyright 2026 Bitspark and the Nightseam contributors.
+Licensed under the Apache License, Version 2.0.
+Source revision: 1c63f1c4d7e4b5987d4bd32e294177645c92ed8f.
+Source files:
+duplex/swift/NightseamDuplex/Sources/NightseamDuplex/Wire.swift
+duplex/swift/NightseamDuplex/Sources/NightseamDuplex/Metadata.swift
+
+Bitwire retains only the Wire protocol and supporting values. Endpoint dispatch,
+routing, selection, mounting, codecs and carriers remain with implementations.
