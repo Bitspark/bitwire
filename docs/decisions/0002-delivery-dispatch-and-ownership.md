@@ -113,6 +113,17 @@ context. This requires neither a global perpetual router map nor another Wire
 method. It is a proposed runtime integration, whose actual implementation and
 generated/physical acceptance remain Nightseam's responsibility.
 
+[Issue #20](https://github.com/Bitspark/bitwire/issues/20) records the obstruction
+and its acceptance criteria. A replied execution and a still-running execution
+can be indistinguishable to a bare router when replies bypass it. Callback return,
+a fixed timeout, an optional Promise or a weak map cannot resolve that missing
+information. The runtime integration must distinguish early caller settlement
+from actual body completion and queued-control retirement, preserve captures
+through forwarding and nested dispatch, reclaim state across more sequential
+calls than its capacity, and prevent old controls from affecting a reused key.
+The issue remains open for actual runtime evidence; retained-reply reference
+tests alone do not close it.
+
 ## Migration and evidence
 
 All eight bindings change together. `Wire.receive(path, receiver)` becomes an

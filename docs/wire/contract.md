@@ -111,6 +111,15 @@ guarantees. It must not silently substitute current route lookup. Generic
 addressed delivery and pure routing remain usable without that runtime-specific
 invocation facility.
 
+The integration distinguishes caller withdrawal, an early deadline response,
+actual executing-body completion and retirement of already queued controls.
+Reusing a return-identity/request-ID pair must not let an older control address
+or delete the newer capture. Capture storage is bounded while requests remain
+unfinished and reclaimed across arbitrarily many sequential completed requests;
+a fixed timeout or weak map is not evidence of terminal retirement. See
+[capture-retirement issue #20](https://github.com/Bitspark/bitwire/issues/20)
+for the required runtime observations and their upstream ownership.
+
 ## Preservation laws
 
 The following are obligations on compositions, not additional primitive methods
