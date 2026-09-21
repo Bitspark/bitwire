@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bitspark-bitwire"
+version = "0.1.0"
+description = "The shared relative-path Wire contract for Python"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{name = "Bitspark"}]
+dependencies = []
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/Bitspark/bitwire"
+Documentation = "https://github.com/Bitspark/bitwire/tree/main/docs"
+Repository = "https://github.com/Bitspark/bitwire"
+Issues = "https://github.com/Bitspark/bitwire/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+bitwire = ["py.typed"]
+
+[tool.mypy]
+strict = true
+python_version = "3.11"
