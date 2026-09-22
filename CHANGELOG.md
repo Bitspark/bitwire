@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Clarify return-capability origins and record the accepted release-qualified Nightseam 0.6.0 profile baseline in all eight binding documents, without changing native declarations.
+- Execute Bitwire's composition oracle against released production Go/TypeScript local and WebSocket endpoints; add independent lifecycle observations and separate upstream endpoint, race, serial and execution-budget evidence to required CI.
+- Record completed Go/TypeScript adoption and the remaining lifecycle, generated/live and consumer acceptance work explicitly.
+
 - Record two open contract review findings against the invocation lifecycle
   evidence: ownership of the return capability's path space, and the compatibility
   disposition of tightening the pinned profile in place.

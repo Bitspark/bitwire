@@ -1,6 +1,16 @@
 # Conformance
 
-**Status: 0.2 reference composition plus a preserved historical 0.1.0 runtime baseline.**
+**Status: current released 0.2 composition and scoped lifecycle evidence, a
+test-only reference, and a preserved historical 0.1.0 runtime baseline.**
+
+## Current released runtime baseline
+
+Run `node scripts/conformance-current.mjs`. The [current baseline](current/README.md)
+pins Nightseam v0.6.0 and its released Bitwire v0.2.0 dependency. It compares
+production local/WebSocket observations with Bitwire's composition oracle,
+executes independent lifecycle cases in Go and TypeScript, and separately runs
+upstream endpoint-integration, race, serial and budget tests. Its coverage table
+identifies the remaining generated/live/authority and consumer acceptance work.
 
 ## Current 0.2 composition reference
 

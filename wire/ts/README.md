@@ -1,5 +1,13 @@
 # Bitwire for TypeScript
 
+A callable return capability holds Wire access to its own relative-path origin.
+The selected profile defines supported paths, frame kinds and lifetime, and may
+reserve that origin's paths for invocation operations. This grants no endpoint
+receive or closure authority. Pure routing preserves the original return
+capability and associated context; generic Wire alone does not imply lifecycle
+support. Consumers must agree on a profile revision as well as its name; see
+[the shared decision](https://github.com/Bitspark/bitwire/blob/main/docs/decisions/0004-return-origins-and-profile-revisions.md).
+
 `@bitspark/bitwire` declares the shared contract for access through relative
 paths. It has no runtime dependencies. Runtimes implement the contract and
 generated adapters use it to connect operations to Wire access.

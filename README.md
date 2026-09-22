@@ -12,12 +12,13 @@ The contract is shared across languages, generators and runtime implementations.
 
 **Status: [0.2.0 released](https://github.com/Bitspark/bitwire/releases/tag/v0.2.0).**
 All eight bindings separate send access from receive attachment and closure.
-A test-only Go/TypeScript composition experiment exercises shared dispatch,
-relative paths and preservation. The earlier ten Nightseam cases remain a pinned
-0.1.0 baseline. The [language matrix](docs/languages.md) records publication and
-adoption separately. Nightseam's migration is tracked in
-[#439](https://github.com/Bitspark/nightseam/issues/439); runtime capture-retirement
-acceptance remains open in [#20](https://github.com/Bitspark/bitwire/issues/20).
+Nightseam v0.6.0 has adopted the Go/TypeScript contract. The
+[current baseline](conformance/current/README.md) checks production composition
+locally and over WebSockets, plus scoped lifecycle observations. The test-only
+reference and ten historical 0.1.0 cases remain distinct. The
+[language matrix](docs/languages.md) records publication and adoption separately;
+full lifecycle acceptance review remains open in
+[#20](https://github.com/Bitspark/bitwire/issues/20).
 No production endpoint runtime is included.
 
 ## The interface
@@ -55,6 +56,8 @@ at(w, [])      ≃ w
 
 These are contract laws. Runtime implementations supply `at` and `mount`;
 Bitwire's independent cases check their observable behavior.
+The [composition guide](docs/composition.md) explains what this enables across
+consumers and which additional agreements make their integration meaningful.
 
 ## Who owns what
 

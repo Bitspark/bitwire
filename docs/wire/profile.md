@@ -54,25 +54,43 @@ preservation and explains how native presentations can carry them.
 | Selection/mount/forwarding observations and borrowed endpoint lifetime | Declaration identity checks, preparation, live-value conversion, scopes and release barriers |
 | Native binding types and independent conformance expectations | Concrete runtimes, generators and any optional authority profile |
 
-The pinned profile sources are:
+The current profile baseline is Nightseam **v0.6.0**, at immutable revision
+`5cc9723a24646c40ed1861f892b2b23eb6d785d7`, with Bitwire **v0.2.0**:
 
-- [Relative-path access and runtime obligations](https://github.com/Bitspark/nightseam/blob/1c63f1c4d7e4b5987d4bd32e294177645c92ed8f/docs/runtime/wire.md).
-- [Network profile and interpretation identity](https://github.com/Bitspark/nightseam/blob/1c63f1c4d7e4b5987d4bd32e294177645c92ed8f/docs/wire/profile.md).
-- [Live-reference profile](https://github.com/Bitspark/nightseam/blob/1c63f1c4d7e4b5987d4bd32e294177645c92ed8f/docs/wire/live.md).
+- [Relative-path access and runtime obligations](https://github.com/Bitspark/nightseam/blob/5cc9723a24646c40ed1861f892b2b23eb6d785d7/docs/runtime/wire.md).
+- [Network profile and interpretation identity](https://github.com/Bitspark/nightseam/blob/5cc9723a24646c40ed1861f892b2b23eb6d785d7/docs/wire/profile.md).
+- [Live-reference profile](https://github.com/Bitspark/nightseam/blob/5cc9723a24646c40ed1861f892b2b23eb6d785d7/docs/wire/live.md).
 
-These public references version the retained profile obligations. Their older
-path-based receive registration is superseded by the 0.2 access contract; handler
-matching belongs to a composed dispatcher. They are not package
-dependencies. Bitwire conformance cases may exercise a pinned Nightseam driver;
-Bitwire libraries do not depend on its runtime.
+These references define the selected profile revision, not package dependencies
+or a claim that every profile obligation is checked here. The
+[current baseline](../../conformance/current/README.md) records executable
+coverage separately. The [historical baseline](../../conformance/nightseam.json)
+retains the old revision and its 0.1 registration semantics. Bitwire libraries
+do not depend on Nightseam's runtime.
 
-The pinned revision predates the request-serial rule adopted in
-[Nightseam PR444](https://github.com/Bitspark/nightseam/pull/444), which tightens
-`nightseam.duplex/1` in place rather than naming a new profile version. That
-rule is the profile's to make under the ownership table above; its compatibility
-disposition is an [open review finding](../integration.md#open-review-findings).
-These references are not repinned, and this page does not describe the tightened
-rule as retained profile obligation, until that evidence is accepted.
+## Profile revisions and return origins
+
+Nightseam versions its pre-1.0 profile by release while retaining the string
+`nightseam.duplex/1`. [Decision 0004](../decisions/0004-return-origins-and-profile-revisions.md)
+accepts that explicit compatibility disposition for the selected baseline; it
+does not claim arbitrary mixed-release compatibility. Consumers must establish
+the supported revision through deployment configuration or a specified bridge.
+Neither frame version 1 nor a matching model digest negotiates the profile.
+
+In this revision, request serials strictly increase in publication order within
+one physical connection and direction; non-increasing requests end the
+connection. Only requests advance the mark, gaps are allowed, senders refuse
+before wrap, and bridges mint in their own scope. The
+[serial decision](https://github.com/Bitspark/nightseam/blob/5cc9723a24646c40ed1861f892b2b23eb6d785d7/docs/decisions/request-serials-increase-in-publication-order.md)
+explains the stale-control race this resolves. A sender valid under an earlier,
+less restrictive revision is not assumed compatible.
+
+A callable return capability has an origin distinct from the destination of the
+request. Nightseam uses `[]` for its outcome and `invocation.*` paths for local
+lifecycle participation, refusing unsupported operations. Those reservations
+belong to this profile's return origin, not to every Wire or a peer root.
+Physical bridges establish their own correlation/lifecycle mapping; they do not
+serialize local return objects or blindly export the local control vocabulary.
 
 ## Publication evidence
 
@@ -97,9 +115,11 @@ The marker is absent from serialized profile errors.
 | Agreement | Why the Wire signature alone is insufficient |
 | --- | --- |
 | Operation paths and frame grammar | A receiver must understand the operation and its arguments. |
+| Profile revision | A shared profile name does not establish compatibility between pre-1.0 releases. |
 | Value encoding | Both sides must preserve the declared values. |
 | Contract identity | Both sides must interpret access as the same closed contract. |
 | Reference representation and scope | A live value must reach the correct binding under its owner and lifetime. |
+| Authority and lifecycle participation | Reachability does not grant permission, and callback return does not finish asynchronous execution. |
 
 A nominal family name, a structural digest, an access path and a live reference
 are distinct. None substitutes for another. A new declaration language does not

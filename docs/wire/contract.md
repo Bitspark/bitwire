@@ -160,11 +160,13 @@ leaves its borrowed endpoints usable.
 A local Message comprises a structured frame and optional local delivery
 capability/context. A request's return capability supports its response;
 correlation uses both that capability's identity and the request identifier.
-Whether a profile may also address that capability on non-empty paths, reserving
-its path space for the invocation, is an
-[open review finding](../integration.md#open-review-findings) under
-[#20](https://github.com/Bitspark/bitwire/issues/20). The released 0.2.0
-declarations neither grant nor refuse it.
+The Wire in a callable return capability has its own origin and relative path
+space. The profile defines its supported paths, frame kinds and lifetime, and
+may reserve that origin's paths for invocation operations. This reserves no
+application or peer-root namespace and grants no receive or closure authority.
+It does not make every Wire a lifecycle participant. Unsupported invocation-aware
+use is explicitly refused by the implementing profile. See
+[decision 0004](../decisions/0004-return-origins-and-profile-revisions.md).
 Composition must retain capability identity, not construct a new wrapper merely
 pointing to the same endpoint. Native bindings may represent stable identity by
 a pointer, an object or another opaque identity token.
