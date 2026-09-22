@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "id": "settlement-is-not-body-completion",
+      "limits": { "captures": 2, "bodies": 2 },
+      "steps": [
+        { "op": "capture", "id": "route" },
+        { "op": "begin", "id": "execution" },
+        { "op": "settle" },
+        { "op": "dispatchDone" },
+        { "op": "snapshot", "label": "undelivered" },
+        { "op": "ready", "id": "route" },
+        { "op": "snapshot", "label": "body-running" },
+        { "op": "done", "id": "execution" },
+        { "op": "snapshot", "label": "completed" },
+        { "op": "capture", "id": "late", "label": "late-capture" },
+        { "op": "begin", "id": "late", "label": "late-body" },
+        { "op": "done", "id": "execution" },
+        { "op": "settle" },
+        { "op": "snapshot", "label": "idempotent" }
+      ],
+      "expected": [
+        { "label": "undelivered", "retired": false, "retirements": 0, "controls": [] },
+        { "label": "body-running", "retired": false, "retirements": 0, "controls": [] },
+        { "label": "completed", "retired": true, "retirements": 1, "controls": [] },
+        { "label": "late-capture", "admitted": false },
+        { "label": "late-body", "admitted": false },
+        { "label": "idempotent", "retired": true, "retirements": 1, "controls": [] }
+      ]
+    },
+    {
+      "id": "cancellation-latches-for-each-traversal",
+      "limits": { "captures": 3, "bodies": 1 },
+      "steps": [
+        { "op": "capture", "id": "outer" },
+        { "op": "cancel" },
+        { "op": "snapshot", "label": "before-delivery" },
+        { "op": "capture", "id": "inner" },
+        { "op": "ready", "id": "outer" },
+        { "op": "snapshot", "label": "outer-delivered" },
+        { "op": "ready", "id": "inner" },
+        { "op": "cancel" },
+        { "op": "ready", "id": "inner" },
+        { "op": "snapshot", "label": "one-control-per-traversal" },
+        { "op": "dispatchDone" },
+        { "op": "settle" },
+        { "op": "snapshot", "label": "retired" }
+      ],
+      "expected": [
+        { "label": "before-delivery", "retired": false, "retirements": 0, "controls": [] },
+        { "label": "outer-delivered", "retired": false, "retirements": 0, "controls": ["outer:c:1"] },
+        { "label": "one-control-per-traversal", "retired": false, "retirements": 0, "controls": ["inner:c:1", "outer:c:1"] },
+        { "label": "retired", "retired": true, "retirements": 1, "controls": ["inner:c:1", "outer:c:1"] }
+      ]
+    },
+    {
+      "id": "capture-and-body-cost-are-total-bounds",
+      "limits": { "captures": 2, "bodies": 1 },
+      "steps": [
+        { "op": "capture", "id": "a" },
+        { "op": "capture", "id": "a", "label": "duplicate-capture" },
+        { "op": "capture", "id": "b" },
+        { "op": "capture", "id": "c", "label": "fan-out-bound" },
+        { "op": "release", "id": "a" },
+        { "op": "release", "id": "b" },
+        { "op": "capture", "id": "d", "label": "released-capture-still-costs" },
+        { "op": "begin", "id": "body" },
+        { "op": "begin", "id": "body", "label": "duplicate-body" },
+        { "op": "done", "id": "body" },
+        { "op": "begin", "id": "next", "label": "completed-body-still-costs" },
+        { "op": "dispatchDone" },
+        { "op": "settle" },
+        { "op": "snapshot", "label": "bounded-and-retired" }
+      ],
+      "expected": [
+        { "label": "duplicate-capture", "admitted": false },
+        { "label": "fan-out-bound", "admitted": false },
+        { "label": "released-capture-still-costs", "admitted": false },
+        { "label": "duplicate-body", "admitted": false },
+        { "label": "completed-body-still-costs", "admitted": false },
+        { "label": "bounded-and-retired", "retired": true, "retirements": 1, "controls": [] }
+      ]
+    },
+    {
+      "id": "unsupported-return-path-is-refused",
+      "limits": { "captures": 1, "bodies": 1 },
+      "steps": [
+        { "op": "unknown", "label": "unknown-operation" },
+        { "op": "wrongKind", "label": "wrong-frame-kind" },
+        { "op": "missingSink", "label": "missing-control-sink" },
+        { "op": "snapshot", "label": "no-participation" },
+        { "op": "dispatchDone" },
+        { "op": "settle" },
+        { "op": "snapshot", "label": "no-leaked-capture" }
+      ],
+      "expected": [
+        { "label": "unknown-operation", "admitted": false },
+        { "label": "wrong-frame-kind", "admitted": false },
+        { "label": "missing-control-sink", "admitted": false },
+        { "label": "no-participation", "retired": false, "retirements": 0, "controls": [] },
+        { "label": "no-leaked-capture", "retired": true, "retirements": 1, "controls": [] }
+      ]
+    },
+    {
+      "id": "retired-capability-cannot-control-a-new-invocation",
+      "limits": { "captures": 1, "bodies": 1 },
+      "steps": [
+        { "op": "capture", "id": "old" },
+        { "op": "ready", "id": "old" },
+        { "op": "dispatchDone" },
+        { "op": "settle" },
+        { "op": "replace" },
+        { "op": "capture", "id": "new" },
+        { "op": "ready", "id": "new" },
+        { "op": "oldCancel" },
+        { "op": "snapshot", "label": "old-control-isolated" },
+        { "op": "cancel" },
+        { "op": "snapshot", "label": "new-control-delivered" },
+        { "op": "dispatchDone" },
+        { "op": "settle" },
+        { "op": "snapshot", "label": "both-retired" }
+      ],
+      "expected": [
+        { "label": "old-control-isolated", "retired": false, "retirements": 1, "controls": [] },
+        { "label": "new-control-delivered", "retired": false, "retirements": 1, "controls": ["new:c:1"] },
+        { "label": "both-retired", "retired": true, "retirements": 2, "controls": ["new:c:1"] }
+      ]
+    }
+  ]
+}

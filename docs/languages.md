@@ -81,12 +81,12 @@ the current upstream rollout.
 
 ## Adoption
 
-[Nightseam #439](https://github.com/Bitspark/nightseam/issues/439) now owns the
-0.2.0 API and dispatcher migration following the verified public handover.
-[Nightseam #421](https://github.com/Bitspark/nightseam/issues/421) received the
-verified public Go/TypeScript handover for 0.6.0; its import migration and
-post-adoption acceptance are coordinated with #439. Its other-language rollout is separately
-scheduled upstream. All eight Bitwire bindings remain in scope; no future
-runtime port or extra registry account silently becomes a prerequisite for the
-agreed Go/TypeScript handover. A binding can exist before a complete runtime or
-generator in that language.
+Nightseam v0.6.0 has adopted Bitwire v0.2.0 in Go and TypeScript through
+[PR444](https://github.com/Bitspark/nightseam/pull/444), closing #421 and #439.
+The [current baseline](../conformance/current/README.md) checks the actual
+production implementations and distinguishes scoped lifecycle evidence from
+remaining acceptance. The other six bindings share the documented return-origin
+semantics, but their runtime/profile adoption and validation remain separately
+tracked upstream; this baseline makes no six-language conformance claim.
+All eight Bitwire bindings remain in scope. A binding can exist before a
+complete runtime or generator in that language.

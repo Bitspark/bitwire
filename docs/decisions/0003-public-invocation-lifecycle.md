@@ -5,6 +5,12 @@ implementation evidence remain required in
 [Nightseam #439](https://github.com/Bitspark/nightseam/issues/439) and
 [Bitwire #20](https://github.com/Bitspark/bitwire/issues/20).
 
+**2026-09-22 update:** Nightseam #439 has landed in v0.6.0. The
+[current baseline](../../conformance/current/README.md) separates executable
+evidence from remaining Bitwire #20 review. [Decision 0004](0004-return-origins-and-profile-revisions.md)
+records the return-origin and profile-revision disposition. The requirements
+below remain acceptance criteria; publication does not discharge them.
+
 ## Decision and operator direction
 
 The operator requires the correct long-term interface now. A migration that

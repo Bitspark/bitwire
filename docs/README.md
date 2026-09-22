@@ -6,6 +6,7 @@ separate the shared boundary, executable checks and consumer adoption.
 | Read this | To understand |
 | --- | --- |
 | [Goals](goals/README.md) | What the contract is meant to make possible. |
+| [Composition](composition.md) | How access composes within Wire and what consumers must agree on. |
 | [Wire contract](wire/contract.md) | The surface, paths, receiver and composition laws. |
 | [Message profile](wire/profile.md) | The existing Nightseam profile and the limits of interface compatibility. |
 | [Integration](integration.md) | Ownership, current dependencies and the next adoption steps. |

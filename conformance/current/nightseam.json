@@ -1,0 +1,9 @@
+{
+  "repository": "https://github.com/Bitspark/nightseam.git",
+  "release": "v0.6.0",
+  "revision": "5cc9723a24646c40ed1861f892b2b23eb6d785d7",
+  "profile": "nightseam.duplex/1",
+  "bitwireVersion": "v0.2.0",
+  "bitwireRevision": "616a2fc5e3a0972f67f40331a9d9ca102bc9698d",
+  "bitwireSum": "h1:gGlNYgfzAHqZtxorw6HkCTWOoInil//uchOWhTA/d3k="
+}
