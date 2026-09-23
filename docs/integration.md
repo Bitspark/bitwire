@@ -29,6 +29,12 @@ specifies declared composites as Deixis nodes with an origin at every node.
 Released Nightseam realizes only the child-only specialization through
 `Mount`. The [declared evidence](../conformance/declared/README.md) records its
 conforming cases and the exact gaps an origin-bearing constructor must close.
+Nightseam's merged, unreleased implementation of
+[#705](https://github.com/Bitspark/nightseam/issues/705) supplies that constructor
+in Go and TypeScript. The [source production gate](../conformance/production/README.md)
+verifies all 39 independent cases at a public commit, plus upstream construction
+and caller-cancellation tests. This closes the source implementation gaps without
+changing the v0.6.0 release baseline or claiming published-package acceptance.
 
 ## Open review findings
 

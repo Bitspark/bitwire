@@ -86,8 +86,9 @@ The [evidence](../conformance/declared/README.md) lists the cases and the
 production observations. Reference interpreters are test-only and are not
 counted as runtime adoption. The separate [production gate](../conformance/production/README.md)
 runs the same cases through Nightseam's unreleased Go/TypeScript construction
-API from PR #713 at a pinned source revision, with no gaps accepted. Adoption
-by a released runtime package is still pending.
+API from PR #713 at a pinned source revision, with no gaps accepted. Native
+construction and actual requester-cancellation tests supplement those cases in
+both languages. Adoption by a released runtime package is still pending.
 
 ## Native representations
 

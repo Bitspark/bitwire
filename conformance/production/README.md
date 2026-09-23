@@ -27,13 +27,16 @@ installed contract version. The fixture's SHA-256 is pinned here, and must equal
 the digest Nightseam records in its `conformance/declared/upstream.json`. Inputs
 omit every expected observation. Bitwire's separate judge refuses missing,
 extra, duplicate and mismatched results. CI also requires Go's race detector for
-the production driver and the upstream construction tests.
+the production driver and the upstream construction and caller-cancellation tests.
 
 Nightseam's drivers are Bitwire's declared-composite harness with only the
 realization replaced by these public API calls. They add an origin adapter that
 refuses nonempty paths. They do not replace production routing, construction or
 decomposition. Expected results are authored and judged in Bitwire. The upstream
-construction tests remain supplementary, runtime-owned evidence.
+construction tests and actual requester-cancellation tests through bound,
+selected and reconstructed access remain supplementary, runtime-owned evidence;
+the runner executes them in both languages. Cancellation continues to target
+the captured invocation after the assembler replaces its description.
 
 These carrier runs are Go/Go and TypeScript/TypeScript, with connected, ordered,
 nonfaulting WebSockets. They do not establish cross-language composition,

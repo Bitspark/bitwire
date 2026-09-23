@@ -74,21 +74,22 @@ try {
     let program, driverArgs;
     if (language === 'go') {
       const race = run('go', ['env', 'CGO_ENABLED']).trim() === '1';
-      if (!race && process.env.CI) throw new Error('CI must exercise Go production admission with the race detector');
+      if (!race && process.env.CI) throw new Error('CI must exercise Go production composition with the race detector');
       program = join(scratch, process.platform === 'win32' ? 'declared.exe' : 'declared');
       run('go', ['build', ...(race ? ['-race'] : []), '-o', program, './conformance/declared/go']);
       driverArgs = [inputPath];
       run('go', ['test', ...(race ? ['-race'] : []), '-count=1', '-timeout=180s', './duplex/go', '-run', '^TestDeclared']);
-      console.log(`PASS upstream production construction/attachment tests${race ? ' with race detector' : ' (CGO disabled; no local race evidence)'}`);
+      run('go', ['test', ...(race ? ['-race'] : []), '-count=1', '-timeout=180s', './runtime/go', '-run', '^TestDeclaredAccess']);
+      console.log(`PASS upstream production construction/caller-cancellation tests${race ? ' with race detector' : ' (CGO disabled; no local race evidence)'}`);
     } else {
       pnpm(['install', '--frozen-lockfile']);
       const installed = JSON.parse(readFileSync(join(source, 'conformance/ts/node_modules/@bitspark/bitwire/package.json'), 'utf8'));
       assert.equal(installed.version, pin.bitwireVersion.slice(1));
       run(process.execPath, [join(source, 'node_modules/typescript/bin/tsc'), '-p', 'conformance/ts/tsconfig.check.json']);
-      run(process.execPath, ['--experimental-strip-types', '--test', 'duplex/ts/src/declared.test.ts']);
+      run(process.execPath, ['--experimental-strip-types', '--test', 'duplex/ts/src/declared.test.ts', 'runtime/ts/src/wire-declared.test.ts']);
       program = process.execPath;
       driverArgs = ['--experimental-strip-types', 'conformance/ts/src/declared.ts', inputPath];
-      console.log('PASS upstream TypeScript production construction/attachment tests');
+      console.log('PASS upstream TypeScript production construction/caller-cancellation tests');
     }
     for (const [carrier, reverse] of [['local', '0'], ['peer', '0'], ['peer', '1']]) {
       const label = `${language}/production/${carrier}/${reverse}`;

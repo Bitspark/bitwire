@@ -6,7 +6,7 @@ choice. An accepted repository boundary does not imply a completed implementatio
 
 | Decision | Status |
 | --- | --- |
-| [0006: Declared composites realize Deixis nodes over origin behavior](0006-declared-composites-realize-deixis-nodes.md) | Accepted; Go/TypeScript reference interpreters, released Nightseam child-only specialization and recorded production gaps. |
+| [0006: Declared composites realize Deixis nodes over origin behavior](0006-declared-composites-realize-deixis-nodes.md) | Accepted; Go/TypeScript reference and unreleased production construction pass all cases. Released Nightseam child-only specialization retains recorded gaps. |
 | [0005: Declared composition retains own behavior and subtree policy](0005-declared-composition-and-subtree-policy.md) | Superseded by 0006 before release; its policy is re-expressed as a guard around access. |
 | [0004: Return origins and profile revisions make composition explicit](0004-return-origins-and-profile-revisions.md) | Accepted clarification; current Go/TypeScript baseline and remaining acceptance recorded. |
 | [0003: Invocation-aware composition has a public lifecycle contract](0003-public-invocation-lifecycle.md) | Accepted requirements; Nightseam implementation landed, scoped evidence and remaining review recorded. |
