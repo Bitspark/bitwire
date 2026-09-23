@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Verify Nightseam's production Go/TypeScript declared-composition APIs against the independent cases at a pinned public source revision; retain the released test-interpreter baseline separately.
+
 - Define opt-in declared composition with separate own behavior and subtree admission policy, context-preserving selection and reconstruction from original parts; align all eight native presentations without adding Wire methods.
 - Add independent Go/TypeScript reconstruction and policy fixtures with negative controls, exercised over released local and WebSocket runtime facilities; distinguish executable interpretation from production construction API adoption.
 

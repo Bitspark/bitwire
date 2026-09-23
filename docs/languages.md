@@ -72,7 +72,9 @@ retains own behavior, subtree admission policy and raw children. All eight
 binding documents carry the same obligations; no native declarations change.
 [Executable interpretation evidence](../conformance/declared/README.md) covers
 Go and TypeScript around released runtime facilities. Production construction
-APIs and the other six runtime realizations are not claimed by those checks.
+APIs are separately exercised by the [production acceptance gate](../conformance/production/README.md)
+at a pinned unreleased Nightseam source revision. The other six runtime
+realizations and released-package adoption remain pending.
 
 ## Native representations
 
