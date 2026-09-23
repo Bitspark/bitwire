@@ -6,6 +6,7 @@ choice. An accepted repository boundary does not imply a completed implementatio
 
 | Decision | Status |
 | --- | --- |
+| [0005: Declared composition retains own behavior and subtree policy](0005-declared-composition-and-subtree-policy.md) | Accepted opt-in interpretation; Go/TypeScript conformance interpreters, runtime adoption tracked separately. |
 | [0004: Return origins and profile revisions make composition explicit](0004-return-origins-and-profile-revisions.md) | Accepted clarification; current Go/TypeScript baseline and remaining acceptance recorded. |
 | [0003: Invocation-aware composition has a public lifecycle contract](0003-public-invocation-lifecycle.md) | Accepted requirements; Nightseam implementation landed, scoped evidence and remaining review recorded. |
 | [0002: Separate addressed delivery, dispatch and endpoint ownership](0002-delivery-dispatch-and-ownership.md) | Accepted for 0.2.0; adopted in Nightseam Go/TypeScript 0.6.0. |

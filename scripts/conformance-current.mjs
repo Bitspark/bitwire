@@ -4,7 +4,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, write
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { compareCases, lifecycleInputs, nightseamCompositionExpected } from './conformance-results.mjs';
+import { compareCases, declaredInputs, lifecycleInputs, nightseamCompositionExpected } from './conformance-results.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = path => JSON.parse(readFileSync(join(root, path), 'utf8'));
@@ -23,6 +23,9 @@ const fixture = read('conformance/current/lifecycle.json');
 const expected = nightseamCompositionExpected(read('conformance/reference/expected.json'));
 const inputs = join(scratch, 'lifecycle-inputs.json');
 writeFileSync(inputs, JSON.stringify(lifecycleInputs(fixture)));
+const declared = read('conformance/declared/cases.json');
+const declaredInputPath = join(scratch, 'declared-inputs.json');
+writeFileSync(declaredInputPath, JSON.stringify(declaredInputs(declared)));
 
 function run(command, arguments_, cwd = source, env = {}) {
   try {
@@ -80,6 +83,7 @@ try {
       const installed = JSON.parse(readFileSync(join(source, 'conformance/ts/node_modules/@bitspark/bitwire/package.json'), 'utf8'));
       assert.equal(installed.version, pin.bitwireVersion.slice(1));
       cpSync(join(root, 'conformance/current/ts/lifecycle.ts'), join(source, 'conformance/ts/src/bitwire-lifecycle.ts'));
+      cpSync(join(root, 'conformance/current/ts/declared.ts'), join(source, 'conformance/ts/src/bitwire-declared.ts'));
       run(process.execPath, [join(source, 'node_modules/typescript/bin/tsc'), '-p', 'conformance/ts/tsconfig.check.json']);
       program = process.execPath;
       driverArgs = ['--experimental-strip-types', 'conformance/ts/src/bitwire.ts'];
@@ -93,7 +97,7 @@ try {
       console.log(`PASS ${label}: six Bitwire composition groups`);
     }
 
-    let output;
+    let output, declaredProgram, declaredArgs;
     if (language === 'go') {
       const driver = join(scratch, 'lifecycle-go');
       cpSync(join(root, 'conformance/current/go'), driver, { recursive: true });
@@ -104,11 +108,25 @@ try {
       const artifact = JSON.parse(run('go', ['mod', 'download', '-json', `github.com/Bitspark/nightseam@${pin.release}`], driver));
       assert.equal(artifact.Origin.Hash, pin.revision);
       output = run('go', ['run', '-mod=readonly', '.', inputs], driver);
+      declaredProgram = join(scratch, process.platform === 'win32' ? 'declared.exe' : 'declared');
+      run('go', ['build', '-mod=readonly', '-o', declaredProgram, './declared'], driver);
+      declaredArgs = [declaredInputPath];
     } else {
       output = run(process.execPath, ['--experimental-strip-types', 'conformance/ts/src/bitwire-lifecycle.ts', inputs]);
+      declaredProgram = process.execPath;
+      declaredArgs = ['--experimental-strip-types', 'conformance/ts/src/bitwire-declared.ts', declaredInputPath];
     }
     compareCases(fixture, JSON.parse(output), `${language}/lifecycle`);
     console.log(`PASS ${language}: ${fixture.cases.length} independent lifecycle cases`);
+
+    for (const [carrier, reverse] of [['local', '0'], ['peer', '0'], ['peer', '1']]) {
+      const label = `${language}/declared/${carrier}/${reverse}`;
+      const actual = JSON.parse(run(declaredProgram, declaredArgs, source, {
+        NIGHTSEAM_BITWIRE_CARRIER: carrier, NIGHTSEAM_BITWIRE_REVERSE: reverse,
+      }));
+      compareCases(declared, actual, label);
+      console.log(`PASS ${label}: ${declared.cases.length} independent declared-composition cases (test-only interpreter, released carriers)`);
+    }
 
     // These are supplementary upstream-owned tests, explicitly not the oracle
     // above. They include the two independent endpoint integrations and races.

@@ -21,12 +21,13 @@ Go installation without CGO reports that limitation explicitly. No private
 sibling checkout, production runtime in Bitwire or package dependency on
 Nightseam is introduced.
 
-## Three distinct kinds of evidence
+## Evidence by implementation and scope
 
 | Layer | Expectations and exercised implementation | Scope |
 | --- | --- | --- |
 | Shared composition | Bitwire's [oracle](../reference/expected.json), compared here against Nightseam's production drivers | Six observation groups in each language: local pairs, client-to-server WebSockets and server-to-client WebSockets. |
 | Public lifecycle state | Bitwire's [cases](lifecycle.json), adapted by [Go](go/main.go) and [TypeScript](ts/lifecycle.ts) using public facilities only | Five independent cases: settlement/body completion, latched cancellation per traversal, total capture/body bounds, unsupported paths and old-capability isolation. |
+| Declared admission composition | Bitwire's [fixtures and test-only interpreters](../declared/README.md), using released endpoints, selection, forwarding and invocation facilities | 27 cases per language on local pairs and WebSockets in both directions. Retained own behavior, inherited policies, complete cuts, shared state, counterexamples and a pending reply/cancellation after reconstruction. This is interpreter evidence, not a released runtime construction API. |
 | Independent endpoint participation and runtime regressions | Pinned Nightseam tests, with expectations owned upstream | Two endpoint implementations without a shared private ledger, an opaque wrapper, detach/rebind, repeated traversal, sequential retirement, serial discipline and execution budgets. Go also runs queued-control races under the race detector. |
 
 The composition drivers are

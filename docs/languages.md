@@ -65,6 +65,15 @@ The immutable [0.1.0 release](https://github.com/Bitspark/bitwire/releases/tag/v
 and its API remain available. Hackage publication is deferred by operator decision;
 Git is the supported Haskell delivery route.
 
+## Declared composition
+
+The opt-in [declared composition interpretation](decisions/0005-declared-composition-and-subtree-policy.md)
+retains own behavior, subtree admission policy and raw children. All eight
+binding documents carry the same obligations; no native declarations change.
+[Executable interpretation evidence](../conformance/declared/README.md) covers
+Go and TypeScript around released runtime facilities. Production construction
+APIs and the other six runtime realizations are not claimed by those checks.
+
 ## Native representations
 
 The [contract](wire/contract.md) is normative. Representations must preserve exact

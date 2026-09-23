@@ -1,5 +1,13 @@
 # Bitwire for Swift
 
+Declared composition may retain separate own-origin behavior and subtree
+admission policy. Selection keeps inherited policy context; reconstruction uses
+raw construction parts and original capability/state identities, applying each
+policy occurrence once. Views grant no closure or construction authority.
+The opt-in [shared interpretation](https://github.com/Bitspark/bitwire/blob/main/docs/decisions/0005-declared-composition-and-subtree-policy.md)
+adds no native Wire methods. Its Go/TypeScript conformance interpreters do not
+establish production construction API adoption in this language.
+
 A callable return capability holds Wire access to its own relative-path origin.
 The selected profile defines supported paths, frame kinds and lifetime, and may
 reserve that origin's paths for invocation operations. This grants no endpoint

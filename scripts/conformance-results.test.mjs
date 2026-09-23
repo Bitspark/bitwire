@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { compareCases, lifecycleInputs, nightseamCompositionExpected } from './conformance-results.mjs';
+import { compareCases, declaredInputs, lifecycleInputs, nightseamCompositionExpected } from './conformance-results.mjs';
 
 const fixture = JSON.parse(readFileSync(new URL('../conformance/current/lifecycle.json', import.meta.url)));
 const observations = () => fixture.cases.map(({ id, expected }) => ({ id, observations: structuredClone(expected) }));
@@ -36,4 +36,29 @@ test('profile instantiation changes only the two placeholder reply identifiers',
   assert.deepEqual(expected, reference);
   reference.sameIDDelayedReplies.replyIDs[0] = 'changed-input';
   assert.throws(() => nightseamCompositionExpected(reference));
+});
+
+test('declared composition inputs exclude the oracle and malformed results fail', () => {
+  const declared = JSON.parse(readFileSync(new URL('../conformance/declared/cases.json', import.meta.url)));
+  const inputs = declaredInputs(declared);
+  assert.deepEqual(inputs.nodes, declared.nodes);
+  assert.equal(inputs.cases.length, declared.cases.length);
+  for (const item of inputs.cases) {
+    assert.deepEqual(Object.keys(item), ['id', 'kind', 'fault', 'limits', 'steps', 'relay', 'mount']);
+  }
+  const results = () => declared.cases.map(({ id, expected }) => ({ id, observations: structuredClone(expected) }));
+  compareCases(declared, results(), 'declared');
+  assert.throws(() => compareCases(declared, results().slice(1), 'missing'));
+  assert.throws(() => compareCases(declared, [...results(), results()[0]], 'extra'));
+  const duplicate = results(); duplicate[1] = duplicate[0];
+  assert.throws(() => compareCases(declared, duplicate, 'duplicate'));
+  const bypass = results();
+  bypass.find(row => row.id === 'denied-selected').observations.outcomes = ['admitted'];
+  assert.throws(() => compareCases(declared, bypass, 'policy bypass'));
+  const added = results(); added[0].unexpected = true;
+  assert.throws(() => compareCases(declared, added, 'extra result field'));
+  const unknown = results(); unknown[0].id = 'unknown';
+  assert.throws(() => compareCases(declared, unknown, 'unknown case'));
+  const invalid = structuredClone(declared); invalid.cases[0].id = '';
+  assert.throws(() => declaredInputs(invalid));
 });

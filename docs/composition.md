@@ -43,6 +43,32 @@ and translate hidden references in payloads. A physical hop is a different
 boundary: its profile maps correlation and establishes receiving context, and
 its value adapters manage references crossing scopes.
 
+## Own behavior and subtree admission
+
+Declared composition can give a parent its own operation at `[]` and a policy
+that also checks access to its descendants. These are separate retained slots:
+
+```text
+root { own: inspectRoot, policy: sharedBudget }
+  ├─ counter { own: increment, policy: identity }
+  └─ report  { own: readReport, policy: identity }
+```
+
+Sending to `["counter"]` checks the root budget and invokes the counter's own
+access at `[]`. Selecting the counter first does the same check. Rebuilding
+from the root's own access, original budget and raw children preserves the
+remaining budget and the existing counter. A new budget resets state; wrapping
+an already selected counter under the same root budget applies it twice.
+
+The construction owner therefore retains raw parts separately from the bound
+Wire views it hands to callers. A shared policy is checked once per occurrence,
+not once per object identity. Checks may refuse or permit single unchanged
+delegation; retries and response interception need additional semantics.
+The [decision](decisions/0005-declared-composition-and-subtree-policy.md)
+defines context-qualified selection, complete cuts, aliasing, exact keys and
+ownership. The [executable evidence](../conformance/declared/README.md) also
+keeps production runtime adoption distinct from the test-only interpreter.
+
 ## Across consumers
 
 The common boundary allows an implementation authored in one repository to be

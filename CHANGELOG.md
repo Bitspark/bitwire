@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Define opt-in declared composition with separate own behavior and subtree admission policy, context-preserving selection and reconstruction from original parts; align all eight native presentations without adding Wire methods.
+- Add independent Go/TypeScript reconstruction and policy fixtures with negative controls, exercised over released local and WebSocket runtime facilities; distinguish executable interpretation from production construction API adoption.
+
 - Clarify return-capability origins and record the accepted release-qualified Nightseam 0.6.0 profile baseline in all eight binding documents, without changing native declarations.
 - Execute Bitwire's composition oracle against released production Go/TypeScript local and WebSocket endpoints; add independent lifecycle observations and separate upstream endpoint, race, serial and execution-budget evidence to required CI.
 - Record completed Go/TypeScript adoption and the remaining lifecycle, generated/live and consumer acceptance work explicitly.
