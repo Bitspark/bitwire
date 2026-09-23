@@ -155,6 +155,29 @@ existing endpoints and preserves their order, capabilities and context; it does
 not inspect or convert references hidden in payloads. Detaching a forwarder
 leaves its borrowed endpoints usable.
 
+## Declared composition with policy
+
+A completely declared composite may retain its own origin behavior, an explicit
+subtree admission policy and its complete child map. This opt-in interpretation
+is specified in [decision 0005](../decisions/0005-declared-composition-and-subtree-policy.md).
+The own behavior applies at the empty relative path; the policy applies to this
+node and its descendants. An identity policy and refusing origin recover a pure
+child-only mount. Ordinary path syntax still confers no implicit policy.
+
+Selected access retains ancestor policy context. Reconstruction uses retained
+raw construction parts, preserving live capability/state identity and aliases;
+selected child views cannot be substituted for those parts. Each policy
+occurrence runs once, root to leaf, before local dispatch/child lookup. Initial
+request/event checks can permit or refuse, with a single unchanged delegation;
+captured invocation controls and replies retain their profile lifetime outside
+fresh admission checks. Rebuilding grants no new ownership or authority.
+
+These are conditional obligations, not new methods or a claim that an arbitrary
+send-only Wire can enumerate its children. The pure mount law above remains
+unchanged; a policy-bearing child selection requires the inherited context in
+decision 0005's law. The [declared evidence](../../conformance/declared/README.md)
+records executable interpretation coverage separately from runtime adoption.
+
 ## Local capabilities and context
 
 A local Message comprises a structured frame and optional local delivery

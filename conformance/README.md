@@ -12,6 +12,14 @@ executes independent lifecycle cases in Go and TypeScript, and separately runs
 upstream endpoint-integration, race, serial and budget tests. Its coverage table
 identifies the remaining generated/live/authority and consumer acceptance work.
 
+## Declared composition interpretation
+
+The current runner also exercises [declared admission composition](declared/README.md).
+Its Go/TypeScript interpreters retain own behavior, raw children and original
+policy state around released runtime endpoints. Independent cases cover
+reconstruction, inherited checks and explicit counterexamples. They are
+test-only interpreters, not a production construction API.
+
 ## Current 0.2 composition reference
 
 Run `node scripts/composition.mjs` for the [Go and TypeScript reference proof](reference/README.md).
