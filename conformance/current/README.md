@@ -21,7 +21,7 @@ Go installation without CGO reports that limitation explicitly. No private
 sibling checkout, production runtime in Bitwire or package dependency on
 Nightseam is introduced.
 
-## Three distinct kinds of evidence
+## Evidence by implementation and scope
 
 | Layer | Expectations and exercised implementation | Scope |
 | --- | --- | --- |
