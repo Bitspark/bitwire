@@ -25,7 +25,7 @@ The own slot receives only the empty relative path and supplies this node's
 behavior. Nonempty paths traverse the child map exactly; the own slot is never
 a fallback for missing children. A node with no children still has its own
 behavior, including an explicit refusal. A child-only mount is the specialization
-with refusing own access and an identity policy.
+with refusing own access and an identity policy, within Q's admitted domain.
 
 Q admits finite, acyclic, completely declared structures. Different positions
 may retain the same child, own capability or policy state. Cyclic routing and
@@ -97,9 +97,14 @@ once. A send-only Wire alone cannot recover either.
 
 Here is the context-qualified law. `I(d, γ)` interprets declaration d in an
 inherited binding context γ; `γ·p` retains the ancestor occurrences, their state,
-and their coordinate paths on the way to p.
+and their coordinate paths on the way to p, excluding the selected node's own
+policy (which its interpretation applies). The interpretation law concerns
+existing declared nodes. A syntactic view of a missing path still follows
+ancestor checks and then refuses; it does not create a declaration or fallback.
 
 ```text
+γ·[]                                  = γ
+(γ·p)·q                               = γ·(p ++ q)
 at(w, [])                             ≈ w
 at(at(w, p), q)                        ≈ at(w, p ++ q)
 at(I(d, γ), p)                         ≈ I(node(d, p), γ·p)

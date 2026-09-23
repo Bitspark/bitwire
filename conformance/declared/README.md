@@ -18,6 +18,8 @@ v0.6.0 public `At/at`, asynchronous endpoints and forwarding. These tests are
 No Bitwire package depends on this runtime or on a sibling checkout.
 
 The same input cases run on local pairs and WebSockets in both directions.
+The fixtures use serial admission schedules; they do not prove concurrent
+policy-state synchronization. That remains an implementing runtime obligation.
 They observe original local return identity and a local context association
 before each carrier boundary; that association is a test marker, not verified
 authentication. Carriers own subsequent identity/context mapping. Tests assume
@@ -35,7 +37,9 @@ checks delayed replies, detach/rebind, cancellation participation and retirement
 The policy-plus-invocation test additionally retains an actual pending request's
 return capability across reconstruction and route replacement, then observes a
 late reply and captured cancellation without another admission check. This
-does not prove authority of lifecycle participants or every concurrent race.
+uses the receiving invocation's public return-origin lifecycle facility; it
+does not claim generic cancellation through Q's new-admission entry, prove
+authority of lifecycle participants or cover every concurrent race.
 
 All eight native presentations share the contract; only Go and TypeScript have
 this executable interpretation evidence. Production construction APIs, verified
