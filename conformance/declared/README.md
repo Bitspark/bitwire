@@ -16,12 +16,16 @@ in both directions:
 | --- | --- | --- |
 | **Reference**, test-only | The [Go](../current/go/declared/main.go) and [TypeScript](../current/ts/declared.ts) interpreters of `compose(origin, children)` with retained parts, over released Nightseam selection, forwarding, endpoints and invocation facilities. | Every case meets its expectation. This is executable specification, not evidence about a runtime. |
 | **Production**, Nightseam v0.6.0 | Released `Mount`/`mount` as the child-only specialization, with released `At`/`at`, `ForwardWire`/`forwardWire` and carriers. | The 20 cases expressible with a refusing origin meet their expectations. The other 19 must reproduce the exact observations in the [gap ledger](production-gaps.json). |
+| **Production**, unreleased Nightseam source | The [separate production gate](../production/README.md) fetches a pinned public commit and uses `ComposeDeclared` / `Declared.compose`, retained parts and bound access. | All 39 cases meet their expectations in both languages and all three carriers, without gap allowances. |
 
 A production gap passes only while its observation stays exactly as recorded.
 A changed observation fails, and so does a gap that starts conforming, which
 must then be removed from the ledger. The oracle is never relaxed to fit a
 runtime. The two drivers share their instrumented children, carriers and step
 interpreter. They differ only in the realization that constructs composites.
+The ledger remains evidence about the immutable v0.6.0 release. Closing these
+gaps in the separately pinned source implementation does not rewrite that
+historical release's behavior or claim a published-package adoption.
 
 ## Coverage
 
@@ -94,12 +98,12 @@ cycles are not exercised here.
 
 Decision 0005's 27 cases are preserved byte for byte in
 [decision-0005-cases.json](../production/decision-0005-cases.json). The separate
-[production gate](../production/README.md) still replays them against
-Nightseam's merged but unreleased declared-composition API at a pinned source
-revision, which implements that superseded shape. That gate is evidence about
-decision 0005, not decision 0006.
+[production runner](../production/README.md) replays them with
+`--decision=0005` against its original source pin. The default runner now
+assesses decision 0006 against the newer implementation from Nightseam #705.
+The historical mode is evidence about decision 0005, not decision 0006.
 
-Read against decision 0006, the same unreleased
+Read against decision 0006, that historical
 [API](https://github.com/Bitspark/nightseam/blob/e905e4f6b6881d6d84fa559f36747398b4bf6d2f/duplex/go/declared.go)
 differs in these ways. They come from reading the source, not from executed
 0006 cases:

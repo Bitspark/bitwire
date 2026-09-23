@@ -271,6 +271,9 @@ the child-only specialization meets every applicable expectation, and the
 - `Mount` requires Endpoint children for send-only composition.
 
 Nightseam owns any production construction API. Its merged but unreleased
-declared-composition API implements decision 0005's shape. It remains gated
-against decision 0005's preserved cases, and the evidence records exactly how it
-differs from this decision. Consumers such as BitTree own their domain mappings.
+origin-and-complete-child API from [#705](https://github.com/Bitspark/nightseam/issues/705)
+is assessed by the [source production gate](../../conformance/production/README.md):
+all 39 independent cases in Go and TypeScript over local pairs and both
+WebSocket directions. Decision 0005's earlier implementation and cases remain
+replayable as historical evidence. Published-package adoption is still distinct;
+consumers such as BitTree own their domain mappings.

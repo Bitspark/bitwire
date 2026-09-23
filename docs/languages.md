@@ -77,8 +77,8 @@ contract release.
 
 | Language | Contract | Reference evidence | Released runtime evidence | Production construction with origins |
 | --- | --- | --- | --- | --- |
-| Go | Documented | 39 cases, three carriers | Nightseam v0.6.0 `Mount`: 20 child-only cases conform; 19 recorded gaps | Not available; Nightseam owns it |
-| TypeScript | Documented | 39 cases, three carriers | Nightseam v0.6.0 `mount`: 20 child-only cases conform; 19 recorded gaps | Not available; Nightseam owns it |
+| Go | Documented | 39 cases, three carriers | Nightseam v0.6.0 `Mount`: 20 child-only cases conform; 19 recorded gaps | Unreleased Nightseam source: all 39 cases conform on three carriers |
+| TypeScript | Documented | 39 cases, three carriers | Nightseam v0.6.0 `mount`: 20 child-only cases conform; 19 recorded gaps | Unreleased Nightseam source: all 39 cases conform on three carriers |
 | Python, Rust, Swift, C++, Java, Haskell | Documented | None | Not exercised | Not assessed |
 
 The [evidence](../conformance/declared/README.md) lists the cases and the
@@ -86,7 +86,10 @@ The [evidence](../conformance/declared/README.md) lists the cases and the
 production observations. Reference interpreters are test-only and are not
 counted as runtime adoption. A separate [production gate](../conformance/production/README.md)
 checks Nightseam's merged but unreleased Go/TypeScript construction API against
-the superseded decision 0005 cases. That API has not adopted decision 0006.
+all decision 0006 cases at a public source pin, plus native construction and
+actual requester-cancellation tests. Decision 0005's earlier source pin and
+cases remain replayable with `--decision=0005`. Source acceptance does not
+establish a published runtime release or adoption in the other six languages.
 
 ## Native representations
 

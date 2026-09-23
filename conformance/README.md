@@ -21,6 +21,12 @@ interpreter and through released Nightseam's child-only `Mount`. The reference
 meets every case. Production meets the 20 child-only cases; the other 19 are
 exact recorded gaps. Reference evidence is not evidence of a production API.
 
+`node scripts/conformance-production.mjs` separately checks all 39 cases against
+Nightseam's new Go/TypeScript construction APIs at an unreleased public source
+pin: 234 executions, with no gap allowances. The
+[production evidence](production/README.md) distinguishes these results from
+published-runtime adoption and preserves the earlier decision 0005 gate.
+
 ## Current 0.2 composition reference
 
 Run `node scripts/composition.mjs` for the [Go and TypeScript reference proof](reference/README.md).
