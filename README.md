@@ -55,7 +55,10 @@ at(w, [])      ≃ w
 ```
 
 These are contract laws. Runtime implementations supply `at` and `mount`;
-Bitwire's independent cases check their observable behavior.
+Bitwire's independent cases check their observable behavior. A declared
+composite adds an origin, its own behavior at `[]`, beside complete named
+children; [decision 0006](docs/decisions/0006-declared-composites-realize-deixis-nodes.md)
+relates this to Deixis's node model.
 The [composition guide](docs/composition.md) explains what this enables across
 consumers and which additional agreements make their integration meaningful.
 

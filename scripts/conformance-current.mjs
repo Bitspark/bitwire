@@ -4,7 +4,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, write
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { compareCases, declaredInputs, lifecycleInputs, nightseamCompositionExpected } from './conformance-results.mjs';
+import { compareCases, compareProduction, declaredInputs, lifecycleInputs, nightseamCompositionExpected } from './conformance-results.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = path => JSON.parse(readFileSync(join(root, path), 'utf8'));
@@ -24,6 +24,7 @@ const expected = nightseamCompositionExpected(read('conformance/reference/expect
 const inputs = join(scratch, 'lifecycle-inputs.json');
 writeFileSync(inputs, JSON.stringify(lifecycleInputs(fixture)));
 const declared = read('conformance/declared/cases.json');
+const productionGaps = read('conformance/declared/production-gaps.json');
 const declaredInputPath = join(scratch, 'declared-inputs.json');
 writeFileSync(declaredInputPath, JSON.stringify(declaredInputs(declared)));
 
@@ -110,22 +111,31 @@ try {
       output = run('go', ['run', '-mod=readonly', '.', inputs], driver);
       declaredProgram = join(scratch, process.platform === 'win32' ? 'declared.exe' : 'declared');
       run('go', ['build', '-mod=readonly', '-o', declaredProgram, './declared'], driver);
-      declaredArgs = [declaredInputPath];
+      declaredArgs = realization => [realization, declaredInputPath];
     } else {
       output = run(process.execPath, ['--experimental-strip-types', 'conformance/ts/src/bitwire-lifecycle.ts', inputs]);
       declaredProgram = process.execPath;
-      declaredArgs = ['--experimental-strip-types', 'conformance/ts/src/bitwire-declared.ts', declaredInputPath];
+      declaredArgs = realization => ['--experimental-strip-types', 'conformance/ts/src/bitwire-declared.ts', realization, declaredInputPath];
     }
     compareCases(fixture, JSON.parse(output), `${language}/lifecycle`);
     console.log(`PASS ${language}: ${fixture.cases.length} independent lifecycle cases`);
 
-    for (const [carrier, reverse] of [['local', '0'], ['peer', '0'], ['peer', '1']]) {
-      const label = `${language}/declared/${carrier}/${reverse}`;
-      const actual = JSON.parse(run(declaredProgram, declaredArgs, source, {
-        NIGHTSEAM_BITWIRE_CARRIER: carrier, NIGHTSEAM_BITWIRE_REVERSE: reverse,
-      }));
-      compareCases(declared, actual, label);
-      console.log(`PASS ${label}: ${declared.cases.length} independent declared-composition cases (test-only interpreter, released carriers)`);
+    // The reference interpreter must meet every expectation. Production runs
+    // released Nightseam composition and may differ only by a recorded gap.
+    for (const realization of ['reference', 'production']) {
+      for (const [carrier, reverse] of [['local', '0'], ['peer', '0'], ['peer', '1']]) {
+        const label = `${language}/declared/${realization}/${carrier}/${reverse}`;
+        const actual = JSON.parse(run(declaredProgram, declaredArgs(realization), source, {
+          NIGHTSEAM_BITWIRE_CARRIER: carrier, NIGHTSEAM_BITWIRE_REVERSE: reverse,
+        }));
+        if (realization === 'reference') {
+          compareCases(declared, actual, label);
+          console.log(`PASS ${label}: ${declared.cases.length} declared-composite cases (test-only reference interpreter, released carriers)`);
+        } else {
+          const result = compareProduction(declared, actual, productionGaps, language, label);
+          console.log(`PASS ${label}: ${result.conforming.length} cases conform through released Mount/At/forwarding; ${result.gaps.length} match recorded Nightseam gaps`);
+        }
+      }
     }
 
     // These are supplementary upstream-owned tests, explicitly not the oracle

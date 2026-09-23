@@ -43,31 +43,40 @@ and translate hidden references in payloads. A physical hop is a different
 boundary: its profile maps correlation and establishes receiving context, and
 its value adapters manage references crossing scopes.
 
-## Own behavior and subtree admission
+## A composite's own behavior
 
-Declared composition can give a parent its own operation at `[]` and a policy
-that also checks access to its descendants. These are separate retained slots:
+A mount has nothing of its own at `[]`. A declared composite can: its value is
+an **origin** that handles messages sent to the composite itself, beside its
+named children. This is Deixis's `Node[T]` with an origin at every node:
 
 ```text
-root { own: inspectRoot, policy: sharedBudget }
-  ├─ counter { own: increment, policy: identity }
-  └─ report  { own: readReport, policy: identity }
+system { origin: describeSystem }
+  ├─ counter { origin: increment }
+  └─ report  (an existing endpoint, used whole)
 ```
 
-Sending to `["counter"]` checks the root budget and invokes the counter's own
-access at `[]`. Selecting the counter first does the same check. Rebuilding
-from the root's own access, original budget and raw children preserves the
-remaining budget and the existing counter. A new budget resets state; wrapping
-an already selected counter under the same root budget applies it twice.
+Sending to `[]` reaches `describeSystem`; sending to `["counter"]` reaches
+`increment`; sending to `["report", "daily"]` reaches the report endpoint at
+`["daily"]`. Selecting `["counter"]` gives exactly the counter's access, with
+nothing of the system in between. A missing name refuses and never falls back to
+`describeSystem`. A mount is the same construction with a refusing origin.
 
-The construction owner therefore retains raw parts separately from the bound
-Wire views it hands to callers. A shared policy is checked once per occurrence,
-not once per object identity. Checks may refuse or permit single unchanged
-delegation; retries and response interception need additional semantics.
-The [decision](decisions/0005-declared-composition-and-subtree-policy.md)
-defines context-qualified selection, complete cuts, aliasing, exact keys and
-ownership. The [executable evidence](../conformance/declared/README.md) also
-keeps production runtime adoption distinct from the test-only interpreter.
+The assembler that built the system keeps its parts: the origin and the complete
+child map. Rebuilding from those parts keeps the same counter, the same origin
+and any child shared under two names, so their state continues. Rebuilding from
+the children alone loses `describeSystem`. Replacing the counter with a fresh
+copy resets it and breaks sharing. Those parts are held by the assembler, not
+exposed through the Wire it hands out; a caller with send access learns nothing
+about the structure it reaches.
+
+Interception, such as a budget over the whole system, is access composed around
+the system: `guard(budget, system)`. It is not part of any node's value.
+Selecting through the guard checks the budget once per send; rebuilding the
+system inside the same guard keeps the budget's state. The
+[decision](decisions/0006-declared-composites-realize-deixis-nodes.md) states
+the key mapping, laws, equivalence and ownership. The
+[evidence](../conformance/declared/README.md) separates the test-only interpreter
+from released runtime behavior and its recorded gaps.
 
 ## Across consumers
 

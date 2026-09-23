@@ -1,233 +1,511 @@
-// Test-only interpreter of ADR0005 around public, released runtime facilities.
-// This is neither a production composition API nor a replacement endpoint.
+// Declared-composite driver for ADR0006. Two realizations share one harness:
+// a test-only reference interpreter and Nightseam's released child-only Mount.
+// Both use released selection, forwarding, endpoints and carriers. Neither is a
+// Bitwire API, and the reference is not evidence about a production runtime.
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"reflect"
+	"sort"
 	"time"
+	"unicode/utf8"
 
 	wire "github.com/Bitspark/bitwire/wire/go"
 	"github.com/Bitspark/nightseam/duplex/go"
 	ns "github.com/Bitspark/nightseam/runtime/go"
 )
 
-type access struct {
-	send func([]string, wire.Message) error
+// origin is a node's own value: behavior at its empty relative path. It never
+// receives a path. Refusal is a value too, not a missing origin.
+type origin struct {
+	name     string
+	instance int
+	handle   func(wire.Message) error
 }
 
-func (a *access) Send(p []string, m wire.Message) error { return a.send(p, m) }
-
-type policy struct {
-	id        string
-	remaining int
-	checks    *[][2]any
-}
-
-func (g *policy) check(p []string) error {
-	if g == nil {
-		return nil
-	}
-	*g.checks = append(*g.checks, [2]any{g.id, append([]string{}, p...)})
-	if g.remaining == 0 {
-		return fmt.Errorf("policy refused")
-	}
-	if g.remaining > 0 {
-		g.remaining--
-	}
-	return nil
-}
+var refuse = &origin{handle: func(wire.Message) error { return duplex.ErrNoRoute }}
 
 type entry struct {
 	key   string
-	child *declaration
-}
-type declaration struct {
-	own      wire.Wire
-	gate     *policy
-	children map[string]*declaration
+	child wire.Wire
 }
 
-func compose(own wire.Wire, gate *policy, entries []entry) (*declaration, error) {
+// A realization constructs declared composites from their own value and
+// complete child access. Parts are the construction owner's retained description.
+type realization interface {
+	compose(own *origin, entries []entry) (wire.Wire, error)
+	parts(composite wire.Wire) (*origin, []entry, bool)
+	expose(composite wire.Wire) wire.Wire
+	teardown()
+}
+
+var errUnsupported = errors.New("origin-bearing composite")
+
+// ---- Reference realization: a test-only interpreter of ADR0006 ----
+
+type composite struct {
+	own      *origin
+	children map[string]wire.Wire
+}
+type sendAccess struct {
+	send func([]string, wire.Message) error
+}
+
+func (a *sendAccess) Send(p []string, m wire.Message) error { return a.send(p, m) }
+
+type reference struct{ retained map[wire.Wire]*composite }
+
+func (r *reference) compose(own *origin, entries []entry) (wire.Wire, error) {
 	if own == nil {
-		return nil, fmt.Errorf("missing own value")
+		return nil, errors.New("a composite requires its own value")
 	}
-	children := map[string]*declaration{}
+	c := &composite{own, make(map[string]wire.Wire, len(entries))}
 	for _, e := range entries {
-		if _, err := duplex.EncodePath([]string{e.key}); err != nil {
-			return nil, err
+		if !utf8.ValidString(e.key) {
+			return nil, errors.New("segment outside the exact UTF-8 key image")
 		}
-		if e.child == nil || children[e.key] != nil {
-			return nil, fmt.Errorf("missing or conflicting child")
+		if e.child == nil {
+			return nil, errors.New("missing child access")
 		}
-		children[e.key] = e.child
-	}
-	return &declaration{own, gate, children}, nil
-}
-func mustBuild(own wire.Wire, gate *policy, entries []entry) *declaration {
-	d, err := compose(own, gate, entries)
-	check(err)
-	return d
-}
-func parts(d *declaration) (wire.Wire, *policy, []entry) {
-	children := []entry{}
-	for key, child := range d.children {
-		children = append(children, entry{key, child})
-	}
-	return d.own, d.gate, children
-}
-func rebuild(d *declaration, deep bool, memo map[*declaration]*declaration) *declaration {
-	if found := memo[d]; found != nil {
-		return found
-	}
-	own, gate, children := parts(d)
-	if deep {
-		for i, e := range children {
-			children[i].child = rebuild(e.child, true, memo)
+		if _, found := c.children[e.key]; found {
+			return nil, errors.New("conflicting child segment")
 		}
+		c.children[e.key] = e.child
 	}
-	next := mustBuild(own, gate, children)
-	memo[d] = next
-	return next
-}
-func retained(d *declaration) bool {
-	own, gate, children := parts(d)
-	other := mustBuild(own, gate, children)
-	if d.own != other.own || d.gate != other.gate || len(d.children) != len(other.children) {
-		return false
-	}
-	for k, v := range d.children {
-		if other.children[k] != v {
-			return false
+	access := &sendAccess{func(p []string, m wire.Message) error {
+		for _, segment := range p {
+			if !utf8.ValidString(segment) {
+				return duplex.ErrPath
+			}
 		}
-	}
-	// Changing the returned map description must not mutate the original.
-	if len(children) > 0 {
-		children[0].child = nil
-	}
-	return true
-}
-func bind(d *declaration) wire.Wire {
-	return &access{func(p []string, m wire.Message) error {
-		if _, err := duplex.EncodePath(p); err != nil {
-			return err
-		}
-		if m.Frame.Kind != wire.ProfileRequest && m.Frame.Kind != wire.ProfileEvent {
-			return fmt.Errorf("not a new admission")
-		}
-		return dispatch(d, p, m)
+		return c.send(p, m)
 	}}
+	r.retained[access] = c
+	return access, nil
 }
-func dispatch(d *declaration, p []string, m wire.Message) error {
-	if err := d.gate.check(p); err != nil {
-		return err
-	}
+func (c *composite) send(p []string, m wire.Message) error {
 	if len(p) == 0 {
-		return d.own.Send([]string{}, m)
+		return c.own.handle(m)
 	}
-	child := d.children[p[0]]
-	if child == nil {
+	child, found := c.children[p[0]]
+	if !found {
 		return duplex.ErrNoRoute
 	}
-	return dispatch(child, p[1:], m)
+	return child.Send(append([]string{}, p[1:]...), m)
+}
+func (r *reference) parts(w wire.Wire) (*origin, []entry, bool) {
+	c := r.retained[w]
+	if c == nil {
+		return nil, nil, false
+	}
+	entries := []entry{}
+	for key, child := range c.children {
+		entries = append(entries, entry{key, child})
+	}
+	return c.own, entries, true
+}
+func (r *reference) expose(w wire.Wire) wire.Wire { return w }
+func (r *reference) teardown()                    {}
+
+// ---- Production realization: Nightseam's released child-only Mount ----
+
+type production struct {
+	retained map[wire.Wire][]entry
+	mounts   []wire.Endpoint
 }
 
-var refuse wire.Wire = &access{func([]string, wire.Message) error { return duplex.ErrNoRoute }}
+// sendOnlyChild adapts complete send access to Mount's Endpoint parameter. It
+// grants no receive attachment and owns nothing to close.
+type sendOnlyChild struct{ wire.Wire }
 
-type nodeSpec struct {
+func (sendOnlyChild) Receive(wire.Receiver) (func(), error) {
+	return nil, errors.New("send-only child")
+}
+func (sendOnlyChild) Close(wire.Code, string) error { return nil }
+
+func (r *production) compose(own *origin, entries []entry) (wire.Wire, error) {
+	if own != refuse {
+		return nil, errUnsupported
+	}
+	routes := make(map[string]wire.Endpoint, len(entries))
+	for _, e := range entries {
+		switch child := e.child.(type) {
+		case nil:
+			routes[e.key] = nil
+		case wire.Endpoint:
+			routes[e.key] = child
+		default:
+			routes[e.key] = sendOnlyChild{child}
+		}
+	}
+	mounted := duplex.Mount(routes)
+	for key := range routes {
+		delete(routes, key) // A retained description must not depend on the caller's map.
+	}
+	r.retained[mounted] = append([]entry{}, entries...)
+	r.mounts = append(r.mounts, mounted)
+	return mounted, nil
+}
+func (r *production) parts(w wire.Wire) (*origin, []entry, bool) {
+	entries, found := r.retained[w]
+	if !found {
+		return nil, nil, false
+	}
+	return refuse, append([]entry{}, entries...), true
+}
+func (r *production) expose(w wire.Wire) wire.Wire { return duplex.At(w, nil) }
+func (r *production) teardown() {
+	for _, mounted := range r.mounts {
+		check(mounted.Close(duplex.CodeNormal, "released"))
+	}
+}
+
+// ---- Instrumented child access and interception used by the fixtures ----
+
+type forwarded struct {
+	path  []string
+	count int
+}
+type env struct {
+	sender    wire.Wire
+	expected  *wire.Message
+	contexts  map[*wire.ReturnAddress]*struct{}
+	marker    *struct{}
+	unchanged bool
+	last      *forwarded
+	trace     []any
+	instances map[string]int
+}
+
+func (e *env) verify(m wire.Message) {
+	e.unchanged = e.unchanged && e.expected != nil && reflect.DeepEqual(m.Frame, e.expected.Frame) &&
+		m.Return == e.expected.Return && m.Return != nil && e.contexts[m.Return] == e.marker
+}
+func (e *env) next(name string) int {
+	e.instances[name]++
+	return e.instances[name]
+}
+func (e *env) newOrigin(name string) *origin {
+	o := &origin{name: name, instance: e.next(name)}
+	count := 0
+	o.handle = func(m wire.Message) error {
+		e.verify(m)
+		count++
+		e.last = &forwarded{[]string{name}, count}
+		return duplex.At(e.sender, []string{name}).Send(nil, m)
+	}
+	return o
+}
+
+// access is complete, stateful child access with its own instance counter.
+type access struct {
+	name     string
+	instance int
+	count    int
+	env      *env
+}
+
+func (e *env) newAccess(name string) *access { return &access{name, e.next(name), 0, e} }
+func (a *access) Send(p []string, m wire.Message) error {
+	a.env.verify(m)
+	a.count++
+	a.env.last = &forwarded{append([]string{a.name}, p...), a.count}
+	return duplex.At(a.env.sender, []string{a.name}).Send(p, m)
+}
+
+type policy struct {
+	id                         string
+	instance, limit, remaining int
+}
+
+// guard is interception composed around access; it is not a node value.
+type guard struct {
+	policy *policy
+	inner  wire.Wire
+	env    *env
+}
+
+func (g *guard) Send(p []string, m wire.Message) error {
+	g.env.trace = append(g.env.trace, []any{"check", g.policy.id, append([]string{}, p...)})
+	if g.policy.remaining == 0 {
+		return errors.New("guard refused")
+	}
+	if g.policy.remaining > 0 {
+		g.policy.remaining--
+	}
+	return g.inner.Send(p, m)
+}
+
+// ---- Fixture interpretation ----
+
+type declaration struct {
 	ID       string
-	Own      *string
-	Policy   string
+	Origin   *string
 	Children [][2]string
+	Access   string
 }
 type step struct {
 	Op         string
-	Path       []string
+	Target     []string `json:"path"`
+	Keep       [][]string
 	Selections [][]string
-	Raw, Cut   string
-	Kind       string
-	UseView    bool
-}
-type testCase struct {
-	ID, Kind, Fault string
-	Limits          map[string]int
-	Steps           []step
-	Relay           bool
-	Mount           bool
-}
-type input struct {
-	Nodes []nodeSpec
-	Cases []testCase
+	Via, Key   string
+	To, Node   string
+	Mode, ID   string
+	Origin     *string
+	Limit      int
 }
 
-func create(specs []nodeSpec, t testCase, own func(string) wire.Wire, checks *[][2]any) (*declaration, map[string]*declaration, error) {
-	definitions := map[string]nodeSpec{}
-	for _, s := range specs {
-		if _, found := definitions[s.ID]; found {
-			return nil, nil, fmt.Errorf("duplicate node")
-		}
-		definitions[s.ID] = s
+type testCase struct {
+	ID, Kind, Root, Fault string
+	Steps                 []step
+	Relay, Mount          bool
+}
+type input struct {
+	Declarations []declaration
+	Cases        []testCase
+}
+
+type harness struct {
+	R          realization
+	env        *env
+	decls      map[string]declaration
+	built      map[string]wire.Wire
+	origins    map[string]*origin
+	root, view wire.Wire
+	partsExact bool
+}
+
+func sameEntries(got, want []entry) bool {
+	if len(got) != len(want) {
+		return false
 	}
-	if t.Fault == "cycle" {
-		spec := definitions["root"]
-		spec.Children = append(spec.Children, [2]string{"loop", "root"})
-		definitions["root"] = spec
+	index := map[string]wire.Wire{}
+	for _, e := range want {
+		index[e.key] = e.child
 	}
-	gates := map[string]*policy{}
-	for id, limit := range t.Limits {
-		gates[id] = &policy{id, limit, checks}
+	for _, e := range got {
+		child, found := index[e.key]
+		if !found || child != e.child {
+			return false
+		}
+		delete(index, e.key)
 	}
-	nodes := map[string]*declaration{}
-	visiting := map[string]bool{}
-	var build func(string) (*declaration, error)
-	build = func(id string) (*declaration, error) {
-		if visiting[id] {
-			return nil, fmt.Errorf("cyclic declaration")
-		}
-		if n := nodes[id]; n != nil {
-			return n, nil
-		}
-		s, ok := definitions[id]
-		if !ok {
-			return nil, fmt.Errorf("missing declaration")
-		}
-		visiting[id] = true
-		entries := []entry{}
-		for _, e := range s.Children {
-			child, err := build(e[1])
-			if err != nil {
-				return nil, err
-			}
-			entries = append(entries, entry{e[0], child})
-		}
-		if id == "root" && t.Fault == "duplicate" {
-			entries = append(entries, entries[0])
-		}
-		if id == "root" && t.Fault == "invalidKey" {
-			entries = append(entries, entry{string([]byte{0xff}), nodes["leaf"]})
-		}
-		origin := refuse
-		if s.Own != nil {
-			origin = own(*s.Own)
-		}
-		if s.Policy != "" && gates[s.Policy] == nil {
-			return nil, fmt.Errorf("missing policy")
-		}
-		n, err := compose(origin, gates[s.Policy], entries)
+	return len(index) == 0
+}
+
+// construct records R1 for every composite and mutates the caller's input
+// afterward: the composite must retain its own copy of the description.
+func (h *harness) construct(own *origin, entries []entry) (wire.Wire, error) {
+	input := append([]entry{}, entries...)
+	w, err := h.R.compose(own, input)
+	if err != nil {
+		return nil, err
+	}
+	for i := range input {
+		input[i] = entry{"mutated", nil}
+	}
+	o, got, ok := h.R.parts(w)
+	exact := ok && o == own && sameEntries(got, entries)
+	if exact && len(got) > 0 {
+		got[0].child = nil // Returned parts are a copy of the retained description.
+		o, got, ok = h.R.parts(w)
+		exact = ok && o == own && sameEntries(got, entries)
+	}
+	h.partsExact = h.partsExact && exact
+	return w, nil
+}
+func (h *harness) compose(own *origin, entries []entry) wire.Wire {
+	w, err := h.construct(own, entries)
+	check(err)
+	return w
+}
+func (h *harness) originNamed(name string) *origin {
+	if o := h.origins[name]; o != nil {
+		return o
+	}
+	o := h.env.newOrigin(name)
+	h.origins[name] = o
+	return o
+}
+func (h *harness) build(id string, fault string, rootID string, visiting map[string]bool) (wire.Wire, error) {
+	if w := h.built[id]; w != nil {
+		return w, nil
+	}
+	d, found := h.decls[id]
+	if !found {
+		return nil, errors.New("missing declaration")
+	}
+	if d.Access != "" {
+		w := h.env.newAccess(d.Access)
+		h.built[id] = w
+		return w, nil
+	}
+	if visiting[id] {
+		return nil, errors.New("cyclic declaration")
+	}
+	visiting[id] = true
+	children := d.Children
+	if id == rootID && fault == "cycle" {
+		children = append(append([][2]string{}, children...), [2]string{"loop", rootID})
+	}
+	entries := []entry{}
+	for _, c := range children {
+		child, err := h.build(c[1], fault, rootID, visiting)
 		if err != nil {
 			return nil, err
 		}
-		delete(visiting, id)
-		nodes[id] = n
-		return n, nil
+		entries = append(entries, entry{c[0], child})
 	}
-	root, err := build("root")
-	return root, nodes, err
+	if id == rootID {
+		switch fault {
+		case "duplicate":
+			leaf, err := h.build("leaf", "", rootID, visiting)
+			check(err)
+			entries = append(entries, entry{"a", leaf})
+		case "invalidKey":
+			leaf, err := h.build("leaf", "", rootID, visiting)
+			check(err)
+			entries = append(entries, entry{string([]byte{0xff}), leaf})
+		case "missingChild":
+			entries = append(entries, entry{"hole", nil})
+		}
+	}
+	own := refuse
+	if d.Origin != nil {
+		own = h.originNamed(*d.Origin)
+	}
+	w, err := h.construct(own, entries)
+	if err != nil {
+		return nil, err
+	}
+	delete(visiting, id)
+	h.built[id] = w
+	return w, nil
+}
+
+func (h *harness) caller() wire.Wire {
+	if g, ok := h.root.(*guard); ok {
+		return g
+	}
+	return h.R.expose(h.root)
+}
+func renderOrigin(o *origin) any {
+	if o == refuse {
+		return nil
+	}
+	return []any{o.name, o.instance}
+}
+func (h *harness) render(w wire.Wire) any {
+	if own, entries, ok := h.R.parts(w); ok {
+		sort.Slice(entries, func(i, j int) bool { return bytes.Compare([]byte(entries[i].key), []byte(entries[j].key)) < 0 })
+		children := []any{}
+		for _, e := range entries {
+			children = append(children, []any{e.key, h.render(e.child)})
+		}
+		return map[string]any{"origin": renderOrigin(own), "children": children}
+	}
+	switch v := w.(type) {
+	case *access:
+		return map[string]any{"access": []any{v.name, v.instance}}
+	case *guard:
+		return map[string]any{"guard": []any{v.policy.id, v.policy.instance}, "inner": h.render(v.inner)}
+	}
+	return "opaque"
+}
+func (h *harness) structure(w wire.Wire, path []string) any {
+	if len(path) == 0 {
+		return h.render(w)
+	}
+	_, entries, ok := h.R.parts(w)
+	if !ok {
+		panic("structure path leaves the declared composites")
+	}
+	for _, e := range entries {
+		if e.key == path[0] {
+			return h.structure(e.child, path[1:])
+		}
+	}
+	return "missing"
+}
+
+// replaceAt rebuilds the declared ancestors of path from their retained parts.
+// A guard retains its original policy instance around a rebuilt inner access.
+func (h *harness) replaceAt(w wire.Wire, path []string, f func(wire.Wire) wire.Wire) wire.Wire {
+	if g, ok := w.(*guard); ok && len(path) > 0 {
+		return &guard{g.policy, h.replaceAt(g.inner, path, f), h.env}
+	}
+	if len(path) == 0 {
+		return f(w)
+	}
+	own, entries, ok := h.R.parts(w)
+	if !ok {
+		panic("edit path leaves the declared composites")
+	}
+	for i := range entries {
+		if entries[i].key == path[0] {
+			entries[i].child = h.replaceAt(entries[i].child, path[1:], f)
+		}
+	}
+	return h.compose(own, entries)
+}
+func (h *harness) rootComposite(f func(wire.Wire) wire.Wire) {
+	if g, ok := h.root.(*guard); ok {
+		h.root = &guard{g.policy, f(g.inner), h.env}
+		return
+	}
+	h.root = f(h.root)
+}
+func containsPath(paths [][]string, path []string) bool {
+	for _, p := range paths {
+		if reflect.DeepEqual(append([]string{}, p...), append([]string{}, path...)) {
+			return true
+		}
+	}
+	return false
+}
+
+// rebuild performs one complete cut: kept subtrees are reused whole, and every
+// other declared composite is rebuilt from its retained parts.
+func (h *harness) rebuild(w wire.Wire, at []string, keep [][]string) wire.Wire {
+	if containsPath(keep, at) {
+		return w
+	}
+	if g, ok := w.(*guard); ok {
+		return &guard{g.policy, h.rebuild(g.inner, at, keep), h.env}
+	}
+	own, entries, ok := h.R.parts(w)
+	if !ok {
+		return w // Opaque child access is retained whole.
+	}
+	for i := range entries {
+		entries[i].child = h.rebuild(entries[i].child, append(append([]string{}, at...), entries[i].key), keep)
+	}
+	return h.compose(own, entries)
+}
+func (h *harness) copySubtree(w wire.Wire) wire.Wire {
+	if a, ok := w.(*access); ok {
+		return h.env.newAccess(a.name)
+	}
+	own, entries, ok := h.R.parts(w)
+	if !ok {
+		panic("cannot copy opaque access")
+	}
+	if own != refuse {
+		own = h.env.newOrigin(own.name)
+	}
+	for i := range entries {
+		entries[i].child = h.copySubtree(entries[i].child)
+	}
+	return h.compose(own, entries)
 }
 
 func check(err error) {
@@ -283,9 +561,34 @@ func event(value string) wire.Message {
 type delivery struct {
 	path    []string
 	message wire.Message
-	count   int
 }
 
+var refuseWire wire.Wire = &sendAccess{func([]string, wire.Message) error { return duplex.ErrNoRoute }}
+
+func (h *harness) send(w wire.Wire, path []string, message wire.Message, deliveries <-chan delivery) {
+	h.env.expected, h.env.last = &message, nil
+	if err := w.Send(path, message); err != nil {
+		if h.env.last != nil {
+			panic("a destination accepted a refused send")
+		}
+		h.env.trace = append(h.env.trace, []any{"refused"})
+		return
+	}
+	got := wait(deliveries)
+	if !bytes.Equal(got.message.Frame.Data, message.Frame.Data) || got.message.Frame.Kind != message.Frame.Kind {
+		panic("message changed or unexpected delivery")
+	}
+	if h.env.last == nil || !reflect.DeepEqual(got.path, h.env.last.path) {
+		panic("delivery does not match its declared destination")
+	}
+	h.env.trace = append(h.env.trace, []any{"delivered", got.path, h.env.last.count})
+}
+func (h *harness) marked(value string) wire.Message {
+	m := event(value)
+	m.Return = &wire.ReturnAddress{Wire: refuseWire}
+	h.env.contexts[m.Return] = h.env.marker
+	return m
+}
 func borrowed(sender wire.Wire, deliveries <-chan delivery) bool {
 	if sender.Send([]string{"borrowed"}, event("borrowed")) != nil {
 		return false
@@ -293,14 +596,137 @@ func borrowed(sender wire.Wire, deliveries <-chan delivery) bool {
 	got := wait(deliveries)
 	return reflect.DeepEqual(got.path, []string{"borrowed"}) && string(got.message.Frame.Data) == `"borrowed"`
 }
-func observe(specs []nodeSpec, t testCase) any {
-	s := &scope{}
-	defer s.close()
+
+func newHarness(R realization, fixture input, sender wire.Wire) *harness {
+	h := &harness{R: R, decls: map[string]declaration{}, built: map[string]wire.Wire{}, origins: map[string]*origin{}, partsExact: true}
+	h.env = &env{sender: sender, contexts: map[*wire.ReturnAddress]*struct{}{}, marker: &struct{}{}, unchanged: true, trace: []any{}, instances: map[string]int{}}
+	for _, d := range fixture.Declarations {
+		if _, found := h.decls[d.ID]; found {
+			panic("duplicate declaration")
+		}
+		h.decls[d.ID] = d
+	}
+	return h
+}
+func refusal(err error) any {
+	if errors.Is(err, errUnsupported) {
+		return map[string]any{"unsupported": "originBearingComposite"}
+	}
+	return map[string]any{"construction": "refused"}
+}
+func (h *harness) node(id string) wire.Wire {
+	w, err := h.build(id, "", "", map[string]bool{})
+	check(err)
+	return w
+}
+
+func (h *harness) apply(t testCase, index int, s step, deliveries <-chan delivery) {
+	switch s.Op {
+	case "send", "invalidPath":
+		w := h.caller()
+		if s.Via == "view" {
+			if h.view == nil {
+				panic("no captured view")
+			}
+			w = h.view
+		}
+		for _, prefix := range s.Selections {
+			w = duplex.At(w, prefix)
+		}
+		path := s.Target
+		if s.Op == "invalidPath" {
+			path = []string{string([]byte{0xff})}
+		}
+		h.send(w, path, h.marked(fmt.Sprintf("%s:%d", t.ID, index)), deliveries)
+	case "direct":
+		h.send(h.node(s.Node), s.Target, h.marked(fmt.Sprintf("%s:%d", t.ID, index)), deliveries)
+	case "structure":
+		root := h.root
+		if g, ok := root.(*guard); ok && len(s.Target) > 0 {
+			root = g.inner
+		}
+		h.env.trace = append(h.env.trace, []any{"structure", h.structure(root, s.Target)})
+	case "rebuild":
+		h.root = h.rebuild(h.root, []string{}, s.Keep)
+	case "origin":
+		h.root = h.replaceAt(h.root, s.Target, func(w wire.Wire) wire.Wire {
+			own, entries, ok := h.R.parts(w)
+			if !ok {
+				panic("origin of opaque access")
+			}
+			if s.Origin == nil {
+				own = refuse
+			} else {
+				own = h.env.newOrigin(own.name)
+			}
+			return h.compose(own, entries)
+		})
+	case "substitute":
+		h.root = h.replaceAt(h.root, s.Target, func(w wire.Wire) wire.Wire {
+			if s.Mode == "copy" {
+				return h.copySubtree(w)
+			}
+			return h.rebuild(w, []string{}, nil)
+		})
+	case "omit", "rename", "add":
+		h.root = h.replaceAt(h.root, s.Target, func(w wire.Wire) wire.Wire {
+			own, entries, ok := h.R.parts(w)
+			if !ok {
+				panic("edit of opaque access")
+			}
+			next := []entry{}
+			for _, e := range entries {
+				if e.key == s.Key && s.Op == "omit" {
+					continue
+				}
+				if e.key == s.Key && s.Op == "rename" {
+					e.key = s.To
+				}
+				next = append(next, e)
+			}
+			if s.Op == "add" {
+				next = append(next, entry{s.Key, h.node(s.Node)})
+			}
+			return h.compose(own, next)
+		})
+	case "replace":
+		h.root = h.replaceAt(h.root, s.Target, func(wire.Wire) wire.Wire { return h.node(s.Node) })
+	case "view":
+		h.view = h.caller()
+		for _, prefix := range s.Selections {
+			h.view = duplex.At(h.view, prefix)
+		}
+	case "guard":
+		h.root = &guard{&policy{s.ID, h.env.next("policy:" + s.ID), s.Limit, s.Limit}, h.root, h.env}
+	case "freshGuard":
+		g := h.root.(*guard)
+		h.root = &guard{&policy{g.policy.id, h.env.next("policy:" + g.policy.id), g.policy.limit, g.policy.limit}, g.inner, h.env}
+	case "guardChild":
+		h.root = h.replaceAt(h.root, append(append([]string{}, s.Target...), s.Key), func(w wire.Wire) wire.Wire {
+			return &guard{&policy{s.ID, h.env.next("policy:" + s.ID), s.Limit, s.Limit}, w, h.env}
+		})
+	case "rebuildFromViews":
+		g := h.root.(*guard)
+		own, entries, ok := h.R.parts(g.inner)
+		if !ok {
+			panic("guarded access is not a composite")
+		}
+		for i := range entries {
+			entries[i].child = duplex.At(g, []string{entries[i].key})
+		}
+		h.root = &guard{g.policy, h.compose(own, entries), h.env}
+	case "teardown":
+		h.R.teardown()
+	default:
+		panic("unknown step: " + s.Op)
+	}
+}
+
+func (s *scope) carriers(t testCase) (wire.Endpoint, wire.Wire, wire.Endpoint) {
 	source, receiver := s.pair()
 	var sender wire.Wire = source
-	var mounted wire.Endpoint
 	if t.Mount {
-		mounted = duplex.Mount(map[string]wire.Endpoint{"mounted": source})
+		mounted := duplex.Mount(map[string]wire.Endpoint{"mounted": source})
 		sender = duplex.At(mounted, []string{"mounted"})
 		s.cleanups = append(s.cleanups, func() { _ = mounted.Close(duplex.CodeNormal, "done") })
 	}
@@ -311,168 +737,50 @@ func observe(specs []nodeSpec, t testCase) any {
 		s.cleanups = append(s.cleanups, off)
 		receiver = target
 	}
-	deliveries := make(chan delivery, 32)
-	counts := map[string]int{}
+	return source, sender, receiver
+}
+
+func observe(R realization, fixture input, t testCase) any {
+	s := &scope{}
+	defer s.close()
+	source, sender, receiver := s.carriers(t)
+	deliveries := make(chan delivery, 64)
 	off, err := receiver.Receive(wire.Receiver{Message: func(p []string, m wire.Message) {
-		if len(p) != 1 {
-			panic("unexpected destination path")
-		}
-		counts[p[0]]++
-		deliveries <- delivery{append([]string{}, p...), m, counts[p[0]]}
+		deliveries <- delivery{append([]string{}, p...), m}
 	}})
 	check(err)
 	s.cleanups = append(s.cleanups, off)
-	checks := [][2]any{}
-	unchanged := true
-	var expected wire.Message
-	marker := &struct{}{}
-	contexts := map[*wire.ReturnAddress]*struct{}{}
-	origins := map[string]wire.Wire{}
-	own := func(name string) wire.Wire {
-		if w := origins[name]; w != nil {
-			return w
-		}
-		w := &access{func(p []string, m wire.Message) error {
-			unchanged = unchanged && len(p) == 0 && reflect.DeepEqual(m.Frame, expected.Frame) && m.Return == expected.Return && contexts[m.Return] == marker
-			return duplex.At(sender, []string{name}).Send(p, m)
-		}}
-		origins[name] = w
-		return w
-	}
-	root, nodes, err := create(specs, t, own, &checks)
+	h := newHarness(R, fixture, sender)
+	root, err := h.build(t.Root, t.Fault, t.Root, map[string]bool{})
 	if err != nil {
-		return map[string]any{"construction": "refused"}
+		return refusal(err)
 	}
-	outcomes := []string{}
-	observed := [][2]any{}
-	partsRetained := retained(root)
-	var selected wire.Wire
+	h.root = root
 	for index, action := range t.Steps {
-		switch action.Op {
-		case "captureView":
-			selected = bind(root)
-			for _, prefix := range action.Selections {
-				selected = duplex.At(selected, prefix)
-			}
-		case "rebind":
-			origin, gate, children := parts(root)
-			for j, e := range children {
-				if e.key == "a" {
-					children[j].child = mustBuild(e.child.own, e.child.gate, []entry{{"b", mustBuild(own("replacement"), nil, nil)}})
-				}
-			}
-			root = mustBuild(origin, gate, children)
-		case "rebuild":
-			root = rebuild(root, action.Cut == "all", map[*declaration]*declaration{})
-			partsRetained = partsRetained && retained(root)
-		case "substitute":
-			origin, gate, children := parts(root)
-			for j, e := range children {
-				if e.key == "a" {
-					children[j].child = rebuild(e.child, true, map[*declaration]*declaration{})
-				}
-			}
-			root = mustBuild(origin, gate, children)
-		case "boundChild":
-			selected := duplex.At(bind(root), []string{"a", "b"})
-			root = mustBuild(root.own, root.gate, []entry{{"a", mustBuild(selected, nil, nil)}})
-		case "resetPolicy":
-			origin, _, children := parts(root)
-			root = mustBuild(origin, &policy{"outer", t.Limits["outer"], &checks}, children)
-		case "sharePolicy":
-			origin, gate, children := parts(root)
-			for j, e := range children {
-				if e.key == "a" {
-					o, _, c := parts(e.child)
-					children[j].child = mustBuild(o, gate, c)
-				}
-			}
-			root = mustBuild(origin, gate, children)
-		case "dropOwn":
-			_, gate, children := parts(root)
-			root = mustBuild(refuse, gate, children)
-		case "omit", "rename", "extra":
-			origin, gate, children := parts(root)
-			next := []entry{}
-			for _, e := range children {
-				if e.key == "a" && action.Op == "omit" {
-					continue
-				}
-				if e.key == "a" && action.Op == "rename" {
-					e.key = "renamed"
-				}
-				next = append(next, e)
-			}
-			if action.Op == "extra" {
-				next = append(next, entry{"extra", nodes["leaf"]})
-			}
-			root = mustBuild(origin, gate, next)
-		case "send", "invalidPath", "control":
-			target := root
-			if action.Raw != "" {
-				target = nodes[action.Raw]
-			}
-			w := bind(target)
-			if action.UseView {
-				if selected == nil {
-					panic("no captured view")
-				}
-				w = selected
-			}
-			for _, prefix := range action.Selections {
-				w = duplex.At(w, prefix)
-			}
-			expected = event(fmt.Sprintf("%s:%d", t.ID, index))
-			expected.Return = &wire.ReturnAddress{Wire: refuse}
-			contexts[expected.Return] = marker
-			if action.Op == "control" {
-				expected.Frame = wire.ProfileFrame{Version: 1, Kind: wire.ProfileKind(action.Kind), ID: "c:1"}
-				if action.Kind == "response" {
-					expected.Frame.Result = json.RawMessage("null")
-				}
-			}
-			path := action.Path
-			if action.Op == "invalidPath" {
-				path = []string{string([]byte{0xff})}
-			}
-			err := w.Send(path, expected)
-			if err != nil {
-				outcomes = append(outcomes, "refused")
-			} else {
-				outcomes = append(outcomes, "admitted")
-				got := wait(deliveries)
-				if string(got.message.Frame.Data) != string(expected.Frame.Data) {
-					panic("message changed or unexpected delivery")
-				}
-				observed = append(observed, [2]any{got.path[0], got.count})
-			}
-		default:
-			panic("unknown step: " + action.Op)
-		}
+		h.apply(t, index, action, deliveries)
 	}
-	_, endpoint := bind(root).(wire.Endpoint)
-	root = nil
-	if mounted != nil {
-		check(mounted.Close(duplex.CodeNormal, "released"))
-	}
-	return map[string]any{"outcomes": outcomes, "checks": checks, "deliveries": observed, "unchanged": unchanged, "sendOnly": !endpoint, "borrowedUsable": borrowed(source, deliveries), "partsRetained": partsRetained}
+	_, endpoint := h.caller().(wire.Endpoint)
+	h.R.teardown()
+	return map[string]any{"trace": h.env.trace, "partsExact": h.partsExact, "unchanged": h.env.unchanged, "sendOnly": !endpoint, "borrowedUsable": borrowed(source, deliveries)}
 }
 
-func pending(specs []nodeSpec, t testCase) any {
+// pending admits a real request through the composite, then rebuilds, rebinds
+// and tears the composition down before its late reply and captured cancel.
+func pending(R realization, fixture input, t testCase) any {
 	s := &scope{}
 	defer s.close()
-	sender, receiver := s.pair()
+	source, sender, receiver := s.carriers(t)
 	captured := make(chan wire.Message, 1)
 	cancelled := make(chan string, 1)
 	deliveries := make(chan delivery, 4)
 	replies := make(chan string, 1)
 	off, err := receiver.Receive(wire.Receiver{Message: func(p []string, m wire.Message) {
 		if m.Frame.Kind == wire.ProfileEvent {
-			deliveries <- delivery{p, m, 1}
+			deliveries <- delivery{append([]string{}, p...), m}
 			return
 		}
 		lifecycle := m.Return.Wire
-		check(lifecycle.Send([]string{"invocation.capture", "old"}, wire.Message{Frame: wire.ProfileFrame{Version: 1, Kind: wire.ProfileEvent, Data: json.RawMessage("null")}, Return: &wire.ReturnAddress{Wire: &access{func(p []string, m wire.Message) error {
+		check(lifecycle.Send([]string{"invocation.capture", "old"}, wire.Message{Frame: wire.ProfileFrame{Version: 1, Kind: wire.ProfileEvent, Data: json.RawMessage("null")}, Return: &wire.ReturnAddress{Wire: &sendAccess{func(p []string, m wire.Message) error {
 			if len(p) != 0 || m.Frame.Kind != wire.ProfileCancel {
 				panic("invalid captured control")
 			}
@@ -485,9 +793,13 @@ func pending(specs []nodeSpec, t testCase) any {
 	}})
 	check(err)
 	s.cleanups = append(s.cleanups, off)
-	checks := [][2]any{}
-	preserved := true
-	original := &wire.ReturnAddress{Wire: &access{func(p []string, m wire.Message) error {
+	h := newHarness(R, fixture, sender)
+	root, err := h.build(t.Root, "", t.Root, map[string]bool{})
+	if err != nil {
+		return refusal(err)
+	}
+	h.root = root
+	original := &wire.ReturnAddress{Wire: &sendAccess{func(p []string, m wire.Message) error {
 		if len(p) != 0 || m.Frame.Kind != wire.ProfileResponse || m.Frame.Error != nil {
 			panic("unexpected reply")
 		}
@@ -496,44 +808,48 @@ func pending(specs []nodeSpec, t testCase) any {
 		replies <- result
 		return nil
 	}}}
-	root, _, err := create(specs, t, func(name string) wire.Wire {
-		return &access{func(p []string, m wire.Message) error {
-			preserved = preserved && m.Return == original && len(p) == 0
-			return duplex.At(sender, []string{name}).Send(p, m)
-		}}
-	}, &checks)
-	check(err)
-	check(duplex.At(duplex.At(bind(root), []string{"a"}), []string{"b"}).Send(nil, wire.Message{Frame: wire.ProfileFrame{Version: 1, Kind: wire.ProfileRequest, ID: "c:1", Params: json.RawMessage("null")}, Return: original}))
+	request := wire.Message{Frame: wire.ProfileFrame{Version: 1, Kind: wire.ProfileRequest, ID: "c:1", Params: json.RawMessage("null")}, Return: original}
+	h.env.contexts[original] = h.env.marker
+	h.env.expected = &request
+	check(duplex.At(duplex.At(h.caller(), []string{"a"}), []string{"b"}).Send(nil, request))
 	old := wait(captured)
-	root = rebuild(root, true, map[*declaration]*declaration{})
-	// Replace the tree's aliases after admission; the captured invocation stays old.
-	own, gate, _ := parts(root)
-	replacement := mustBuild(duplex.At(sender, []string{"new"}), nil, nil)
-	root = mustBuild(own, gate, []entry{{"alias", replacement}, {"a", replacement}})
-	newRefused := bind(root).Send([]string{"alias"}, event("new")) != nil
+	h.root = h.rebuild(h.root, []string{}, nil)
+	for _, path := range [][]string{{"a", "b"}, {"alias"}} {
+		h.apply(t, 0, step{Op: "replace", Target: path, Node: "replacement"}, deliveries)
+	}
+	h.send(duplex.At(h.caller(), []string{"alias"}), nil, h.marked("new"), deliveries)
+	h.R.teardown()
 	check(old.Return.Wire.Send(nil, wire.Message{Frame: wire.ProfileFrame{Version: 1, Kind: wire.ProfileResponse, ID: old.Frame.ID, Result: json.RawMessage(`"old"`)}}))
 	late := wait(replies)
 	check(old.Return.Wire.Send([]string{"invocation.control"}, wire.Message{Frame: wire.ProfileFrame{Version: 1, Kind: wire.ProfileCancel, ID: old.Frame.ID}}))
 	controls := []string{wait(cancelled)}
 	check(old.Return.Wire.Send([]string{"invocation.release", "old"}, event("release")))
 	check(old.Return.Wire.Send([]string{"invocation.done", "old"}, event("done")))
-	return map[string]any{"checks": checks, "newCallRefused": newRefused, "lateReply": late, "cancelled": controls, "returnPreserved": preserved, "borrowedUsable": borrowed(sender, deliveries)}
+	return map[string]any{"trace": h.env.trace, "lateReply": late, "cancelled": controls, "unchanged": h.env.unchanged, "borrowedUsable": borrowed(source, deliveries)}
 }
+
 func main() {
 	if os.Getenv("NIGHTSEAM_BITWIRE_CARRIER") != "local" && os.Getenv("NIGHTSEAM_BITWIRE_CARRIER") != "peer" {
 		panic("expected local or peer carrier")
 	}
-	data, err := os.ReadFile(os.Args[1])
+	if len(os.Args) != 3 || (os.Args[1] != "reference" && os.Args[1] != "production") {
+		panic("usage: declared reference|production inputs.json")
+	}
+	data, err := os.ReadFile(os.Args[2])
 	check(err)
 	var fixture input
 	check(json.Unmarshal(data, &fixture))
 	output := []any{}
 	for _, t := range fixture.Cases {
+		var R realization = &reference{map[wire.Wire]*composite{}}
+		if os.Args[1] == "production" {
+			R = &production{retained: map[wire.Wire][]entry{}}
+		}
 		var observations any
 		if t.Kind == "pending" {
-			observations = pending(fixture.Nodes, t)
+			observations = pending(R, fixture, t)
 		} else {
-			observations = observe(fixture.Nodes, t)
+			observations = observe(R, fixture, t)
 		}
 		output = append(output, map[string]any{"id": t.ID, "observations": observations})
 	}

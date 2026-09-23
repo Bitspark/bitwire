@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "implementation": "Nightseam v0.6.0 at 5cc9723a24646c40ed1861f892b2b23eb6d785d7: public At/at, Mount/mount, ForwardWire/forwardWire, local pairs and WebSocket peers",
+  "gaps": [
+    {
+      "id": "origin-bearing-construction",
+      "requirement": "ADR0006: compose(origin, children) admits a composite whose own value is not the refusing origin.",
+      "evidence": "The release has no public constructor taking an origin. Mount/mount is the child-only specialization: it takes only children and refuses []. https://github.com/Bitspark/nightseam/blob/5cc9723a24646c40ed1861f892b2b23eb6d785d7/duplex/go/wire.go#L140-L150 https://github.com/Bitspark/nightseam/blob/5cc9723a24646c40ed1861f892b2b23eb6d785d7/duplex/ts/src/wire.ts#L91-L96",
+      "cases": [
+        "origin-and-descendants",
+        "nested-selection-agrees",
+        "missing-never-falls-back",
+        "empty-branch-versus-missing",
+        "root-cut-reconstruction",
+        "complete-cuts-agree",
+        "children-alone-lose-origin",
+        "fresh-origin-resets-parent-state",
+        "equivalent-substitution",
+        "copied-subtree-breaks-sharing",
+        "altered-children-detected",
+        "invalid-path-never-reaches-origin",
+        "selection-retains-original-binding",
+        "forwarded-reconstruction",
+        "mounted-carrier-reconstruction",
+        "pending-across-reconstruction"
+      ],
+      "observed": {
+        "go": {"unsupported": "originBearingComposite"},
+        "ts": {"unsupported": "originBearingComposite"}
+      }
+    },
+    {
+      "id": "conflicting-segments-accepted",
+      "requirement": "ADR0006: construction refuses conflicting child segments before a native map can discard one.",
+      "evidence": "Mount/mount accepts only an already-built native map. The later entry replaced the earlier one before Mount ran, so [\"a\"] reached the replacing child and the retained description no longer matches the routes.",
+      "cases": ["conflicting-children"],
+      "observed": {
+        "go": {"trace": [["delivered", ["leaf"], 1]], "partsExact": false, "unchanged": true, "sendOnly": true, "borrowedUsable": true},
+        "ts": {"trace": [["delivered", ["leaf"], 1]], "partsExact": false, "unchanged": true, "sendOnly": true, "borrowedUsable": true}
+      }
+    },
+    {
+      "id": "invalid-segments-accepted",
+      "requirement": "ADR0006: construction refuses a segment outside the exact UTF-8 key image.",
+      "evidence": "Mount/mount copies the key without validation. The child becomes unreachable because sending validates the path later (ErrPath / invalid_path).",
+      "cases": ["invalid-key"],
+      "observed": {
+        "go": {"trace": [["refused"]], "partsExact": true, "unchanged": true, "sendOnly": true, "borrowedUsable": true},
+        "ts": {"trace": [["refused"]], "partsExact": true, "unchanged": true, "sendOnly": true, "borrowedUsable": true}
+      }
+    },
+    {
+      "id": "missing-children-accepted",
+      "requirement": "ADR0006: every child is complete Wire access; construction refuses a missing child value.",
+      "evidence": "Mount/mount accepts a nil (Go) or undefined (TypeScript) child and later refuses sends to that key as missing (ErrNoRoute / no_route).",
+      "cases": ["missing-child-value"],
+      "observed": {
+        "go": {"trace": [["refused"]], "partsExact": true, "unchanged": true, "sendOnly": true, "borrowedUsable": true},
+        "ts": {"trace": [["refused"]], "partsExact": true, "unchanged": true, "sendOnly": true, "borrowedUsable": true}
+      }
+    }
+  ],
+  "limitations": [
+    {
+      "id": "endpoint-typed-children",
+      "requirement": "ADR0006: a child is complete send access; composition requires no receive attachment or closure authority from it.",
+      "evidence": "Mount/mount types its children as Endpoint. The production driver adapts send-only children (instrumented access, guards, selected views) with a receive attachment that refuses and a Close that owns nothing. Mount then works for sending; its receiving mode would refuse such a child."
+    },
+    {
+      "id": "owner-retained-parts",
+      "requirement": "ADR0006: the construction owner retains Parts; send access reveals none.",
+      "evidence": "Mount/mount exposes no parts. The production driver retains the entries it supplied, which ADR0006 permits. Clearing the supplied map after construction left routing unchanged, so Mount copies its input."
+    }
+  ]
+}

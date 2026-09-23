@@ -52,6 +52,7 @@ preservation and explains how native presentations can carry them.
 | Structured frame vocabulary and preservation of represented data | Complete envelope validation, id minting/correlation, cancellation and configured bounds |
 | Stable local capability identity and received-context preservation | Creation, validation and recognition of invocation context, tracing and observation |
 | Selection/mount/forwarding observations and borrowed endpoint lifetime | Declaration identity checks, preparation, live-value conversion, scopes and release barriers |
+| Declared-composite realization, segment-to-key mapping and reconstruction laws ([0006](../decisions/0006-declared-composites-realize-deixis-nodes.md)) | Any production construction facility with origins, its retained parts and their runtime integration |
 | Native binding types and independent conformance expectations | Concrete runtimes, generators and any optional authority profile |
 
 The current profile baseline is Nightseam **v0.6.0**, at immutable revision

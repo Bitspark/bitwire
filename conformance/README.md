@@ -12,13 +12,14 @@ executes independent lifecycle cases in Go and TypeScript, and separately runs
 upstream endpoint-integration, race, serial and budget tests. Its coverage table
 identifies the remaining generated/live/authority and consumer acceptance work.
 
-## Declared composition interpretation
+## Declared composites
 
-The current runner also exercises [declared admission composition](declared/README.md).
-Its Go/TypeScript interpreters retain own behavior, raw children and original
-policy state around released runtime endpoints. Independent cases cover
-reconstruction, inherited checks and explicit counterexamples. They are
-test-only interpreters, not a production construction API.
+The current runner also exercises [declared composites](declared/README.md):
+an origin at every node beside complete named children, with parts retained by
+their owner. The same 39 independent cases run through a test-only reference
+interpreter and through released Nightseam's child-only `Mount`. The reference
+meets every case. Production meets the 20 child-only cases; the other 19 are
+exact recorded gaps. Reference evidence is not evidence of a production API.
 
 ## Current 0.2 composition reference
 
