@@ -41,7 +41,11 @@ uses the receiving invocation's public return-origin lifecycle facility; it
 does not claim generic cancellation through Q's new-admission entry, prove
 authority of lifecycle participants or cover every concurrent race.
 
+The separate [production acceptance gate](../production/README.md) exercises
+Nightseam's actual Go and TypeScript construction APIs at an unreleased public
+source revision. It leaves the released interpreter baseline above unchanged.
+
 All eight native presentations share the contract; only Go and TypeScript have
-this executable interpretation evidence. Production construction APIs, verified
-authority, other language runtimes, fault injection, generated live-value
-adapters and BitTree's full conversion cycles remain separate acceptance work.
+this executable evidence. Released production packages, verified authority,
+other language runtimes, fault injection, generated live-value adapters and
+BitTree's full conversion cycles remain separate acceptance work.

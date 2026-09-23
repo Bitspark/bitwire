@@ -48,6 +48,7 @@ jobs:
           node-version: 24
       - run: node scripts/conformance.mjs
       - run: node scripts/conformance-current.mjs
+      - run: node scripts/conformance-production.mjs
 
   packages:
     runs-on: ubuntu-latest
