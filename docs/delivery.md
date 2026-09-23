@@ -15,11 +15,11 @@ named children. The work has separate lanes:
    own; it is recorded under Unreleased for the next contract release.
 2. **Production construction, Nightseam.** An origin-bearing constructor over
    complete send-only children that refuses conflicting, invalid and missing
-   children at construction. Nightseam's in-flight declared-composition work
-   implements the superseded decision 0005 shape. Once a release provides the
-   facility, the production driver uses it and the corresponding gaps leave the
-   ledger. Until then, released v0.6.0 conforms only as the child-only
-   specialization.
+   children at construction. Nightseam PR #713 provides it in unreleased
+   source; Bitwire's [production gate](../conformance/production/README.md)
+   runs all 39 cases through it with no gaps accepted. Once a release ships it,
+   the released baseline moves to that release and the gap ledger empties.
+   Until then, released v0.6.0 conforms only as the child-only specialization.
 3. **Consumers, their own repositories.** BitTree and other consumers own their
    domain mappings; this contract does not certify them.
 

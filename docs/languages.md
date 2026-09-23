@@ -77,16 +77,17 @@ contract release.
 
 | Language | Contract | Reference evidence | Released runtime evidence | Production construction with origins |
 | --- | --- | --- | --- | --- |
-| Go | Documented | 39 cases, three carriers | Nightseam v0.6.0 `Mount`: 20 child-only cases conform; 19 recorded gaps | Not available; Nightseam owns it |
-| TypeScript | Documented | 39 cases, three carriers | Nightseam v0.6.0 `mount`: 20 child-only cases conform; 19 recorded gaps | Not available; Nightseam owns it |
+| Go | Documented | 39 cases, three carriers | Nightseam v0.6.0 `Mount`: 20 child-only cases conform; 19 recorded gaps | Unreleased Nightseam source (PR #713): all 39 cases, no gaps; not yet released |
+| TypeScript | Documented | 39 cases, three carriers | Nightseam v0.6.0 `mount`: 20 child-only cases conform; 19 recorded gaps | Unreleased Nightseam source (PR #713): all 39 cases, no gaps; not yet released |
 | Python, Rust, Swift, C++, Java, Haskell | Documented | None | Not exercised | Not assessed |
 
 The [evidence](../conformance/declared/README.md) lists the cases and the
 [gap ledger](../conformance/declared/production-gaps.json) holds the exact
 production observations. Reference interpreters are test-only and are not
-counted as runtime adoption. A separate [production gate](../conformance/production/README.md)
-checks Nightseam's merged but unreleased Go/TypeScript construction API against
-the superseded decision 0005 cases. That API has not adopted decision 0006.
+counted as runtime adoption. The separate [production gate](../conformance/production/README.md)
+runs the same cases through Nightseam's unreleased Go/TypeScript construction
+API from PR #713 at a pinned source revision, with no gaps accepted. Adoption
+by a released runtime package is still pending.
 
 ## Native representations
 

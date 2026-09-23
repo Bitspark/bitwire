@@ -90,26 +90,13 @@ after the last local hop.
 Verified authority, generated live-value adapters and BitTree's conversion
 cycles are not exercised here.
 
-## Superseded decision 0005 evidence
+## Unreleased production API
 
-Decision 0005's 27 cases are preserved byte for byte in
-[decision-0005-cases.json](../production/decision-0005-cases.json). The separate
-[production gate](../production/README.md) still replays them against
-Nightseam's merged but unreleased declared-composition API at a pinned source
-revision, which implements that superseded shape. That gate is evidence about
-decision 0005, not decision 0006.
+Nightseam [PR #713](https://github.com/Bitspark/nightseam/pull/713) adopts
+decision 0006 in its declared-composition API. The separate
+[production gate](../production/README.md) runs these same 39 cases through that
+API at a pinned unreleased source revision and accepts no gaps. The gap ledger
+above still describes released v0.6.0 and empties once a release ships the API.
 
-Read against decision 0006, the same unreleased
-[API](https://github.com/Bitspark/nightseam/blob/e905e4f6b6881d6d84fa559f36747398b4bf6d2f/duplex/go/declared.go)
-differs in these ways. They come from reading the source, not from executed
-0006 cases:
-
-- It already refuses invalid, conflicting and missing children at construction,
-  as 0006 requires.
-- It accepts only `Declared` descriptions as children. An endpoint or other
-  opaque access cannot be a complete child, and a mount of arbitrary access
-  cannot be expressed.
-- Each node's value carries an admission policy, where 0006 composes a guard
-  around access.
-- Its bound entry refuses response and cancel frames, whereas a 0006 composite
-  delegates any message unchanged.
+The superseded decision 0005 cases and their gate against Nightseam PR #698
+remain in history at [`fdc2ae9`](https://github.com/Bitspark/bitwire/tree/fdc2ae99bbd4dcf1f887c5e32bbda2e315c890a1/conformance/production).

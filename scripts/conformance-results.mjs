@@ -23,16 +23,6 @@ export function declaredInputs(fixture) {
   };
 }
 
-// Decision 0005's superseded policy fixtures keep their original input shape.
-export function decision0005Inputs(fixture) {
-  validateCases(fixture, 1);
-  assert.ok(Array.isArray(fixture.nodes) && fixture.nodes.length > 0);
-  return {
-    nodes: fixture.nodes,
-    cases: fixture.cases.map(({ id, kind, fault, limits, steps, relay, mount }) => ({ id, kind, fault, limits, steps, relay, mount })),
-  };
-}
-
 function observationRows(fixture, actual, label) {
   assert.ok(Array.isArray(actual), `${label}: expected an observations array`);
   assert.equal(actual.length, fixture.cases.length, `${label}: missing or extra observations`);
