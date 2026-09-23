@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { compareCases, compareProduction, decision0005Inputs, declaredInputs, lifecycleInputs, nightseamCompositionExpected } from './conformance-results.mjs';
+import { compareCases, compareProduction, declaredInputs, lifecycleInputs, nightseamCompositionExpected } from './conformance-results.mjs';
 
 const fixture = JSON.parse(readFileSync(new URL('../conformance/current/lifecycle.json', import.meta.url)));
 const observations = () => fixture.cases.map(({ id, expected }) => ({ id, observations: structuredClone(expected) }));
@@ -73,15 +73,6 @@ test('declared composition inputs exclude the oracle and malformed results fail'
   assert.throws(() => declaredInputs(invalid));
   const twice = structuredClone(declared); twice.declarations.push(twice.declarations[0]);
   assert.throws(() => declaredInputs(twice));
-});
-
-test('superseded decision 0005 inputs keep their shape and exclude the oracle', () => {
-  const superseded = JSON.parse(readFileSync(new URL('../conformance/production/decision-0005-cases.json', import.meta.url)));
-  const inputs = decision0005Inputs(superseded);
-  assert.deepEqual(inputs.nodes, superseded.nodes);
-  for (const item of inputs.cases) assert.deepEqual(Object.keys(item), ['id', 'kind', 'fault', 'limits', 'steps', 'relay', 'mount']);
-  assert.throws(() => decision0005Inputs(declared));
-  assert.throws(() => declaredInputs(superseded));
 });
 
 test('production differs from the oracle only by exactly recorded gaps', () => {

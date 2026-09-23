@@ -113,10 +113,11 @@ path : Segment* → Key*             path(s₁ … sₙ) = key(s₁) … key(s�
 `key` is a bijection between Unicode scalar strings and valid UTF-8 byte strings.
 Its image is the admitted key domain. `[]` maps to the empty path ε, `[""]` to a
 path of one empty key, and `path(p ++ q) = path(p) ++ path(q)`. There is no
-normalization, case folding or separator parsing: `"é"` and `"é"` are
-different keys, and `"a/b"` is one key. A Deixis node with a key outside the
-image, such as invalid UTF-8, has no Wire realization. Construction refuses it;
-it is never replaced or repaired. A native string type must hold scalar values
+normalization, case folding or separator parsing: `"\u00e9"` (precomposed) and
+`"e\u0301"` (with a combining accent) are different keys, and
+`"a/b"` is one key. A Deixis node with a key outside the image, such as invalid
+UTF-8, has no Wire realization. Construction refuses it; it is never replaced or
+repaired. A native string type must hold scalar values
 exactly: Go strings must be valid UTF-8, and UTF-16 presentations must not
 contain unpaired surrogates. A canonical ordering of siblings, where one is
 needed, is by key bytes, which differs from UTF-16 code-unit order for
@@ -270,10 +271,8 @@ the child-only specialization meets every applicable expectation, and the
 - `Mount` accepts conflicting, invalid or missing children at construction;
 - `Mount` requires Endpoint children for send-only composition.
 
-Nightseam owns any production construction API. Its merged but unreleased
-origin-and-complete-child API from [#705](https://github.com/Bitspark/nightseam/issues/705)
-is assessed by the [source production gate](../../conformance/production/README.md):
-all 39 independent cases in Go and TypeScript over local pairs and both
-WebSocket directions. Decision 0005's earlier implementation and cases remain
-replayable as historical evidence. Published-package adoption is still distinct;
-consumers such as BitTree own their domain mappings.
+Nightseam owns any production construction API. Its unreleased
+declared-composition API from Nightseam PR #713 adopts this decision. A separate
+production gate runs the same 39 cases through it at a pinned source revision and
+accepts no gaps. The released baseline and its gap ledger move once a release
+ships that API. Consumers such as BitTree own their domain mappings.

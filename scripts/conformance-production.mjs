@@ -5,23 +5,21 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { compareCases, declaredInputs, decision0005Inputs } from './conformance-results.mjs';
+import { compareCases, declaredInputs } from './conformance-results.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = path => JSON.parse(readFileSync(join(root, path), 'utf8'));
-const args = process.argv.slice(2);
-if (args.some(arg => !['--language=go', '--language=ts', '--keep-scratch', '--decision=0005'].includes(arg))) {
-  throw new Error('Usage: node scripts/conformance-production.mjs [--language=go|ts] [--decision=0005] [--keep-scratch]');
-}
-const historical = args.includes('--decision=0005');
-const decision = historical ? '0005' : '0006';
-const pin = read(`conformance/production/${historical ? 'nightseam-decision-0005' : 'nightseam'}.json`);
+const pin = read('conformance/production/nightseam.json');
 assert.equal(pin.repository, 'https://github.com/Bitspark/nightseam.git');
 assert.match(pin.revision, /^[a-f0-9]{40}$/);
 assert.equal(pin.status, 'unreleased-source');
+const args = process.argv.slice(2);
+if (args.some(arg => !['--language=go', '--language=ts', '--keep-scratch'].includes(arg))) {
+  throw new Error('Usage: node scripts/conformance-production.mjs [--language=go|ts] [--keep-scratch]');
+}
 const choice = args.find(arg => arg.startsWith('--language='))?.split('=')[1];
-// Each decision retains its own immutable fixture and matching runtime revision.
-const bytes = readFileSync(join(root, historical ? 'conformance/production/decision-0005-cases.json' : 'conformance/declared/cases.json'));
+// The same independent decision 0006 cases as the released baseline; no gap is accepted here.
+const bytes = readFileSync(join(root, 'conformance/declared/cases.json'));
 assert.equal(createHash('sha256').update(bytes).digest('hex'), pin.fixtureSHA256, 'independent fixture changed');
 const fixture = JSON.parse(bytes);
 const scratch = mkdtempSync(join(tmpdir(), 'bitwire-production-'));
@@ -54,7 +52,7 @@ function pnpm(arguments_) {
   throw new Error('Cannot find pnpm beside its Windows shim.');
 }
 
-console.log(`Decision ${decision} production API baseline: unreleased Nightseam ${pin.revision}; scratch ${scratch}`);
+console.log(`Production API baseline: unreleased Nightseam ${pin.revision}; scratch ${scratch}`);
 try {
   mkdirSync(source);
   run('git', ['init', '--quiet']);
@@ -70,7 +68,7 @@ try {
   const upstream = JSON.parse(readFileSync(join(source, 'conformance/declared/upstream.json'), 'utf8'));
   assert.equal(upstream.sha256, pin.fixtureSHA256);
   const inputPath = join(scratch, 'declared-inputs.json');
-  writeFileSync(inputPath, JSON.stringify(historical ? decision0005Inputs(fixture) : declaredInputs(fixture)));
+  writeFileSync(inputPath, JSON.stringify(declaredInputs(fixture)));
 
   for (const language of choice ? [choice] : ['go', 'ts']) {
     let program, driverArgs;
@@ -81,20 +79,20 @@ try {
       run('go', ['build', ...(race ? ['-race'] : []), '-o', program, './conformance/declared/go']);
       driverArgs = [inputPath];
       run('go', ['test', ...(race ? ['-race'] : []), '-count=1', '-timeout=180s', './duplex/go', '-run', '^TestDeclared']);
-      if (!historical) run('go', ['test', ...(race ? ['-race'] : []), '-count=1', '-timeout=180s', './runtime/go', '-run', '^TestDeclaredAccess']);
-      console.log(`PASS upstream production construction${historical ? '/attachment' : '/caller-cancellation'} tests${race ? ' with race detector' : ' (CGO disabled; no local race evidence)'}`);
+      run('go', ['test', ...(race ? ['-race'] : []), '-count=1', '-timeout=180s', './runtime/go', '-run', '^TestDeclaredAccess']);
+      console.log(`PASS upstream production construction/caller-cancellation tests${race ? ' with race detector' : ' (CGO disabled; no local race evidence)'}`);
     } else {
       pnpm(['install', '--frozen-lockfile']);
       const installed = JSON.parse(readFileSync(join(source, 'conformance/ts/node_modules/@bitspark/bitwire/package.json'), 'utf8'));
       assert.equal(installed.version, pin.bitwireVersion.slice(1));
       run(process.execPath, [join(source, 'node_modules/typescript/bin/tsc'), '-p', 'conformance/ts/tsconfig.check.json']);
-      run(process.execPath, ['--experimental-strip-types', '--test', 'duplex/ts/src/declared.test.ts', ...(!historical ? ['runtime/ts/src/wire-declared.test.ts'] : [])]);
+      run(process.execPath, ['--experimental-strip-types', '--test', 'duplex/ts/src/declared.test.ts', 'runtime/ts/src/wire-declared.test.ts']);
       program = process.execPath;
       driverArgs = ['--experimental-strip-types', 'conformance/ts/src/declared.ts', inputPath];
-      console.log(`PASS upstream TypeScript production construction${historical ? '/attachment' : '/caller-cancellation'} tests`);
+      console.log('PASS upstream TypeScript production construction/caller-cancellation tests');
     }
     for (const [carrier, reverse] of [['local', '0'], ['peer', '0'], ['peer', '1']]) {
-      const label = `${language}/production/${decision}/${carrier}/${reverse}`;
+      const label = `${language}/production/${carrier}/${reverse}`;
       const actual = JSON.parse(run(program, driverArgs, {
         NIGHTSEAM_BITWIRE_CARRIER: carrier, NIGHTSEAM_BITWIRE_REVERSE: reverse,
       }));

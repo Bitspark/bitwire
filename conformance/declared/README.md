@@ -16,16 +16,12 @@ in both directions:
 | --- | --- | --- |
 | **Reference**, test-only | The [Go](../current/go/declared/main.go) and [TypeScript](../current/ts/declared.ts) interpreters of `compose(origin, children)` with retained parts, over released Nightseam selection, forwarding, endpoints and invocation facilities. | Every case meets its expectation. This is executable specification, not evidence about a runtime. |
 | **Production**, Nightseam v0.6.0 | Released `Mount`/`mount` as the child-only specialization, with released `At`/`at`, `ForwardWire`/`forwardWire` and carriers. | The 20 cases expressible with a refusing origin meet their expectations. The other 19 must reproduce the exact observations in the [gap ledger](production-gaps.json). |
-| **Production**, unreleased Nightseam source | The [separate production gate](../production/README.md) fetches a pinned public commit and uses `ComposeDeclared` / `Declared.compose`, retained parts and bound access. | All 39 cases meet their expectations in both languages and all three carriers, without gap allowances. |
 
 A production gap passes only while its observation stays exactly as recorded.
 A changed observation fails, and so does a gap that starts conforming, which
 must then be removed from the ledger. The oracle is never relaxed to fit a
 runtime. The two drivers share their instrumented children, carriers and step
 interpreter. They differ only in the realization that constructs composites.
-The ledger remains evidence about the immutable v0.6.0 release. Closing these
-gaps in the separately pinned source implementation does not rewrite that
-historical release's behavior or claim a published-package adoption.
 
 ## Coverage
 
@@ -94,26 +90,13 @@ after the last local hop.
 Verified authority, generated live-value adapters and BitTree's conversion
 cycles are not exercised here.
 
-## Superseded decision 0005 evidence
+## Unreleased production API
 
-Decision 0005's 27 cases are preserved byte for byte in
-[decision-0005-cases.json](../production/decision-0005-cases.json). The separate
-[production runner](../production/README.md) replays them with
-`--decision=0005` against its original source pin. The default runner now
-assesses decision 0006 against the newer implementation from Nightseam #705.
-The historical mode is evidence about decision 0005, not decision 0006.
+Nightseam [PR #713](https://github.com/Bitspark/nightseam/pull/713) adopts
+decision 0006 in its declared-composition API. The separate
+[production gate](../production/README.md) runs these same 39 cases through that
+API at a pinned unreleased source revision and accepts no gaps. The gap ledger
+above still describes released v0.6.0 and empties once a release ships the API.
 
-Read against decision 0006, that historical
-[API](https://github.com/Bitspark/nightseam/blob/e905e4f6b6881d6d84fa559f36747398b4bf6d2f/duplex/go/declared.go)
-differs in these ways. They come from reading the source, not from executed
-0006 cases:
-
-- It already refuses invalid, conflicting and missing children at construction,
-  as 0006 requires.
-- It accepts only `Declared` descriptions as children. An endpoint or other
-  opaque access cannot be a complete child, and a mount of arbitrary access
-  cannot be expressed.
-- Each node's value carries an admission policy, where 0006 composes a guard
-  around access.
-- Its bound entry refuses response and cancel frames, whereas a 0006 composite
-  delegates any message unchanged.
+The superseded decision 0005 cases and their gate against Nightseam PR #698
+remain in history at [`fdc2ae9`](https://github.com/Bitspark/bitwire/tree/fdc2ae99bbd4dcf1f887c5e32bbda2e315c890a1/conformance/production).

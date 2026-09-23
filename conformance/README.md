@@ -25,7 +25,7 @@ exact recorded gaps. Reference evidence is not evidence of a production API.
 Nightseam's new Go/TypeScript construction APIs at an unreleased public source
 pin: 234 executions, with no gap allowances. The
 [production evidence](production/README.md) distinguishes these results from
-published-runtime adoption and preserves the earlier decision 0005 gate.
+published-runtime adoption and links the earlier decision 0005 gate in history.
 
 ## Current 0.2 composition reference
 
