@@ -5,7 +5,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { compareCases, decision0005Inputs } from './conformance-results.mjs';
+import { compareCases, declaredInputs } from './conformance-results.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = path => JSON.parse(readFileSync(join(root, path), 'utf8'));
@@ -18,8 +18,8 @@ if (args.some(arg => !['--language=go', '--language=ts', '--keep-scratch'].inclu
   throw new Error('Usage: node scripts/conformance-production.mjs [--language=go|ts] [--keep-scratch]');
 }
 const choice = args.find(arg => arg.startsWith('--language='))?.split('=')[1];
-// Superseded decision 0005 cases, preserved byte for byte for this unreleased API.
-const bytes = readFileSync(join(root, 'conformance/production/decision-0005-cases.json'));
+// The same independent decision 0006 cases as the released baseline; no gap is accepted here.
+const bytes = readFileSync(join(root, 'conformance/declared/cases.json'));
 assert.equal(createHash('sha256').update(bytes).digest('hex'), pin.fixtureSHA256, 'independent fixture changed');
 const fixture = JSON.parse(bytes);
 const scratch = mkdtempSync(join(tmpdir(), 'bitwire-production-'));
@@ -68,7 +68,7 @@ try {
   const upstream = JSON.parse(readFileSync(join(source, 'conformance/declared/upstream.json'), 'utf8'));
   assert.equal(upstream.sha256, pin.fixtureSHA256);
   const inputPath = join(scratch, 'declared-inputs.json');
-  writeFileSync(inputPath, JSON.stringify(decision0005Inputs(fixture)));
+  writeFileSync(inputPath, JSON.stringify(declaredInputs(fixture)));
 
   for (const language of choice ? [choice] : ['go', 'ts']) {
     let program, driverArgs;
