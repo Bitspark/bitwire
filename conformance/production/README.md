@@ -1,15 +1,21 @@
-# Production declared-composition acceptance
+# Production acceptance for superseded decision 0005
 
-Run `node scripts/conformance-production.mjs` to replay Bitwire's
-[27 independent cases](../declared/cases.json) through Nightseam's production
-Go and TypeScript constructors, complete parts and guarded binding. This is
-162 case executions: both languages over local pairs and WebSockets in both
-directions. `--language=go` or `--language=ts` selects one language.
+[Decision 0006](../../docs/decisions/0006-declared-composites-realize-deixis-nodes.md)
+supersedes decision 0005's policy-bearing node value. This gate remains as
+evidence about the superseded shape, which Nightseam's merged but unreleased API
+implements. It is not evidence for decision 0006; the
+[declared-composite evidence](../declared/README.md) states how that API differs.
+
+Run `node scripts/conformance-production.mjs` to replay decision 0005's
+[27 independent cases](decision-0005-cases.json), kept byte for byte, through
+Nightseam's production Go and TypeScript constructors, complete parts and
+guarded binding. This is 162 case executions: both languages over local pairs
+and WebSockets in both directions. `--language=go` or `--language=ts` selects one language.
 
 The [pin](nightseam.json) identifies an **unreleased public source revision**.
 It fixes the implementation commit from [Nightseam PR #698](https://github.com/Bitspark/nightseam/pull/698).
-It is separate from the immutable [v0.6.0 baseline](../current/README.md), whose
-declared-composition adapter remains a test-only interpreter. Passing this
+It is separate from the immutable [v0.6.0 baseline](../current/README.md), which
+exercises decision 0006 through a test-only interpreter and released `Mount`. Passing this
 gate does not claim the new API is in a published runtime package.
 
 The runner fetches that exact public commit into a temporary checkout, verifies
@@ -31,7 +37,7 @@ Coverage includes retained parent origins, inherited policies, complete cuts,
 shared state and aliases, exact paths and refusals, captured views after route
 replacement, borrowed ownership, unchanged local associations and a pending
 request's later reply and cancellation. Deliberately incorrect constructions
-remain counterexamples. See the [interpretation](../../docs/decisions/0005-declared-composition-and-subtree-policy.md)
+remain counterexamples. See the superseded [interpretation](../../docs/decisions/0005-declared-composition-and-subtree-policy.md)
 for the admitted policies and observation relation.
 
 These carrier runs are Go/Go and TypeScript/TypeScript, with connected, ordered,

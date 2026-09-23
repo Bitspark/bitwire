@@ -155,28 +155,40 @@ existing endpoints and preserves their order, capabilities and context; it does
 not inspect or convert references hidden in payloads. Detaching a forwarder
 leaves its borrowed endpoints usable.
 
-## Declared composition with policy
+## Declared composites
 
-A completely declared composite may retain its own origin behavior, an explicit
-subtree admission policy and its complete child map. This opt-in interpretation
-is specified in [decision 0005](../decisions/0005-declared-composition-and-subtree-policy.md).
-The own behavior applies at the empty relative path; the policy applies to this
-node and its descendants. An identity policy and refusing origin recover a pure
-child-only mount. Ordinary path syntax still confers no implicit policy.
+A declared composite realizes a Deixis node `Node[T] = T × FinMap[Bytes, Node[T]]`
+with Wire access, as specified in [decision 0006](../decisions/0006-declared-composites-realize-deixis-nodes.md).
+Its own value is its **origin**: the behavior for a message sent at `[]`, which
+never sees a path. A refusing origin is a value. Each named child is complete
+Wire access, retained and delegated unchanged:
 
-Selected access retains ancestor policy context. Reconstruction uses retained
-raw construction parts, preserving live capability/state identity and aliases;
-selected child views cannot be substituted for those parts. Each policy
-occurrence runs once, root to leaf, before local dispatch/child lookup. Initial
-request/event checks can permit or refuse, with a single unchanged delegation;
-captured invocation controls and replies retain their profile lifetime outside
-fresh admission checks. Rebuilding grants no new ownership or authority.
+```text
+send(compose(o, m), [],    x) = o(x)
+send(compose(o, m), k : p, x) = send(m[k], p, x)     when k ∈ dom m, else refused
 
-These are conditional obligations, not new methods or a claim that an arbitrary
-send-only Wire can enumerate its children. The pure mount law above remains
-unchanged; a policy-bearing child selection requires the inherited context in
-decision 0005's law. The [declared evidence](../../conformance/declared/README.md)
-records executable interpretation coverage separately from runtime adoption.
+at(compose(o, m), [k])         ≃ m[k]
+compose(parts(c))              ≃ c
+parts(compose(o, m))           ≅ (o, m)
+mount(m)                       ≃ compose(refuse, m)
+```
+
+A segment maps to a Deixis key by exact UTF-8 encoding; the empty segment is the
+empty key and `[]` is the empty path. Construction refuses a missing origin or
+child, a segment outside that image and duplicate segments. It copies its
+inputs. The origin is never a fallback for a missing child. Rebuilding from the
+retained parts at any complete cut preserves origin behavior, child state and
+aliases, exact keys, empty branches, replies, return identity, context,
+captured invocations and borrowed ownership.
+
+`parts` belongs to the construction owner, not to the Wire it hands out. A
+send-only Wire gains no enumeration, unwrapping or new method, and an arbitrary
+Wire is not decomposable. Missing children and childless refusing children
+refuse alike; only retained parts distinguish them. Interception is explicit
+access composed around a node, not part of its value. These laws are
+obligations on compositions, not a claim that a runtime already offers such a
+constructor. The [declared evidence](../../conformance/declared/README.md)
+separates the test-only interpreter, released Nightseam behavior and recorded gaps.
 
 ## Local capabilities and context
 

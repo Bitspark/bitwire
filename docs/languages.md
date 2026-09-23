@@ -65,16 +65,28 @@ The immutable [0.1.0 release](https://github.com/Bitspark/bitwire/releases/tag/v
 and its API remain available. Hackage publication is deferred by operator decision;
 Git is the supported Haskell delivery route.
 
-## Declared composition
+## Declared composites
 
-The opt-in [declared composition interpretation](decisions/0005-declared-composition-and-subtree-policy.md)
-retains own behavior, subtree admission policy and raw children. All eight
-binding documents carry the same obligations; no native declarations change.
-[Executable interpretation evidence](../conformance/declared/README.md) covers
-Go and TypeScript around released runtime facilities. Production construction
-APIs are separately exercised by the [production acceptance gate](../conformance/production/README.md)
-at a pinned unreleased Nightseam source revision. The other six runtime
-realizations and released-package adoption remain pending.
+[Decision 0006](decisions/0006-declared-composites-realize-deixis-nodes.md)
+makes declared composites a realization of Deixis nodes. Each node's value is
+an origin, and named children stay complete Wire access. It supersedes the
+unreleased decision 0005. All eight binding documents carry the same
+obligations and state which native strings are in the key image; no native
+declaration changes. This is recorded under Unreleased and ships with the next
+contract release.
+
+| Language | Contract | Reference evidence | Released runtime evidence | Production construction with origins |
+| --- | --- | --- | --- | --- |
+| Go | Documented | 39 cases, three carriers | Nightseam v0.6.0 `Mount`: 20 child-only cases conform; 19 recorded gaps | Not available; Nightseam owns it |
+| TypeScript | Documented | 39 cases, three carriers | Nightseam v0.6.0 `mount`: 20 child-only cases conform; 19 recorded gaps | Not available; Nightseam owns it |
+| Python, Rust, Swift, C++, Java, Haskell | Documented | None | Not exercised | Not assessed |
+
+The [evidence](../conformance/declared/README.md) lists the cases and the
+[gap ledger](../conformance/declared/production-gaps.json) holds the exact
+production observations. Reference interpreters are test-only and are not
+counted as runtime adoption. A separate [production gate](../conformance/production/README.md)
+checks Nightseam's merged but unreleased Go/TypeScript construction API against
+the superseded decision 0005 cases. That API has not adopted decision 0006.
 
 ## Native representations
 

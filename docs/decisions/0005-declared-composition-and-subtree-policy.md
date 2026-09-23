@@ -1,5 +1,10 @@
 # 0005: Declared composition retains own behavior and subtree policy
 
+**Superseded** by [decision 0006](0006-declared-composites-realize-deixis-nodes.md)
+on 2026-09-23, before any release. A node's value is now its origin alone,
+children keep their complete Wire access, and admission policy becomes an
+explicit guard composed around access. The record below is unchanged history.
+
 **Status:** accepted, 2026-09-23, following the user's decision to support both
 exact-node behavior and explicit parent interception. This is an opt-in
 interpretation around the existing Wire interface, not a new Wire primitive.

@@ -2,10 +2,9 @@
 
 ## Unreleased
 
-- Verify Nightseam's production Go/TypeScript declared-composition APIs against the independent cases at a pinned public source revision; retain the released test-interpreter baseline separately.
-
-- Define opt-in declared composition with separate own behavior and subtree admission policy, context-preserving selection and reconstruction from original parts; align all eight native presentations without adding Wire methods.
-- Add independent Go/TypeScript reconstruction and policy fixtures with negative controls, exercised over released local and WebSocket runtime facilities; distinguish executable interpretation from production construction API adoption.
+- Define declared composites as a realization of Deixis `Node[T]` (decision 0006): an origin at every node beside complete named children, exact UTF-8 segment keys, both reconstruction directions, agreement across complete cuts and an explicit observational equivalence. This supersedes the unreleased decision 0005's policy-bearing node value; interception becomes a guard composed around access. All eight native presentations are aligned without adding Wire methods.
+- Replace the declared fixtures with 39 independent cases, run through a test-only reference interpreter and through released Nightseam v0.6.0's child-only `Mount`, locally and over WebSockets in both directions. Production may differ only by exactly recorded gaps: no origin-bearing construction, and conflicting, invalid or missing children accepted at construction.
+- Keep decision 0005's 27 cases byte for byte as superseded evidence, and verify Nightseam's unreleased production Go/TypeScript declared-composition APIs against them at a pinned public source revision; retain the released test-interpreter baseline separately.
 
 - Clarify return-capability origins and record the accepted release-qualified Nightseam 0.6.0 profile baseline in all eight binding documents, without changing native declarations.
 - Execute Bitwire's composition oracle against released production Go/TypeScript local and WebSocket endpoints; add independent lifecycle observations and separate upstream endpoint, race, serial and execution-budget evidence to required CI.

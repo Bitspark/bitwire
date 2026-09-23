@@ -24,6 +24,12 @@ Nightseam's chosen lifecycle representation uses the request's existing return
 Wire and profile-defined paths. It needs no new Bitwire method. Publication and
 these scoped observations do not imply complete cross-domain interoperability.
 
+[Decision 0006](decisions/0006-declared-composites-realize-deixis-nodes.md)
+specifies declared composites as Deixis nodes with an origin at every node.
+Released Nightseam realizes only the child-only specialization through
+`Mount`. The [declared evidence](../conformance/declared/README.md) records its
+conforming cases and the exact gaps an origin-bearing constructor must close.
+
 ## Open review findings
 
 [Decision 0004](decisions/0004-return-origins-and-profile-revisions.md) answers

@@ -1,5 +1,28 @@
 # First delivery
 
+## Declared composites, unreleased
+
+[Issue #29](https://github.com/Bitspark/bitwire/issues/29) and
+[decision 0006](decisions/0006-declared-composites-realize-deixis-nodes.md)
+realize Deixis v0.2.0's `Node[T]` with an origin at every node and complete
+named children. The work has separate lanes:
+
+1. **Contract and acceptance, this repository.** The decision, the shared
+   contract, the composition guide, all eight binding documents, 39 independent
+   cases, test-only reference interpreters and the
+   [production gap ledger](../conformance/declared/production-gaps.json).
+   Native declarations do not change, so this needs no package release of its
+   own; it is recorded under Unreleased for the next contract release.
+2. **Production construction, Nightseam.** An origin-bearing constructor over
+   complete send-only children that refuses conflicting, invalid and missing
+   children at construction. Nightseam's in-flight declared-composition work
+   implements the superseded decision 0005 shape. Once a release provides the
+   facility, the production driver uses it and the corresponding gaps leave the
+   ledger. Until then, released v0.6.0 conforms only as the child-only
+   specialization.
+3. **Consumers, their own repositories.** BitTree and other consumers own their
+   domain mappings; this contract does not certify them.
+
 ## Subsequent 0.2.0 delivery
 
 The immutable [v0.2.0 release](https://github.com/Bitspark/bitwire/releases/tag/v0.2.0)
