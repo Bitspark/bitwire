@@ -5,7 +5,8 @@ beside complete named children. Selecting a child gives exactly that child's
 access; the origin is never a fallback, and a mount is the case with a refusing
 origin. Segments map to Deixis keys by exact UTF-8 encoding. Every `String`
 segment is valid UTF-8 and therefore a key. Rebuilding uses parts retained by
-the construction owner; a send-only Wire reveals no structure. The [shared
+the construction owner; a send-only Wire cannot enumerate or unwrap them, though
+its behavior may reveal which routes respond. The [shared
 decision](https://github.com/Bitspark/bitwire/blob/main/docs/decisions/0006-declared-composites-realize-deixis-nodes.md)
 adds no native Wire methods. Its Go/TypeScript conformance evidence does not
 establish a production construction API in this language.

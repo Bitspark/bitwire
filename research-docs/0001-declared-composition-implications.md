@@ -2,7 +2,7 @@
 
 **ID:** 0001
 **Date:** 24 September 2026
-**Status:** advice-received
+**Status:** applied
 **Run-ID:** run_345bdfe3-d76d-46b5-b0f5-161b0ba6c5c3
 **Document-ID:** doc_0a1918b1-fe12-4e88-b3dc-7ac9567ad8c9
 
@@ -1061,3 +1061,78 @@ are asking about. *Implementation* rows will simply be fixed.
 5. **Open.** Looking at the whole picture, what consequences, opportunities or risks of this composition
    model would you highlight that the questions above do not cover? That includes anything you would want
    settled or tested before this ships in a runtime release or a consumer adopts it.
+
+## Applied
+
+**Advice:** [0001-declared-composition-implications.advice.md](0001-declared-composition-implications.advice.md).
+It came from run `run_345bdfe3-d76d-46b5-b0f5-161b0ba6c5c3`, and `nightfall consult verify` judged it genuine.
+
+**Checked against:** Nightseam main at `dfacbb27`, which has not moved since the document was written, and
+Bitwire main at `bcaf44c`. The document the expert read changed afterwards only in its status lines, so no
+advice rests on text the expert did not see.
+
+**Method:** three independent readers checked each premise against the source, one per area: the generator
+and identity check, the in-flight lifecycle, and refusal, forwarding and resources. Each verdict below cites
+their evidence.
+
+**Verdicts:**
+- **HOLDS:** the premise is intact.
+- **ADAPT:** directionally right, but a detail differs.
+- **STALE:** the premise was not true.
+
+**Outcomes:**
+- **Integrated:** changed in this pull request.
+- **Decision:** needs the maintainer's call.
+- **Nightseam:** belongs to the runtime.
+- **Consumer:** belongs to BitTree or Bitsystem.
+- **Later:** deferred by the advice itself.
+
+| # | Recommendation | Verdict and evidence | Outcome |
+| --- | --- | --- | --- |
+| 1 | Keep the immutable composite, and keep guards as ordinary access wrappers. | HOLDS. This is the current design. | No change. |
+| 2 | The generated description is a prefix restriction, not an exact operation set. Make generated children origin-only leaves unless suffix forwarding is intended. | HOLDS. Children are `At(access,[op])`, and nothing in generated code, live references, tunnels, lifecycle paths or documentation relies on paths below an operation. `ComposeDeclared(At(access,[op]), nil)` is accepted, and a leaf would not break identity, events, callbacks or cancels. Two side effects: a suffix error becomes a local `Unpublished` refusal instead of a remote `method_not_found`, and the golden files need regenerating. | Integrated: the prefix/exact distinction and the leaf pattern in decision 0006. Nightseam: change the generator. |
+| 3 | Laws for prefix restrictions over the same access: `G_D(G_E(w)) ≈ G_{D∩E}(w)`, and idempotence. | HOLDS. They follow from the routing rule. | Integrated in decision 0006. Later: conformance cases. |
+| 4 | Keep three things apart: the description (an algebra), bound access (interactive behavior), and the interpretation, which is not injective. | HOLDS. The decision already separates structure from behavior. | No change. |
+| 5 | An interface framing needs qualifying: a declaration states intent, not implementation or coherence after rebinding. | HOLDS. | Recorded; see 27. |
+| 6 | Keep live capabilities in the local assembly. Optionally, a portable manifest of names bound through an explicit authority environment. | HOLDS as a direction. Nothing implements it. | Later. |
+| 7 | Acceptance, route capture and execution are different commitments. State a guarantee about stable traversals, not a global snapshot. | HOLDS. A dispatcher matches and captures when it *delivers*, and a carrier only queues. Detaching and re-registering between acceptance and delivery retargets the request. No document states where routing becomes fixed, although decision 0003 requires it. Every rebind test detaches after delivery. | Integrated: decision 0006's preservation table and clarifications. Nightseam: document where routing becomes fixed, and test a rebind between acceptance and delivery. |
+| 8 | An opaque child can hold mutable routing state, so retaining it does not retain its destination. | HOLDS. | Integrated in decision 0006. |
+| 9 | Keep composites stateless and give the runtime invocation lifetime. Provide graceful shutdown (stop admitting, keep owed controls, drain or reach a deadline) separately from abort. | HOLDS. Only abort exists. A peer close cancels every handler and drops queued responses and cancels, and generated cleanup settles no outgoing call. | Nightseam. Decision: whether the release needs graceful shutdown. |
+| 10 | A guard that stops admission must still pass controls for admitted work, keep the return capability, and never derive authority from sender metadata. | HOLDS. Nightseam's documentation says so, but nothing enforces it, and a guard that swaps the return capability also breaks admission at a dispatcher. | Integrated as a rule in decision 0006. Nightseam: a standard guard helper. |
+| 11 | Define cancellation at each phase: before acceptance, before capture, after completion, and concurrent with a reply. | ADAPT. Partly guaranteed already: a cancel before capture is latched and pushed on readiness, a queued cancel keeps its reserved slot, and completion is final. Three gaps remain: a cancel over a third-party asynchronous Wire, a local-pair deadline that fires while the request is still queued, and a physical cancel dropped when the output queue is full. | Nightseam: close the gaps and test them. |
+| 12 | Make "synchronous refusal means nothing was published, and nothing will be later" an explicit obligation on every Wire implementation. | HOLDS as a gap. Every Wire in the tree complies, but Bitwire's contract assigns this evidence to the runtime and obliges nothing. An opaque tee or retrying guard that fails after an inner send succeeded would forge the proof and cause a wrongful unwind. | Decision: a Bitwire contract obligation across eight languages, or a Nightseam profile rule. |
+| 13 | Do not make raw and declared refusals look alike. | HOLDS. | No change. |
+| 14 | A refused message should fail only that request, not detach its forwarder. Give local routing refusals a deliberate public error code. | HOLDS. `ForwardWire` detaches in both directions on any synchronous error in Go and TypeScript. A route miss becomes `internal`, and a closed mount on the path also yields `internal`, because `duplex.ErrClosed` and `runtime.ErrClosed` are different errors. This contradicts Nightseam's own decision that busy is a refusal, not a failure. | Nightseam, before release. |
+| 15 | Promise only a partial order. Do not promise order across a change of path. | HOLDS, with one overclaim found: Bitwire's contract said a forwarder "preserves their order". A Go peer delivers requests concurrently, so a forwarder keeps only the order in which its source delivers. | Integrated: contract corrected, and the order clarification added to decision 0006. |
+| 16 | Separate three things: local assembly equivalence, transport realization, and fault behavior as a refinement of a lifecycle specification. | HOLDS as a direction, consistent with faults already being separate outcomes. | Integrated as a clarification. Later: a lifecycle specification for faults. |
+| 17 | Retained parts carry authority. Delegate bound access, not parts. An origin Wire may accept more paths than the composite exposes. | HOLDS. `Decompose` returns the raw origin, and the examples use an origin (`At(caller,["storeInfo"])`) that accepts suffixes. | Integrated in decision 0006 and the contract. |
+| 18 | Put interception in three places: admission guards on send access, ingress checks before trusted dispatch, and capability-aware gateways. | HOLDS. | Integrated in decision 0006. |
+| 19 | Where a guard sits changes which paths it observes. | HOLDS. | Integrated. |
+| 20 | This is not a membrane. Promise route-level attenuation only. | HOLDS. Live invocations and releases go over the connection, never the tree, and descriptors are not translated by relays. | Integrated in decision 0006, the contract, the binding READMEs and the poster fact sheet. |
+| 21 | Treat `Through` as an asymmetric adapter. Give generated proxies a runtime-owned session assembly. Add a test that rebinds sends to a different carrier and then makes a new callback-bearing call. | HOLDS for `Through` and the missing test. The one conformance rebind reuses the same carrier with a different prefix, never installs it into `Through`, and makes no callback call. ADAPT for session assembly: a dispatcher's selected endpoints already share one receive slot, and generated `FromWire` works over them. They cannot replace `Through`'s send side, though, and several services on one carrier need a prefix convention on the far side. | Nightseam. |
+| 22 | Narrow the confidentiality claim to "no operation recovers the assembly; behavior may reveal routes". | HOLDS. Decision 0006, all eight binding READMEs and the poster fact sheet overclaimed. | Integrated. |
+| 23 | BitTree should keep its flat service with addresses as request data, and consider a repository- or snapshot-scoped service facet. Hex-encoding keys fixes only their spelling. | HOLDS. It matches BitTree's accepted design, and its resolver is not exact routing. | Consumer (BitTree). |
+| 24 | Bitsystem should separate a space's model operations from its child namespace (for example `ops` and `children`), and choose explicitly between retained generations and live discovery. | HOLDS. It resolves the collision between an operation `plan` and a child `plan`. | Consumer (Bitsystem). |
+| 25 | A returned callable is a new capability with its own lifetime, not an attached child. | HOLDS. | Integrated through the non-membrane clarification. Consumer. |
+| 26 | Keep layer ownership as assigned. Runtime-reserved prefixes should not ban domain names at every depth. | HOLDS. The reserved prefixes apply only to generated operations. | No change. |
+| 27 | Report the identity check as compatible, incompatible or unverified. A digest cannot certify an assembly whose operations were rebound separately. | HOLDS, and the verification found worse: a remote `method_not_found` counts as success and is surfaced nowhere. A misaddressed access such as `At(target,["elsewhere"])` passes the check as "absent". | Nightseam, before release. Decision: whether to require identity by default. |
+| 28 | Say when a message becomes immutable, so that the data a guard checked is the data admitted. | ADAPT. Bitwire already covers "after admission" but not the window during `Send`. Go carriers validate before copying, so a concurrent mutation could admit bytes that were never validated. TypeScript copies first. | Decision: extend Bitwire's rule to cover the call to `Send`, which changes the Go and TypeScript doc comments. Nightseam: copy, then validate. |
+| 29 | Make no termination claim for opaque routing, and give admitting components resource bounds. | HOLDS. There is no depth guard, and a Go cycle overflows the stack fatally. The capture bound resets at every carrier hop, and a non-amplifying event loop through a local pair circulates forever. | Integrated as a no-termination clarification. Nightseam: a cyclic-forwarding policy and resource bounds. |
+| 30 | Seven conformance scenario families: generated facets, acceptance versus capture, shutdown and controls, refusal isolation, correlation races, carrier and reference boundaries, snapshot and input ownership. | HOLDS. Gaps the verification confirmed: none of the four duplicate-request refusal sites is tested, a stale ending after rebind is untested for `Through`, selected endpoints, local pairs and peers, and the late-reply and duplicate-response paths are untested. | Later. Split between Bitwire cases and Nightseam tests; not built here. |
+| 31 | Before release, settle: exact versus prefix domains, synchronous-refusal evidence, how forwarders handle errors, acceptance versus capture, cancellation and close ownership, the scope of `Through`, and the non-membrane claim. | HOLDS. | Decision. The non-membrane claim and the capture wording are settled on Bitwire's side by this change; the rest is Nightseam's. |
+
+No recommendation was stale.
+
+**Integrated in this change:**
+- decision 0006: dated clarifications, plus three corrected sentences;
+- the contract's declared-composite section and its forwarder-order claim;
+- all eight binding READMEs;
+- the poster fact sheet;
+- the changelog.
+
+No native declaration or conformance case changes.
+
+**Outside this change:**
+- **Decisions and Nightseam work:** rows 2, 7, 9, 11, 12, 14, 21, 27, 28, 29 and 31.
+- **Consumers:** rows 23 to 25.
+- **Later:** rows 3, 6, 16 and 30.

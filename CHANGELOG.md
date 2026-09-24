@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Record research 0001 on what declared composition implies, with an outside expert's advice verified against the runtime. Clarify decision 0006, the contract and all eight binding documents. Behavior may reveal which routes respond. Retained parts carry authority. Composites attenuate routes but are not a membrane. A composite of selected views restricts by first segment, while origin-only leaves give an exact operation set. Capture, not carrier acceptance, fixes a request's route. Ordering is partial: a forwarder keeps its source's delivery order. Routing through opaque children may cycle, and nothing claims it terminates.
+
 - Add a self-contained poster at `poster/index.html` for new consumers: the
   seam, one send traced through an assembly, attachment in each language, the
   rules and limits, and how conformance is checked. `poster/SEAM.md` cites every
