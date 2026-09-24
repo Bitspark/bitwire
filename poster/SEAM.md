@@ -152,7 +152,7 @@ prefix"; a receiving selection needs the shared dispatcher.
   and duplicates; it copies inputs. `docs/wire/contract.md:176-178`
 - `parts` belongs to the construction owner; a send-only Wire gains no
   enumeration or unwrapping; an arbitrary Wire is not decomposable.
-  `docs/wire/contract.md:184-186`; behavior does not disclose structure.
+  `docs/wire/contract.md:184-186`; behavior may reveal which routes respond, never the retained assembly.
   `docs/decisions/0006-declared-composites-realize-deixis-nodes.md:264-271`
 - Guards are access composed around a node, not part of it.
   `docs/decisions/0006-declared-composites-realize-deixis-nodes.md:394-417`

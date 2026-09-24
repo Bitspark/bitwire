@@ -151,9 +151,9 @@ rather than inferred from equivalent send paths.
 
 Selection and mounting create no new peer, channel, request correlation or
 message queue, including on first use. A forwarder passes messages through the
-existing endpoints and preserves their order, capabilities and context; it does
-not inspect or convert references hidden in payloads. Detaching a forwarder
-leaves its borrowed endpoints usable.
+existing endpoints and preserves the order in which its source delivers them,
+their capabilities and their context; it does not inspect or convert references
+hidden in payloads. Detaching a forwarder leaves its borrowed endpoints usable.
 
 ## Declared composites
 
@@ -184,8 +184,13 @@ captured invocations and borrowed ownership.
 `parts` belongs to the construction owner, not to the Wire it hands out. A
 send-only Wire gains no enumeration, unwrapping or new method, and an arbitrary
 Wire is not decomposable. Missing children and childless refusing children
-refuse alike; only retained parts distinguish them. Interception is explicit
-access composed around a node, not part of its value. These laws are
+refuse alike; only retained parts distinguish them. Behavior can still reveal
+which routes respond, and parts carry the capabilities they hold, so delegate
+bound access rather than parts. Interception is explicit access composed around
+a node, not part of its value. It attenuates routes; it is not a membrane over
+capabilities in payloads, callbacks or replies. A composite of `at(w, [k])` views
+restricts by first segment; origin-only leaves give an exact operation set. See
+the decision's [clarifications](../decisions/0006-declared-composites-realize-deixis-nodes.md#clarifications-24-september-2026). These laws are
 obligations on compositions, not a claim that a runtime already offers such a
 constructor. The [declared evidence](../../conformance/declared/README.md)
 separates the test-only interpreter, released Nightseam behavior and recorded gaps.

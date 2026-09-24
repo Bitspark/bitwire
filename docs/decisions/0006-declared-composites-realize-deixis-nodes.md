@@ -7,6 +7,9 @@ access. Supersedes [decision 0005](0005-declared-composition-and-subtree-policy.
 node value and its context-qualified selection law. Native Wire and Endpoint
 declarations are unchanged. [Evidence and gaps](../../conformance/declared/README.md)
 keep the test-only reference interpreter apart from released Nightseam behavior.
+**Clarified** on 24 September 2026 after
+[research 0001](../../research-docs/0001-declared-composition-implications.md);
+see [Clarifications](#clarifications-24-september-2026).
 
 ## Question
 
@@ -67,12 +70,15 @@ A composite is admitted when it comes from an explicit construction that:
 - takes an origin and a list of `(segment, access)` entries;
 - refuses a missing origin, a missing child value, a segment outside the key
   image below, and duplicate segments before a native map could discard one;
-- copies its inputs, so its origin and child map are immutable afterwards;
+- copies its input containers, so its origin and child map are immutable
+  afterwards (the capabilities themselves are borrowed);
 - retains `Parts` for its construction owner.
 
 Children must exist before their parent, so construction from values is finite
-and acyclic. A declaration that refers to itself is refused. Later state behind
-retained capabilities can change; the description cannot.
+and acyclic. A declaration that refers to itself is refused. This bounds the
+description, not routing: an opaque child can forward back into an ancestor, and
+composition detects no such cycle. Later state behind retained capabilities can
+change; the description cannot.
 
 A child is either an admitted composite, whose own parts are retained, or
 **opaque** access: an endpoint, a selected view, a forwarder, a guard or a
@@ -92,10 +98,16 @@ not make it decomposable.
 A send-only Wire has no enumeration, unwrapping or parts method, and this
 decision adds none. As [decision 0002](0002-delivery-dispatch-and-ownership.md)
 requires for attenuation, an implementation hands out a facade that cannot be
-cast back to its description. Selection reveals nothing structural either:
-sending below a missing child and below an existing child whose origin refuses
-and which has no children produce the same refusals. Only `Parts` distinguishes
-them. Behavior does not disclose structure.
+cast back to its description. Selection offers no way to recover structure
+either: sending below a missing child and below an existing child whose origin
+refuses and which has no children produce the same refusals. Only `Parts`
+distinguishes them. Behavior can still reveal which routes respond, but not the
+retained assembly.
+
+`Parts` carry authority, not just description: they hold the executable
+capabilities, including an origin Wire that may accept paths the composite never
+routes to it. Delegate bound access to consumers; delegate parts only to parties
+allowed to assemble from the capabilities they contain.
 
 Reconstruction uses the retained parts. Rebuilding from selected views,
 `compose(o, {k ↦ at(c, [k])})`, is equivalent in behavior by the child law below.
@@ -213,7 +225,7 @@ Structural identity `≅` is a separate claim about retained `Parts`.
 | Admission and refusal | Composition refuses only missing destinations and invalid paths, and admits nothing its origin or child would refuse. An invalid path is refused before any origin or child sees it. |
 | Replies | Composition never wraps or replaces a return capability, so a reply reaches the original caller unchanged. |
 | Return identity and context | Messages are delegated as the same objects. They are never reconstructed from visible fields. |
-| Invocation captures | An admitted invocation keeps its captured target through rebuild, rebind and teardown, and controls use the captured facilities rather than current lookup ([decision 0003](0003-public-invocation-lifecycle.md)). |
+| Invocation captures | Once a routing stage has captured an invocation's traversal, that traversal keeps its target through rebuild, rebind and teardown, and controls use the captured facilities rather than current lookup ([decision 0003](0003-public-invocation-lifecycle.md)). Capture happens when that stage delivers the request, not when a carrier accepts it. |
 | Lifecycle ownership | A composite owns nothing it borrows. An owning mount endpoint's Close ends only its own routing; borrowed children stay usable. |
 
 ## Interception is composition around access
@@ -243,10 +255,108 @@ policy rules still describe such a guard where an implementation offers one:
 bounded synchronous checks, one check per occurrence, an attempt budget and
 request/event admission only. Guards are optional, not a primitive.
 
+## Clarifications (24 September 2026)
+
+[Research 0001](../../research-docs/0001-declared-composition-implications.md)
+consulted an outside expert and verified the advice against the Go and
+TypeScript runtime. These clarifications narrow claims and state consequences.
+They add no primitive and change no native declaration. Recommendations that need
+a decision, or belong to a runtime, are listed in that document's verdicts.
+
+**Prefix restriction versus an exact operation set.** For a set `D` of names over
+access `w`,
+
+```text
+G_D(w) = compose(refuse, {k ↦ at(w, [k]) | k ∈ D})
+```
+
+sends `k : q` to `w` when `k ∈ D`, and refuses everything else, including `[]`.
+It restricts by first segment: paths below a declared name pass through to `w`.
+For such restrictions over the same retained access,
+`G_D(G_E(w)) ≈ G_{D∩E}(w)` and `G_D(G_D(w)) ≈ G_D(w)`. These laws say nothing
+about duplicating guards. An exact operation set uses origin-only leaves,
+`leaf(v) = compose(origin(v), {})` with children `k ↦ leaf(at(w, [k]))`: a leaf
+accepts or refuses at `[]` and refuses every nonempty suffix.
+
+**What behavior reveals.** Send access provides no operation for enumerating or
+recovering the retained assembly. Its behavior may still reveal facts about
+reachable routes and policy. A composite refuses a missing name synchronously,
+where an existing child may accept, so a sender can probe which names respond.
+A refusal is not proof that a child is absent, because an existing child or guard
+can refuse identically.
+
+**Route attenuation, not a membrane.** Composites and guards govern the sends
+that pass through them. They do not mediate:
+
+- capabilities carried inside payloads;
+- callbacks or events toward the holder;
+- replies, which travel on return capabilities.
+
+An allowed operation may return broader authority or cause callbacks outside the
+tree. Confinement or transitive revocation needs a capability-aware gateway. Such
+a gateway participates in the invocation lifecycle and translates references. A
+transparent guard cannot provide this, and a guard that replaces the return
+capability is not transparent.
+
+**Where interception sits.** A guard around a composite sees paths relative to
+itself, while a guard around a selected child sees child-relative paths. Moving
+one to the other rewrites its policy.
+
+A guard around send access governs outgoing requests and events only.
+Restrictions that must hold against an untrusted peer belong at ingress, before
+trusted dispatch. A guard that stops admitting new work must still:
+
+- pass controls owed to work already admitted;
+- preserve the return capability and its context;
+- never derive authority from metadata the sender controls.
+
+**In-flight work.** Retained descriptions fix references to access, so
+reconstruction does not retarget existing bound access. Once a routing stage
+captures a traversal, later changes to that stage's registrations do not retarget
+the traversal's controls, and replies stay with the original return capability.
+
+Composition does not:
+
+- freeze routing decisions that are still uncaptured, since an opaque child may
+  hold mutable routing state and a request accepted by a carrier but not yet
+  delivered follows the registration in force at delivery;
+- keep closed access usable;
+- guarantee completion after a transport failure.
+
+A guarantee that every call belongs to one assembly generation would need
+versioned routes or a coordinated capture protocol.
+
+**Order.** Equivalence observes a partial order made of three parts:
+
+- each sender's own order, where it applies;
+- each carrier's order within its stated scope;
+- each invocation's lifecycle order.
+
+There is no global order across independent carriers. A change of path, such as
+rebinding or forwarding through another carrier, may let a later message overtake
+an earlier one.
+
+**Cycles and resources.** Composition bounds the description, not routing, and
+makes no termination claim. Resource bounds belong to the components that admit
+work: queues, invocation and export limits, and a policy for cyclic forwarding.
+
+**The shape of equivalence.** `≈` above combines two things:
+
+- equivalence of local assemblies rebuilt from the same retained capabilities,
+  shared state and lifecycle resources;
+- preservation of the logical protocol by a carrier under stated assumptions,
+  with explicit mappings for return capabilities, context and reference scopes.
+
+Fault behavior remains separate. It is best stated as a refinement of a lifecycle
+specification that allows uncertain remote outcomes but forbids three things:
+miscorrelation, false evidence that nothing was published, and settling one
+invocation more than once.
+
 ## Not claimed
 
 No Wire method, enumeration or unwrapping is added. An arbitrary Wire is not
-decomposable. Generic undo, edit history, domain inverse operations and a codec
+decomposable. Composition claims neither confinement, transitive revocation nor
+termination of routing through opaque children. Generic undo, edit history, domain inverse operations and a codec
 for origins or access are out of scope. Attaching a new child at a fresh key
 yields a different composite; it leaves every existing path's behavior unchanged
 but promises no equality of the whole. Bitwire takes no dependency on Deixis;
