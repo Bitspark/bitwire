@@ -6,14 +6,14 @@ implementation, model, command and observable result.
 
 ## Run the Nightseam examples
 
-The [Nightseam catalogue](https://github.com/Bitspark/nightseam/blob/cd7c80ebf815fa91945cc809bc799464c189e29b/examples/README.md)
+The [Nightseam catalogue](https://github.com/Bitspark/nightseam/blob/dfacbb2783598c55d5ba78273e6ee8d11ebd9cee/examples/README.md)
 contains Go and TypeScript consumers. Install Node.js 24+, pnpm 12.4.1 and
 Go 1.26, then use a public checkout:
 
 ```sh
 git clone https://github.com/Bitspark/nightseam.git
 cd nightseam
-git checkout cd7c80ebf815fa91945cc809bc799464c189e29b
+git checkout dfacbb2783598c55d5ba78273e6ee8d11ebd9cee
 node scripts/examples.mjs list
 node scripts/examples.mjs run rebuild-with-state
 node scripts/examples.mjs check --all
@@ -25,12 +25,12 @@ below run from that repository's root, not from Bitwire.
 
 | Use case | Runnable implementation and model | Command |
 | --- | --- | --- |
-| Give a parent behavior and complete children | [service-tree](https://github.com/Bitspark/nightseam/blob/cd7c80ebf815fa91945cc809bc799464c189e29b/examples/service-tree/README.md): call the shop itself and its cart | `node scripts/examples.mjs run service-tree` |
-| Select and reuse a subtree | [select-and-remount](https://github.com/Bitspark/nightseam/blob/cd7c80ebf815fa91945cc809bc799464c189e29b/examples/select-and-remount/README.md): mount the same cart as a checkout's basket | `node scripts/examples.mjs run select-and-remount` |
-| Rebuild without losing state | [rebuild-with-state](https://github.com/Bitspark/nightseam/blob/cd7c80ebf815fa91945cc809bc799464c189e29b/examples/rebuild-with-state/README.md): add recommendations and retain the existing cart | `node scripts/examples.mjs run rebuild-with-state` |
-| Retain a child's policy | [guarded-child](https://github.com/Bitspark/nightseam/blob/cd7c80ebf815fa91945cc809bc799464c189e29b/examples/guarded-child/README.md): a two-add budget survives rebuilding its parent | `node scripts/examples.mjs run guarded-child` |
-| Cancel a pending invocation | [cancel-pending-request](https://github.com/Bitspark/nightseam/blob/cd7c80ebf815fa91945cc809bc799464c189e29b/examples/cancel-pending-request/README.md): cancel the original handler after assembler replacement | `node scripts/examples.mjs run cancel-pending-request` |
-| Call across languages and a network carrier | [probe](https://github.com/Bitspark/nightseam/blob/cd7c80ebf815fa91945cc809bc799464c189e29b/examples/probe/README.md): generated Go server and TypeScript client over WebSockets | `node scripts/examples.mjs run probe` |
+| Give a parent behavior and complete children | [service-tree](https://github.com/Bitspark/nightseam/blob/dfacbb2783598c55d5ba78273e6ee8d11ebd9cee/examples/service-tree/README.md): call the shop itself and its cart | `node scripts/examples.mjs run service-tree` |
+| Select and reuse a subtree | [select-and-remount](https://github.com/Bitspark/nightseam/blob/dfacbb2783598c55d5ba78273e6ee8d11ebd9cee/examples/select-and-remount/README.md): mount the same cart as a checkout's basket | `node scripts/examples.mjs run select-and-remount` |
+| Rebuild without losing state | [rebuild-with-state](https://github.com/Bitspark/nightseam/blob/dfacbb2783598c55d5ba78273e6ee8d11ebd9cee/examples/rebuild-with-state/README.md): add recommendations and retain the existing cart | `node scripts/examples.mjs run rebuild-with-state` |
+| Retain a child's policy | [guarded-child](https://github.com/Bitspark/nightseam/blob/dfacbb2783598c55d5ba78273e6ee8d11ebd9cee/examples/guarded-child/README.md): a two-add budget survives rebuilding its parent | `node scripts/examples.mjs run guarded-child` |
+| Cancel a pending invocation | [cancel-pending-request](https://github.com/Bitspark/nightseam/blob/dfacbb2783598c55d5ba78273e6ee8d11ebd9cee/examples/cancel-pending-request/README.md): cancel the original handler after assembler replacement | `node scripts/examples.mjs run cancel-pending-request` |
+| Call across languages and a network carrier | [probe](https://github.com/Bitspark/nightseam/blob/dfacbb2783598c55d5ba78273e6ee8d11ebd9cee/examples/probe/README.md): generated Go server and TypeScript client over WebSockets | `node scripts/examples.mjs run probe` |
 
 The first five run in Go and TypeScript independently. Add `--language=go`
 or `--language=ts` to run one. Probe runs both ends together on an ephemeral
@@ -79,7 +79,7 @@ access keeps reaching the original invocation after the assembler constructs
 replacement access. The destination runtime tracks that invocation; plain
 composition forwards control frames unchanged.
 
-The full [model and approach](https://github.com/Bitspark/nightseam/blob/cd7c80ebf815fa91945cc809bc799464c189e29b/docs/runtime/examples.md)
+The full [model and approach](https://github.com/Bitspark/nightseam/blob/dfacbb2783598c55d5ba78273e6ee8d11ebd9cee/docs/runtime/examples.md)
 documents the domain, exact native APIs, ownership, package isolation and CI.
 The shared meaning comes from the [Wire contract](../docs/wire/contract.md),
 [composition guide](../docs/composition.md) and
@@ -108,7 +108,7 @@ status and consumer adoption remain separate in the
 [integration status](../docs/integration.md).
 
 Future domain examples can cover observations, competing change sets, provider
-policies and commit behavior in BitTree. The full
-[BitTree Wire exposure](https://github.com/Bitspark/bittree/issues/28) and
-[Bitwire/Deixis integration](https://github.com/Bitspark/bitwire/issues/29) remain
-separate integration work. They are not advertised here as runnable recipes.
+policies and commit behavior in the repository that owns that domain API.
+They are not advertised here as runnable recipes. The public
+[Bitwire/Deixis integration discussion](https://github.com/Bitspark/bitwire/issues/29)
+tracks the wider integration work separately.
