@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Bitwire</title>
+<meta name="description" content="Bitwire: one interface for sending a message to a path, shared by eight languages. Composed access is the same access again.">
+<style>
+:root {
+  --paper: #f5f2eb;
+  --paper-2: #fbf9f4;
+  --ink: #1c1d21;
+  --ink-2: #54575f;
+  --rule: #cbc3b2;
+  --outer: #9a5b0b;
+  --outer-tint: #f1dfbd;
+  --rel: #2344a0;
+  --rel-tint: #dde4f6;
+  --refuse: #b3321f;
+  --refuse-tint: #f5d8d1;
+
+  --f-label: "Bahnschrift", "Avenir Next Condensed", "Roboto Condensed", "Arial Narrow", sans-serif;
+  --f-read: Charter, "Bitstream Charter", "Sitka Text", "Iowan Old Style", Georgia, serif;
+  --f-mono: "Cascadia Mono", "SF Mono", ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
+
+  --gutter: clamp(16px, 4vw, 48px);
+  --col: 1200px;
+  --b: 1.5px;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 1.0625rem/1.6 var(--f-read);
+}
+a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { text-decoration-thickness: 2px; }
+a:focus-visible, summary:focus-visible { outline: 2.5px solid var(--rel); outline-offset: 3px; }
+code, pre, kbd { font-family: var(--f-mono); font-size: .88em; }
+p code, li code, td code, dd code, figcaption code { white-space: nowrap; }
+.skip { position: absolute; left: -9999px; }
+.skip:focus { left: var(--gutter); top: 8px; background: var(--paper-2); padding: 6px 10px; border: var(--b) solid var(--ink); z-index: 9; }
+.wrap { max-width: calc(var(--col) + 2 * var(--gutter)); margin: 0 auto; padding: 0 var(--gutter); }
+.label { font-family: var(--f-label); font-stretch: 87.5%; letter-spacing: .01em; }
+.caps { font-family: var(--f-label); font-stretch: 87.5%; text-transform: uppercase; letter-spacing: .09em; font-size: .78rem; font-weight: 600; color: var(--ink-2); }
+.measure { max-width: 66ch; }
+
+/* ——— The strip: a path drawn as cells, one per opaque segment ——— */
+.strip { display: inline-flex; align-items: stretch; vertical-align: middle; font-family: var(--f-mono); font-style: normal; font-size: .9rem; line-height: 1.1; white-space: nowrap; }
+.strip .o { width: 5px; background: var(--ink); margin-right: 3px; flex: none; }
+.strip .c {
+  border: var(--b) solid var(--ink); border-left-width: 0;
+  background: var(--paper-2); padding: .38em .6em; min-width: 2.1em; text-align: center;
+}
+.strip .o + .c { border-left-width: var(--b); }
+.strip .c:not(:last-child) { border-right-style: dashed; }
+.strip .c.rel { background: var(--rel-tint); border-color: var(--rel); }
+.strip .c.outer { background: var(--outer-tint); border-color: var(--outer); }
+.strip .c.outer::before { content: "+"; color: var(--outer); font-weight: 700; margin-right: .3em; }
+.strip .c.refuse { background: var(--refuse-tint); border-color: var(--refuse); text-decoration: line-through; text-decoration-color: var(--refuse); text-decoration-thickness: 2px; }
+.strip .c.empty { min-width: 2.4em; }
+.strip.mini { font-size: .72rem; }
+.strip.mini .c { padding: .25em .5em; }
+/* A consumed segment: torn off at a boundary */
+.stub {
+  display: inline-block; vertical-align: middle; font-family: var(--f-mono); font-size: .9rem; line-height: 1.1;
+  background: var(--outer-tint); border: var(--b) solid var(--outer); border-right: 0;
+  padding: .38em 1.05em .38em .6em; margin-right: .55em;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 7px) 17%, 100% 34%, calc(100% - 7px) 51%, 100% 68%, calc(100% - 7px) 85%, 100% 100%, 0 100%);
+  transform: translateY(-.28em) rotate(-6deg);
+}
+.pathrow { display: flex; align-items: center; flex-wrap: wrap; gap: .35em 0; }
+
+/* ——— Top navigation, itself a strip ——— */
+.top { border-bottom: 1px solid var(--rule); }
+.top .wrap { display: flex; align-items: center; gap: 18px; padding-top: 12px; padding-bottom: 12px; }
+.brand { font-family: var(--f-label); font-stretch: 87.5%; font-weight: 700; font-size: 1.15rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; flex: none; }
+.brand::before { content: ""; width: 5px; height: 1.2em; background: var(--ink); }
+.navscroll { overflow-x: auto; scrollbar-width: thin; min-width: 0; -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); padding: 2px 28px 2px 2px; }
+.navscroll .strip .c { text-decoration: none; font-size: .8rem; }
+.navscroll .strip .c:hover { background: var(--rel-tint); }
+
+/* ——— Hero ——— */
+.hero .wrap { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(28px, 4vw, 64px); padding-top: clamp(28px, 5vw, 64px); padding-bottom: clamp(36px, 5vw, 64px); align-items: start; }
+.hero h1 { font-family: var(--f-label); font-stretch: 87.5%; font-weight: 700; font-size: clamp(3.4rem, 8vw, 6.4rem); line-height: .9; letter-spacing: -.01em; margin: .25em 0 .3em; display: flex; align-items: stretch; gap: .12em; }
+.hero h1::before { content: ""; width: .1em; background: var(--ink); }
+.prop { font-size: clamp(1.35rem, 2.4vw, 1.85rem); line-height: 1.32; margin: 0 0 .7em; max-width: 30ch; }
+.diff { font-size: 1.12rem; line-height: 1.55; margin: 0 0 1.2em; max-width: 52ch; }
+.diff strong { font-weight: 700; }
+.status { font-size: .92rem; color: var(--ink-2); margin: 0 0 1.4em; max-width: 60ch; }
+.cta { display: flex; flex-wrap: wrap; gap: 10px 18px; font-family: var(--f-label); font-stretch: 87.5%; font-size: 1.02rem; font-weight: 600; }
+.cta a { text-decoration: none; border-bottom: 2px solid var(--ink); padding-bottom: 1px; }
+.cta a.alt { border-bottom-color: var(--rule); }
+
+.seam { border: var(--b) solid var(--ink); background: var(--paper-2); padding: 18px 20px 20px; }
+.seam h2 { margin: 0 0 12px; }
+.seam dl { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 14px; row-gap: 10px; }
+.seam dt { font-family: var(--f-mono); font-weight: 700; font-size: .86rem; padding-top: 1px; }
+.seam dd { margin: 0; }
+.seam dd code { font-size: .86rem; white-space: normal; }
+.seam dd .g { display: block; font-size: .88rem; line-height: 1.4; color: var(--ink-2); }
+.seam .big code { font-size: 1.02rem; font-weight: 700; }
+.seam .band { grid-column: 1 / -1; border-top: 1px dashed var(--rule); padding-top: 6px; margin-top: 2px; }
+.law-strip { margin-top: 18px; padding-top: 14px; border-top: var(--b) solid var(--ink); }
+.law-strip .eq { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; font-family: var(--f-read); font-style: italic; font-size: 1.05rem; }
+.law-strip .eq .sim { font-style: normal; font-size: 1.3rem; }
+.law-strip p { margin: 10px 0 0; font-size: .92rem; line-height: 1.45; }
+.seam .note { margin: 12px 0 0; font-size: .82rem; color: var(--ink-2); }
+
+/* ——— Sections ——— */
+section.sec { border-top: 1px solid var(--rule); }
+section.sec > .wrap { padding-top: clamp(40px, 6vw, 76px); padding-bottom: clamp(40px, 6vw, 76px); }
+.head { margin-bottom: 26px; }
+.head .strip { margin-bottom: 12px; }
+h2 { font-family: var(--f-label); font-stretch: 87.5%; font-weight: 700; font-size: clamp(1.7rem, 3.4vw, 2.45rem); line-height: 1.05; margin: 0 0 .4em; }
+h3 { font-family: var(--f-label); font-stretch: 87.5%; font-weight: 700; font-size: 1.28rem; line-height: 1.15; margin: 0 0 .45em; }
+.lead { font-size: 1.14rem; margin: 0; }
+
+/* Path specimens */
+.specimens { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border: var(--b) solid var(--ink); background: var(--paper-2); }
+.specimen { padding: 20px 18px 18px; border-left: 1px solid var(--rule); }
+.specimen:first-child { border-left: 0; }
+.specimen .lit { font-family: var(--f-mono); font-size: .92rem; font-weight: 700; margin: 0 0 14px; }
+.specimen .strip { min-height: 2.3rem; font-size: 1.02rem; }
+.specimen p { margin: 12px 0 0; font-size: .95rem; line-height: 1.45; }
+.after-spec { margin-top: 18px; }
+
+/* The descent */
+.key { display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: center; margin: 0 0 22px; font-size: .92rem; }
+.key span.k { display: inline-flex; align-items: center; gap: 8px; }
+.sw { display: inline-block; width: 18px; height: 14px; border: var(--b) solid; vertical-align: middle; }
+.sw.rel { background: var(--rel-tint); border-color: var(--rel); }
+.sw.outer { background: var(--outer-tint); border-color: var(--outer); }
+.sw.refuse { background: var(--refuse-tint); border-color: var(--refuse); }
+.sw.reply { width: 22px; height: 0; border: 0; border-top: 3px solid var(--ink); }
+.descent { display: grid; grid-template-columns: 34px minmax(0, 1fr); border: var(--b) solid var(--ink); background: var(--paper-2); }
+.lane { position: relative; border-right: 1px solid var(--rule); }
+.lane::before { content: ""; position: absolute; left: 15px; top: 34px; bottom: 40px; width: 3px; background: var(--ink); }
+.lane::after { content: ""; position: absolute; left: 9px; top: 22px; border: 7.5px solid transparent; border-bottom: 12px solid var(--ink); border-top: 0; }
+.lane i { position: absolute; left: 11px; bottom: 34px; width: 11px; height: 11px; border-radius: 50%; background: var(--ink); }
+.levels { list-style: none; margin: 0; padding: 0; }
+.lvl { display: grid; grid-template-columns: minmax(150px, 200px) minmax(220px, 270px) minmax(0, 1fr); gap: 10px 22px; padding: 18px 20px 18px 18px; border-top: 1px solid var(--rule); align-items: center; }
+.lvl:first-child { border-top: 0; }
+.lvl .who { font-size: .95rem; line-height: 1.35; }
+.lvl .who code { white-space: normal; }
+.lvl .who b { display: block; font-family: var(--f-label); font-stretch: 87.5%; font-size: 1.12rem; }
+.lvl .note { font-size: .98rem; line-height: 1.5; }
+.lvl .note p { margin: 0; }
+.law { font-style: italic; margin: .45em 0 0 !important; padding-left: 10px; border-left: 3px solid var(--ink); }
+.law code { font-style: normal; }
+.lvl.reply { background: var(--paper); }
+.lvl.reply .who b::before { content: "↑ "; }
+.recv { font-family: var(--f-mono); font-size: .86rem; margin-top: 8px; display: block; }
+
+.three { margin-top: 36px; }
+.sends { border: var(--b) solid var(--ink); background: var(--paper-2); margin: 0; padding: 0; list-style: none; }
+.sends li { display: grid; grid-template-columns: minmax(170px, 230px) 40px minmax(0, 1fr); align-items: center; gap: 10px 14px; padding: 14px 18px; border-top: 1px solid var(--rule); }
+.sends li:first-child { border-top: 0; }
+.sends .arrow { font-family: var(--f-label); font-size: 1.3rem; text-align: center; color: var(--ink-2); }
+.sends .out { font-size: .98rem; line-height: 1.45; }
+.sends .out b { font-family: var(--f-label); font-stretch: 87.5%; font-size: 1.05rem; }
+.sends .out .refused { color: var(--refuse); font-family: var(--f-label); font-stretch: 87.5%; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; font-size: .9rem; }
+.lit-inline { margin-left: .6em; font-size: .9rem; color: var(--ink-2); }
+.illus { font-size: .88rem; color: var(--ink-2); margin: 12px 0 0; }
+
+/* Attach */
+.doors { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+.door { border: var(--b) solid var(--ink); background: var(--paper-2); }
+.door > header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 12px 16px; border-bottom: var(--b) solid var(--ink); }
+.door > header h3 { margin: 0; }
+.door .body { padding: 14px 16px 16px; }
+.door .body > p { margin: 12px 0 0; font-size: .95rem; line-height: 1.5; }
+pre { margin: 0; padding: 12px 14px; border: 1px solid var(--rule); overflow-x: auto; line-height: 1.5; font-size: .8rem; scrollbar-width: thin;
+  /* Scroll shadows: a dark edge appears on whichever side has more code. */
+  background:
+    linear-gradient(90deg, var(--paper) 30%, rgba(245,242,235,0)) left / 36px 100% no-repeat local,
+    linear-gradient(270deg, var(--paper) 30%, rgba(245,242,235,0)) right / 36px 100% no-repeat local,
+    linear-gradient(90deg, rgba(28,29,33,.22), rgba(28,29,33,0)) left / 12px 100% no-repeat scroll,
+    linear-gradient(270deg, rgba(28,29,33,.22), rgba(28,29,33,0)) right / 12px 100% no-repeat scroll,
+    var(--paper); }
+pre code { white-space: inherit; font-size: inherit; }
+pre + pre, pre + .out-label { margin-top: 10px; }
+pre.cmd { border-left: 5px solid var(--ink); }
+pre.out { color: var(--paper); border-color: var(--ink);
+  background:
+    linear-gradient(90deg, var(--ink) 30%, rgba(28,29,33,0)) left / 36px 100% no-repeat local,
+    linear-gradient(270deg, var(--ink) 30%, rgba(28,29,33,0)) right / 36px 100% no-repeat local,
+    linear-gradient(90deg, rgba(245,242,235,.35), rgba(245,242,235,0)) left / 12px 100% no-repeat scroll,
+    linear-gradient(270deg, rgba(245,242,235,.35), rgba(245,242,235,0)) right / 12px 100% no-repeat scroll,
+    var(--ink); }
+.out-label { display: block; margin: 12px 0 4px; }
+.cm { color: var(--ink-2); font-style: italic; }
+.more { margin-top: 28px; }
+.more dl { display: grid; grid-template-columns: minmax(7em, auto) minmax(0, 1fr); margin: 0; border: var(--b) solid var(--ink); background: var(--paper-2); }
+.more dt, .more dd { padding: 10px 14px; border-top: 1px solid var(--rule); margin: 0; }
+.more dt:first-of-type, .more dt:first-of-type + dd { border-top: 0; }
+.more dt { font-family: var(--f-label); font-stretch: 87.5%; font-weight: 700; font-size: 1.02rem; }
+.more dd { font-size: .95rem; line-height: 1.5; }
+.more dd code { white-space: normal; overflow-wrap: anywhere; }
+.more .fine { font-size: .92rem; margin: 12px 0 0; }
+
+/* Rules */
+.rules { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; border-top: var(--b) solid var(--ink); }
+.rules li { padding: 22px 24px 24px 0; border-bottom: 1px solid var(--rule); display: grid; grid-template-columns: 2.4rem minmax(0, 1fr); column-gap: 8px; }
+.rules li:nth-child(even) { padding-left: 24px; border-left: 1px solid var(--rule); }
+.rules .n { font-family: var(--f-label); font-stretch: 87.5%; font-weight: 700; font-size: 1.9rem; line-height: 1; }
+.rules p { margin: 0; line-height: 1.55; }
+
+/* Limits */
+.limits { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 36px; align-items: start; }
+.deps { border: var(--b) solid var(--ink); background: var(--paper-2); padding: 16px; }
+.deps .src { display: grid; gap: 8px; }
+.deps .box { border: 1px solid var(--ink); padding: 8px 12px; background: var(--paper); font-size: .95rem; line-height: 1.4; }
+.deps .box b { font-family: var(--f-label); font-stretch: 87.5%; font-size: 1.05rem; }
+.deps .down { text-align: center; font-family: var(--f-label); font-stretch: 87.5%; font-size: .9rem; color: var(--ink-2); padding: 8px 0; }
+.deps .down::before { content: "↓ "; font-size: 1.2rem; color: var(--ink); }
+.deps .box.core { border-width: 2.5px; background: var(--paper-2); }
+.deps .fine { margin: 10px 0 0; font-size: .9rem; color: var(--ink-2); }
+.nothere { margin: 0; padding: 0; list-style: none; }
+.nothere li { padding: 9px 0 9px 1.6em; border-bottom: 1px solid var(--rule); position: relative; line-height: 1.45; }
+.nothere li::before { content: "—"; position: absolute; left: 0; color: var(--ink-2); }
+.agree { margin-top: 22px; }
+.agree p { margin: 0 0 8px; }
+
+/* Evidence */
+.ev { display: grid; gap: 0; border: var(--b) solid var(--ink); background: var(--paper-2); }
+.ev > div { padding: 18px 20px; border-top: 1px solid var(--rule); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 10px 26px; align-items: center; }
+.ev > div:first-child { border-top: 0; }
+.ev h3 { font-size: 1.1rem; margin: 0 0 4px; }
+.ev p { margin: 0; font-size: .95rem; line-height: 1.5; }
+.tally { display: grid; grid-template-columns: repeat(39, minmax(0, 1fr)); gap: 2px; max-width: 640px; }
+.tally span { aspect-ratio: 1 / 1.35; border: 1px solid var(--ink); }
+.tally .p { background: var(--ink); }
+.tally .g { background: repeating-linear-gradient(135deg, var(--paper-2) 0 2px, var(--ink-2) 2px 3px); border-color: var(--ink-2); }
+.tally-l { font-size: .9rem; margin-top: 8px !important; }
+.open { margin-top: 18px; padding: 14px 18px; border-left: 5px solid var(--ink); background: var(--paper-2); }
+.open p { margin: 0; }
+
+/* Next */
+.next { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr) minmax(0, 1.45fr); gap: 22px; counter-reset: n; }
+.next > li { border-top: 4px solid var(--ink); padding-top: 14px; counter-increment: n; min-width: 0; }
+.next > li > h3::before { content: counter(n) "  "; font-weight: 400; color: var(--ink-2); }
+.next p { margin: 10px 0 0; font-size: .95rem; line-height: 1.5; }
+
+/* Appendix */
+details { border: var(--b) solid var(--ink); background: var(--paper-2); }
+summary { cursor: pointer; padding: 14px 18px; font-family: var(--f-label); font-stretch: 87.5%; font-weight: 700; font-size: 1.15rem; }
+details[open] summary { border-bottom: 1px solid var(--rule); }
+.apx { padding: 6px 18px 20px; }
+.apx h3 { margin-top: 20px; }
+.tscroll { overflow-x: auto; scrollbar-width: thin;
+  background:
+    linear-gradient(90deg, var(--paper-2) 30%, rgba(251,249,244,0)) left / 36px 100% no-repeat local,
+    linear-gradient(270deg, var(--paper-2) 30%, rgba(251,249,244,0)) right / 36px 100% no-repeat local,
+    linear-gradient(90deg, rgba(28,29,33,.2), rgba(28,29,33,0)) left / 12px 100% no-repeat scroll,
+    linear-gradient(270deg, rgba(28,29,33,.2), rgba(28,29,33,0)) right / 12px 100% no-repeat scroll; }
+table { border-collapse: collapse; width: 100%; font-size: .92rem; line-height: 1.45; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px 7px 0; border-bottom: 1px solid var(--rule); }
+th { font-family: var(--f-label); font-stretch: 87.5%; font-size: .98rem; }
+td code { white-space: normal; }
+.apx pre { font-size: .82rem; }
+.apx ul { padding-left: 1.2em; }
+.apx li { margin: 4px 0; }
+
+footer { border-top: var(--b) solid var(--ink); }
+footer .wrap { padding-top: 22px; padding-bottom: 36px; font-size: .88rem; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 6px 22px; }
+
+/* ——— Responsive transformations ——— */
+@media (max-width: 1099px) {
+  .hero .wrap { grid-template-columns: minmax(0, 1fr); }
+  .prop { max-width: 34ch; }
+  .lvl { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); grid-template-areas: "who note" "path note"; align-items: start; }
+  .lvl .who { grid-area: who; } .lvl .path { grid-area: path; } .lvl .note { grid-area: note; }
+  .doors { grid-template-columns: minmax(0, 1fr); }
+  .ev > div { grid-template-columns: minmax(0, 1fr); }
+  .tally { max-width: none; }
+}
+@media (max-width: 899px) {
+  .specimens { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .specimen:nth-child(3) { border-left: 0; }
+  .specimen:nth-child(n+3) { border-top: 1px solid var(--rule); }
+  .limits { grid-template-columns: minmax(0, 1fr); }
+  .next { grid-template-columns: minmax(0, 1fr); }
+  .rules { grid-template-columns: minmax(0, 1fr); }
+  .rules li, .rules li:nth-child(even) { padding: 18px 0 20px; border-left: 0; }
+}
+@media (max-width: 699px) {
+  body { font-size: 1.02rem; }
+  .top .wrap { gap: 12px; }
+  .lvl { grid-template-columns: minmax(0, 1fr); grid-template-areas: "who" "path" "note"; padding: 16px 14px 16px 12px; gap: 10px; }
+  .descent { grid-template-columns: 26px minmax(0, 1fr); }
+  .lane::before { left: 11px; }
+  .lane::after { left: 5px; }
+  .lane i { left: 7px; }
+  .sends li { grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 14px; }
+  .sends .arrow { text-align: left; }
+  .sends .arrow::after { content: " reaches"; font-size: .9rem; }
+  .specimen { padding: 16px 12px 14px; }
+  .specimen .lit { font-size: .84rem; }
+  .strip { font-size: .84rem; }
+  .stub { font-size: .84rem; }
+  pre { font-size: .74rem; padding: 10px 8px; }
+  .door .body { padding: 10px 8px 12px; }
+  .door > header { padding: 10px 12px; flex-wrap: wrap; }
+  .more dl { grid-template-columns: minmax(0, 1fr); }
+  .more dd { border-top: 0; padding-top: 0; }
+  .seam { padding: 14px 14px 16px; }
+  .seam dl { grid-template-columns: minmax(0, 1fr); row-gap: 2px; }
+  .seam dd { margin-bottom: 10px; }
+  .seam .band { margin-top: 4px; }
+  .tally { grid-template-columns: repeat(13, minmax(0, 1fr)); max-width: 300px; gap: 3px; }
+  .tally span { aspect-ratio: 1 / 1; }
+  .spell thead { display: none; }
+  .spell, .spell tbody, .spell tr, .spell th, .spell td { display: block; }
+  .spell tr { padding: 10px 0; border-bottom: 1px solid var(--rule); }
+  .spell th, .spell td { border: 0; padding: 2px 0; }
+  .spell td::before { content: attr(data-l); display: block; font-family: var(--f-label); font-stretch: 87.5%; font-size: .8rem; color: var(--ink-2); text-transform: uppercase; letter-spacing: .08em; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+@media print { .top, .skip { display: none; } details > * { display: block; } }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#seam">Bitwire</a>
+    <nav class="navscroll" aria-label="Sections">
+      <span class="strip">
+        <span class="o"></span><a class="c" href="#paths">paths</a><a class="c" href="#send">send</a><a class="c" href="#attach">attach</a><a class="c" href="#rules">rules</a><a class="c" href="#limits">limits</a><a class="c" href="#evidence">evidence</a><a class="c" href="#next">next</a>
+      </span>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="hero" id="seam" aria-labelledby="title">
+  <div class="wrap">
+    <div>
+      <p class="caps">Bitspark · shared contract · 0.2.0 · Apache-2.0</p>
+      <h1 id="title">Bitwire</h1>
+      <p class="prop">One interface for sending a message to a path. Components that speak it can be plugged into larger systems without knowing where they were plugged in.</p>
+      <p class="diff"><strong>Plugging in is exact.</strong> Selecting a path or mounting components gives back the same interface, under written laws that eight language packages share and that independent test cases check against a production runtime.</p>
+      <p class="status">Released as 0.2.0 for Go, TypeScript, Python, Rust, Swift, C++, Java and Haskell. Nightseam v0.6.0 has adopted it in Go and TypeScript. Declarations only: runtimes supply endpoints.</p>
+      <div class="cta"><a href="#attach">Attach in your language</a><a class="alt" href="https://github.com/Bitspark/bitwire/blob/main/docs/wire/contract.md">Read the contract</a></div>
+    </div>
+
+    <aside class="seam" aria-labelledby="seam-h">
+      <h2 id="seam-h" class="caps" style="font-size:.78rem;margin-bottom:12px">The whole seam</h2>
+      <dl>
+        <dt>Wire</dt>
+        <dd class="big"><code>send(path, message)</code><span class="g">All a holder can do. Returns once the message is admitted or refused.</span></dd>
+        <dd class="band caps" style="font-size:.7rem">Endpoint adds, for the owner only</dd>
+        <dt>Endpoint</dt>
+        <dd><code>receive(receiver) → detach</code><span class="g">One receiver at a time; a second is refused.</span></dd>
+        <dt></dt>
+        <dd><code>close(code?, reason?)</code><span class="g">Ends the endpoint; its receiver hears once.</span></dd>
+        <dd class="band caps" style="font-size:.7rem">What travels</dd>
+        <dt>Path</dt>
+        <dd><code>readonly string[]</code><span class="g">Opaque segments, relative to an origin.</span></dd>
+        <dt>Message</dt>
+        <dd><code>frame + return?</code><span class="g">Request, response, event or cancel. The return capability holds a Wire.</span></dd>
+      </dl>
+      <div class="law-strip">
+        <div class="eq" role="img" aria-label="at of at of w with shop, with cart, is equivalent to at of w with shop and cart">
+          <span>at(at(w,&nbsp;<span class="strip mini"><span class="o"></span><span class="c outer">shop</span></span>),&nbsp;<span class="strip mini"><span class="o"></span><span class="c outer">cart</span></span>)</span>
+          <span class="sim">≃</span>
+          <span>at(w,&nbsp;<span class="strip mini"><span class="o"></span><span class="c outer">shop</span><span class="c outer">cart</span></span>)</span>
+        </div>
+        <p>Selecting twice is selecting once, and the result is a Wire again. Nothing is added on the way: no peer, channel or queue.</p>
+      </div>
+      <p class="note">TypeScript spelling. The seven other packages say the same thing natively.</p>
+    </aside>
+  </div>
+</section>
+
+<section class="sec" id="paths" aria-labelledby="paths-h">
+  <div class="wrap">
+    <div class="head">
+      <span class="strip mini" aria-hidden="true"><span class="o"></span><span class="c">paths</span></span>
+      <h2 id="paths-h">A path is a strip of opaque segments</h2>
+      <p class="lead measure">Every figure on this page draws a path this way: a bar for the origin, then one cell per segment. These four look alike, and are four different paths.</p>
+    </div>
+    <div class="specimens">
+      <div class="specimen">
+        <p class="lit">[]</p>
+        <span class="strip" role="img" aria-label="empty path: origin bar, no cells"><span class="o" style="height:2.1rem"></span></span>
+        <p>No segments: the origin itself.</p>
+      </div>
+      <div class="specimen">
+        <p class="lit">[""]</p>
+        <span class="strip" role="img" aria-label="one segment, the empty string"><span class="o"></span><span class="c empty"></span></span>
+        <p>One segment, the empty string. A valid child name.</p>
+      </div>
+      <div class="specimen">
+        <p class="lit">["a/b"]</p>
+        <span class="strip" role="img" aria-label="one segment containing a slash"><span class="o"></span><span class="c">a/b</span></span>
+        <p>One segment. The slash is just a character.</p>
+      </div>
+      <div class="specimen">
+        <p class="lit">["a", "b"]</p>
+        <span class="strip" role="img" aria-label="two segments, a then b"><span class="o"></span><span class="c">a</span><span class="c">b</span></span>
+        <p>Two segments.</p>
+      </div>
+    </div>
+    <p class="after-spec measure">Nothing is parsed, normalized or inherited: <code>"é"</code> written as one code point and as <code>e</code> plus a combining accent are different segments, and reaching a path grants no permission beneath it.</p>
+  </div>
+</section>
+
+<section class="sec" id="send" aria-labelledby="send-h">
+  <div class="wrap">
+    <div class="head">
+      <span class="strip mini" aria-hidden="true"><span class="o"></span><span class="c">send</span></span>
+      <h2 id="send-h">Follow one send down an assembly</h2>
+      <p class="lead measure">Each boundary tears off exactly one segment and hands the same message on. The cart at the bottom sees only its own path; it never learns where it was mounted.</p>
+    </div>
+    <p class="key" aria-label="Key">
+      <span class="k"><span class="sw outer"></span> segment the assembly adds or consumes</span>
+      <span class="k"><span class="sw rel"></span> segment the receiver still sees</span>
+      <span class="k"><span class="sw refuse"></span> refused</span>
+      <span class="k"><span class="sw reply"></span> reply</span>
+    </p>
+
+    <div class="descent">
+      <div class="lane" aria-hidden="true"><i></i></div>
+      <ol class="levels">
+        <li class="lvl">
+          <div class="who"><b>Caller</b>holds <code>checkout</code>, a Wire selected from the system</div>
+          <div class="path"><span class="strip" role="img" aria-label='path ["cart", "add"]'><span class="o"></span><span class="c rel">cart</span><span class="c rel">add</span></span></div>
+          <div class="note"><p><code>checkout.send(["cart", "add"], m)</code>. The caller does not know that <code>checkout</code> points into a larger system.</p></div>
+        </li>
+        <li class="lvl">
+          <div class="who"><b>Selection</b><code>checkout = at(system, ["shop"])</code></div>
+          <div class="path"><span class="strip" role="img" aria-label='path ["shop", "cart", "add"], shop added by selection'><span class="o"></span><span class="c outer">shop</span><span class="c rel">cart</span><span class="c rel">add</span></span></div>
+          <div class="note"><p>On a send, selection puts its prefix in front. That is all it does.</p><p class="law">at(at(w, a), b) ≃ at(w, a ++ b)</p></div>
+        </li>
+        <li class="lvl">
+          <div class="who"><b>system</b>a mount of <code>shop</code> and its siblings</div>
+          <div class="path pathrow" role="img" aria-label='shop torn off; path ["cart", "add"] continues'><span class="stub">shop</span><span class="strip"><span class="o"></span><span class="c rel">cart</span><span class="c rel">add</span></span></div>
+          <div class="note"><p>A mount consumes exactly one segment and delegates the same message to that child. It creates no peer, channel or queue.</p><p class="law">at(mount({k: w}), [k]) ≃ w</p></div>
+        </li>
+        <li class="lvl">
+          <div class="who"><b>shop</b>a declared composite: an origin that answers <code>"Bookshop"</code>, children <code>cart</code> and <code>recommendations</code></div>
+          <div class="path pathrow" role="img" aria-label='cart torn off; path ["add"] continues'><span class="stub">cart</span><span class="strip"><span class="o"></span><span class="c rel">add</span></span></div>
+          <div class="note"><p>A composite routes named children the same way. Each child is complete access, passed on untouched: selecting <code>["cart"]</code> gives exactly the cart.</p></div>
+        </li>
+        <li class="lvl">
+          <div class="who"><b>cart</b>an endpoint's single receiver</div>
+          <div class="path"><span class="strip" role="img" aria-label='path ["add"]'><span class="o"></span><span class="c rel">add</span></span><code class="recv">message(["add"], m)</code></div>
+          <div class="note"><p>The path arrives relative to the cart's own origin, with the unchanged message <code>m</code>. Move the cart under another name and nothing here changes.</p></div>
+        </li>
+        <li class="lvl reply">
+          <div class="who"><b>Reply</b>through <code>m.return</code></div>
+          <div class="path"><span class="caps">bypasses every boundary</span></div>
+          <div class="note"><p>The cart answers through the message's own return capability. Nothing above rebuilt <code>m</code>, so the reply reaches the original caller directly.</p></div>
+        </li>
+      </ol>
+    </div>
+
+    <div class="three">
+      <h3>Same shop, three sends</h3>
+      <ul class="sends">
+        <li>
+          <span class="pathrow" role="img" aria-label="empty path"><span class="strip"><span class="o" style="height:1.9rem"></span></span><code class="lit-inline" aria-hidden="true">[]</code></span>
+          <span class="arrow" aria-hidden="true">→</span>
+          <span class="out"><b>shop's origin</b> answers <code>"Bookshop"</code>. Only <code>[]</code> reaches the origin.</span>
+        </li>
+        <li>
+          <span class="pathrow" role="img" aria-label='path ["cart", "list"]: cart consumed, list continues'><span class="stub">cart</span><span class="strip"><span class="o"></span><span class="c rel">list</span></span></span>
+          <span class="arrow" aria-hidden="true">→</span>
+          <span class="out"><b>cart</b> receives <code>["list"]</code>.</span>
+        </li>
+        <li>
+          <span class="strip" role="img" aria-label='path ["gifts"], refused'><span class="o"></span><span class="c refuse">gifts</span></span>
+          <span class="arrow" aria-hidden="true">→</span>
+          <span class="out"><span class="refused">Refused.</span> There is no <code>gifts</code> child, and the origin is never a fallback.</span>
+        </li>
+      </ul>
+      <p class="illus measure">Illustrative assembly, after the bookshop in Nightseam's runnable examples. The assembler keeps the shop's parts (origin and children) and can rebuild it with the same cart. A caller holding the Wire learns nothing about that structure.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="attach" aria-labelledby="attach-h">
+  <div class="wrap">
+    <div class="head">
+      <span class="strip mini" aria-hidden="true"><span class="o"></span><span class="c">attach</span></span>
+      <h2 id="attach-h">Attach through your language's package</h2>
+      <p class="lead measure">The packages are declarations; none depends on a runtime, transport or generator. Your code depends on the interface. Endpoints come from a runtime such as Nightseam; send-only composition takes a few lines of your own.</p>
+    </div>
+
+    <div class="doors">
+      <article class="door" aria-labelledby="ts-h">
+        <header><h3 id="ts-h">TypeScript</h3><span class="caps">compiled and run</span></header>
+        <div class="body">
+<pre class="cmd"><code>npm install @bitspark/bitwire@0.2.0</code></pre>
+<pre><code>import type { Message, Path, Wire }
+  from '@bitspark/bitwire';
+
+<span class="cm">// Send-only selection: put the prefix in
+// front, hand on the very same message.</span>
+function at(wire: Wire, prefix: Path): Wire {
+  return {
+    send: (path, msg) =>
+      wire.send([...prefix, ...path], msg),
+  };
+}
+
+<span class="cm">// Any send access will do. This one prints.</span>
+const shop: Wire = {
+  send: (path, msg) =>
+    console.log(path, msg.frame.kind),
+};
+
+const m: Message = { frame: {
+  version: 1, kind: 'request', id: 'c:1',
+  params: { item: 'notebook' },
+} };
+
+at(at(shop, ['cart']), ['add']).send([], m);
+at(shop, ['cart', 'add']).send([], m);
+at(shop, []).send(['cart', 'add'], m);</code></pre>
+<span class="out-label caps">Output</span>
+<pre class="out"><code>[ 'cart', 'add' ] request
+[ 'cart', 'add' ] request
+[ 'cart', 'add' ] request</code></pre>
+          <p>Three spellings, one path: the selection law, observed. Compiled with <code>tsc --strict</code> against the 0.2 declarations. This <code>at</code> only sends. A view that also <em>receives</em> needs a dispatcher that owns the endpoint's one attachment, which a runtime supplies.</p>
+        </div>
+      </article>
+
+      <article class="door" aria-labelledby="go-h">
+        <header><h3 id="go-h">Go</h3><span class="caps">standard library only</span></header>
+        <div class="body">
+<pre class="cmd"><code>go get github.com/Bitspark/bitwire@v0.2.0</code></pre>
+<pre><code>import wire "github.com/Bitspark/bitwire/wire/go"
+
+type Wire interface {
+    Send(path []string, message Message) error
+}
+
+type Endpoint interface {
+    Wire
+    Receive(receiver Receiver) (detach func(), err error)
+    Close(code Code, reason string) error
+}</code></pre>
+          <p>Refusal is an <code>error</code> from <code>Send</code>. <code>ExampleWire</code> in <a href="https://github.com/Bitspark/bitwire/blob/main/wire/go/wire_test.go"><code>wire/go/wire_test.go</code></a> runs under <code>go test</code>: a function type becomes send-only access, sits in a <code>ReturnAddress</code>, and sends an event.</p>
+        </div>
+      </article>
+    </div>
+
+    <div class="more">
+      <h3>Six more packages, one meaning</h3>
+      <dl>
+        <dt>Python</dt><dd><code>python -m pip install bitspark-bitwire==0.2.0</code>, then <code>import bitwire</code></dd>
+        <dt>Rust</dt><dd><code>bitwire = { package = "bitspark-bitwire", version = "0.2.0" }</code></dd>
+        <dt>Swift</dt><dd>SwiftPM package <code>https://github.com/Bitspark/bitwire.git</code>, exact <code>0.2.0</code>, product <code>Bitwire</code></dd>
+        <dt>C++</dt><dd><code>find_package(Bitwire 0.2 CONFIG REQUIRED)</code>, target <code>Bitwire::wire</code>, header <code>&lt;bitwire/wire.hpp&gt;</code></dd>
+        <dt>Java</dt><dd>Maven Central <code>dev.bitspark:bitwire:0.2.0</code></dd>
+        <dt>Haskell</dt><dd>Git tag <code>v0.2.0</code>, <code>subdir: wire/hs</code>, module <code>Bitwire</code></dd>
+      </dl>
+      <p class="fine measure">Go and TypeScript carry executed behavioral evidence and Nightseam's adoption. The other six carry the same written obligations; their runtime adoption is tracked separately. Each binding's README has the full install steps.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="rules" aria-labelledby="rules-h">
+  <div class="wrap">
+    <div class="head">
+      <span class="strip mini" aria-hidden="true"><span class="o"></span><span class="c">rules</span></span>
+      <h2 id="rules-h">Four rules that change how you build on it</h2>
+    </div>
+    <ol class="rules">
+      <li><span class="n" aria-hidden="true">1</span><div><h3>Send means admitted, not done.</h3><p>Send returns when the message is accepted or refused. It never runs the receiver's code on your stack or waits for a reply, and a receiver's callback returning does not finish an invocation.</p></div></li>
+      <li><span class="n" aria-hidden="true">2</span><div><h3>An endpoint has one receiver.</h3><p>A second attachment is refused; it does not replace the first. Route tables, prefix matching and precedence belong to a dispatcher composed above, which owns that one attachment for all its views.</p></div></li>
+      <li><span class="n" aria-hidden="true">3</span><div><h3>A Wire grants sending, nothing more.</h3><p>Receive and close belong to Endpoint. If a holder must not reach them, hand out a send-only facade: a type annotation does not hide methods. Closing a mount never closes what it borrowed.</p></div></li>
+      <li><span class="n" aria-hidden="true">4</span><div><h3>Pass messages on; never rebuild them.</h3><p>Composition hands on the same message object, so the return capability's identity and the runtime's received context survive. Neither is ever serialized: only frame fields cross a network hop.</p></div></li>
+    </ol>
+  </div>
+</section>
+
+<section class="sec" id="limits" aria-labelledby="limits-h">
+  <div class="wrap">
+    <div class="head">
+      <span class="strip mini" aria-hidden="true"><span class="o"></span><span class="c">limits</span></span>
+      <h2 id="limits-h">Where Bitwire stops</h2>
+      <p class="lead measure">Bitwire owns what the interface means. Everything that makes messages actually move lives in the projects that depend on it.</p>
+    </div>
+    <div class="limits">
+      <figure class="deps" style="margin:0" aria-labelledby="deps-cap">
+        <div class="src">
+          <div class="box"><b>Nightseam</b> · runtime, carriers, peers, tunnels, live references, generator</div>
+          <div class="box"><b>Bitlink</b> · planned protocol projections and generated adapters</div>
+          <div class="box"><b>Your composition</b> · what operations mean, how parts attach, who is allowed</div>
+        </div>
+        <div class="down">depend on</div>
+        <div class="box core"><b>Bitwire</b> · the access contract, eight language declarations, independent conformance cases</div>
+        <figcaption id="deps-cap" class="fine">Bitwire's packages depend on none of the projects above, and no transport or generator is a dependency.</figcaption>
+      </figure>
+      <div>
+        <h3>Not in this repository</h3>
+        <ul class="nothere">
+          <li>An endpoint runtime, queue, transport or codec.</li>
+          <li>A generator.</li>
+          <li>A new network protocol. Messages keep Nightseam's <code>nightseam.duplex/1</code> profile.</li>
+          <li>Authentication. Reaching a path is not permission.</li>
+          <li>Routing policy or a completion signal in the primitive.</li>
+          <li>Profile negotiation. Deployments agree on a revision out of band.</li>
+        </ul>
+        <div class="agree">
+          <h3>A shared signature is not interoperability</h3>
+          <p class="measure">Two adapters must also agree on operation paths, profile revision, value encoding, contract identity, reference scope and authority. Mounting a storage API at <code>["worker"]</code> does not make it a worker.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="evidence" aria-labelledby="evidence-h">
+  <div class="wrap">
+    <div class="head">
+      <span class="strip mini" aria-hidden="true"><span class="o"></span><span class="c">evidence</span></span>
+      <h2 id="evidence-h">How the promise is checked</h2>
+      <p class="lead measure">Expected observations are written here, withheld from the drivers, and judged here. The oracle is never relaxed to fit a runtime, and all of it runs in CI.</p>
+    </div>
+    <div class="ev">
+      <div>
+        <div><h3>Composition against production</h3><p>Bitwire's composition oracle against Nightseam v0.6.0's own endpoints, dispatchers and forwarding, plus five lifecycle cases through its public invocation facility.</p></div>
+        <p>Go and TypeScript, over local pairs and WebSockets in both directions. Passing on <code>main</code>.</p>
+      </div>
+      <div>
+        <div><h3>Declared composites · released runtime</h3><p>The 39 cases for origins and complete children, through released Nightseam's child-only <code>Mount</code>.</p></div>
+        <div>
+          <div class="tally" role="img" aria-label="39 cases: 20 conform, 19 recorded gaps">
+            <span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="g"></span><span class="g"></span><span class="g"></span><span class="g"></span><span class="g"></span><span class="g"></span><span class="g"></span><span class="g"></span><span class="g"></span><span class="g"></span><span class="g"></span><span class="g"></span><span class="g"></span><span class="g"></span><span class="g"></span><span class="g"></span><span class="g"></span><span class="g"></span><span class="g"></span>
+          </div>
+          <p class="tally-l"><b>20 conform</b> (solid) · <b>19 exact recorded gaps</b> (hatched): no released constructor takes an origin, and conflicting, invalid or missing children are accepted at construction.</p>
+        </div>
+      </div>
+      <div>
+        <div><h3>Declared composites · unreleased source</h3><p>The same 39 cases through Nightseam's new construction API (PR #713), pinned at a public commit.</p></div>
+        <div>
+          <div class="tally" role="img" aria-label="39 cases: all 39 conform">
+            <span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span><span class="p"></span>
+          </div>
+          <p class="tally-l"><b>39 of 39</b>, 234 executions (two languages, three carriers), no gaps accepted. Not yet in a released package.</p>
+        </div>
+      </div>
+    </div>
+    <div class="open">
+      <p><b>Still open:</b> <a href="https://github.com/Bitspark/bitwire/issues/20">#20</a>, the full lifecycle acceptance review (generated adapters, live values, authority between participants, shutdown while work continues). Only Go and TypeScript have executed evidence; carriers in these runs are ordered and fault-free.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="next" aria-labelledby="next-h">
+  <div class="wrap">
+    <div class="head">
+      <span class="strip mini" aria-hidden="true"><span class="o"></span><span class="c">next</span></span>
+      <h2 id="next-h">Next</h2>
+    </div>
+    <ol class="next">
+      <li>
+        <h3>Depend on the interface</h3>
+<pre class="cmd"><code>npm install @bitspark/bitwire@0.2.0</code></pre>
+<pre class="cmd"><code>go get github.com/Bitspark/bitwire@v0.2.0</code></pre>
+        <p>Take <code>Wire</code> wherever you only need to send; take <code>Endpoint</code> only where you own receiving.</p>
+      </li>
+      <li>
+        <h3>Read the contract</h3>
+        <p><a href="https://github.com/Bitspark/bitwire/blob/main/docs/wire/contract.md">The Wire contract</a> gives every name above its exact meaning. <a href="https://github.com/Bitspark/bitwire/blob/main/docs/composition.md">The composition guide</a> explains what composing access enables and what consumers must still agree on.</p>
+      </li>
+      <li>
+        <h3>Run the bookshop</h3>
+<pre class="cmd"><code>git clone https://github.com/Bitspark/nightseam.git
+cd nightseam
+git checkout dfacbb2783598c55d5ba78273e6ee8d11ebd9cee
+node scripts/examples.mjs run rebuild-with-state</code></pre>
+<pre class="out"><code>before: book, pen
+same cart capability: true
+shop: Bookshop
+after: book, pen, notebook
+recommendations: pencil</code></pre>
+        <p>The shop is rebuilt with a new child, and the old and new access reach the same cart. Needs Node 24+, pnpm 12.4.1 and Go 1.26; uses Nightseam's unreleased declared-composition API from source. <a href="https://github.com/Bitspark/bitwire/blob/main/examples/README.md">All six recipes</a>.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="sec" id="reference" aria-labelledby="ref-h">
+  <div class="wrap">
+    <h2 id="ref-h" class="caps" style="font-size:.78rem">Reference</h2>
+    <details>
+      <summary>Frames, composite laws, native spellings and contributor commands</summary>
+      <div class="apx">
+        <h3>The four frames</h3>
+        <p class="measure">The Wire path is the operation name, so a frame never carries a second one. Every frame is version 1. Payloads are JSON; a missing value and JSON <code>null</code> are different.</p>
+        <div class="tscroll"><table>
+          <thead><tr><th>Kind</th><th>Required</th><th>Optional</th></tr></thead>
+          <tbody>
+            <tr><td>Request</td><td>request id, JSON params</td><td>trace fields, string metadata</td></tr>
+            <tr><td>Response</td><td>request id and exactly one of JSON result or public error</td><td>trace fields</td></tr>
+            <tr><td>Event</td><td>JSON data</td><td>trace fields, string metadata</td></tr>
+            <tr><td>Cancel</td><td>request id</td><td>trace fields</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Declared-composite laws (decision 0006)</h3>
+        <p class="measure">For a composite <code>c = compose(o, m)</code> with origin <code>o</code> and children <code>m</code>; <code>⊥</code> refuses every send.</p>
+<pre><code>(S0) at(w, [])             ≈ w
+(S1) at(at(w, p), q)       ≈ at(w, p ++ q)
+(S2) at(c, [k])            ≈ m[k]     k ∈ dom m
+(S3) at(c, [k])            ≈ ⊥        k ∉ dom m
+(O)  origin(c)             ≈ o
+(R0) compose(parts(c))     ≈ c
+(R1) parts(compose(o, m))  ≅ (o, m)
+(M)  mount(m)              ≈ compose(refuse, m)</code></pre>
+        <p class="measure">Segments map to keys by exact UTF-8. Construction refuses a missing origin or child, an invalid segment and duplicates. <code>parts</code> belongs to whoever built the composite; an arbitrary Wire is not decomposable.</p>
+
+        <h3>Native spellings</h3>
+        <div class="tscroll"><table class="spell">
+          <thead><tr><th scope="col">Language</th><th scope="col">Send</th><th scope="col">Receive</th><th scope="col">Close</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Go</th><td data-l="Send"><code>Send(path []string, message Message) error</code></td><td data-l="Receive"><code>Receive(receiver Receiver) (detach func(), err error)</code></td><td data-l="Close"><code>Close(code Code, reason string) error</code></td></tr>
+            <tr><th scope="row">TypeScript</th><td data-l="Send"><code>send(path: Path, message: Message): void</code></td><td data-l="Receive"><code>receive(receiver: Receiver): () =&gt; void</code></td><td data-l="Close"><code>close(code?: number, reason?: string): void</code></td></tr>
+            <tr><th scope="row">Python</th><td data-l="Send"><code>send(self, path: Path, message: Message) -&gt; None</code></td><td data-l="Receive"><code>receive(self, receiver: Receiver) -&gt; Callable[[], None]</code></td><td data-l="Close"><code>close(self, code: int = 1000, reason: str = "") -&gt; None</code></td></tr>
+            <tr><th scope="row">Rust</th><td data-l="Send"><code>fn send(&amp;self, path: &amp;[String], message: Message) -&gt; Result&lt;(), PublicError&gt;</code></td><td data-l="Receive"><code>fn receive(&amp;self, receiver: Receiver) -&gt; Result&lt;Detach, PublicError&gt;</code></td><td data-l="Close"><code>fn close(&amp;self, code: u16, reason: &amp;str) -&gt; Result&lt;(), PublicError&gt;</code></td></tr>
+            <tr><th scope="row">Swift</th><td data-l="Send"><code>func send(path: [String], message: Message) throws</code></td><td data-l="Receive"><code>func receive(receiver: Receiver) throws -&gt; Detach</code></td><td data-l="Close"><code>func close(code: Int, reason: String) throws</code></td></tr>
+            <tr><th scope="row">C++</th><td data-l="Send"><code>virtual void send(const Path&amp; path, const Message&amp; message) = 0</code></td><td data-l="Receive"><code>virtual Detach receive(Receiver receiver) = 0</code></td><td data-l="Close"><code>virtual void close(Code code = 1000, std::string reason = {}) = 0</code></td></tr>
+            <tr><th scope="row">Java</th><td data-l="Send"><code>void send(List&lt;String&gt; path, Message message)</code></td><td data-l="Receive"><code>Runnable receive(Receiver receiver)</code></td><td data-l="Close"><code>void close(int code, String reason)</code></td></tr>
+            <tr><th scope="row">Haskell</th><td data-l="Send"><code>send :: Path -&gt; Message -&gt; IO ()</code></td><td data-l="Receive"><code>receive :: Receiver -&gt; IO (IO ())</code></td><td data-l="Close"><code>close :: Code -&gt; Text -&gt; IO ()</code></td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Working on Bitwire</h3>
+        <p class="measure">Go 1.26, Node.js 24 or later, pnpm 12.4.1. No private checkout or credentials.</p>
+<pre class="cmd"><code>pnpm install --frozen-lockfile
+node scripts/check.mjs
+node scripts/conformance-current.mjs
+node scripts/conformance-production.mjs</code></pre>
+        <ul class="measure">
+          <li><a href="https://github.com/Bitspark/bitwire/tree/main/docs/decisions">Decisions 0001–0006</a>: why the contract has its own home, why sending and owning are separate, and how composites realize Deixis nodes.</li>
+          <li><a href="https://github.com/Bitspark/bitwire/blob/main/docs/languages.md">Language matrix</a>: publication and adoption, recorded separately.</li>
+          <li><a href="https://github.com/Bitspark/bitwire/tree/main/conformance">Conformance</a>: cases, gap ledger and runners.</li>
+        </ul>
+      </div>
+    </details>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Bitwire 0.2.0 · Apache-2.0</span>
+    <span>Every claim is cited in <code>poster/SEAM.md</code> at <code>02846d5</code></span>
+    <a href="https://github.com/Bitspark/bitwire">github.com/Bitspark/bitwire</a>
+  </div>
+</footer>
+</body>
+</html>

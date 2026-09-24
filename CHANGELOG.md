@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add a self-contained poster at `poster/index.html` for new consumers: the
+  seam, one send traced through an assembly, attachment in each language, the
+  rules and limits, and how conformance is checked. `poster/SEAM.md` cites every
+  claim; `poster/DESIGN.md` records the editorial and visual contract.
+
 - Add a runnable use-case catalogue linking Nightseam's Go and TypeScript
   consumers for service trees, remounting, retained cart state and guards,
   pending-call cancellation and WebSocket calls. Document the bookshop model,
