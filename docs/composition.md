@@ -1,5 +1,9 @@
 # What composition through Wire means
 
+For programs you can run, start with the [use-case catalogue](../examples/README.md).
+It connects these laws to a documented bookshop model and complete Go and
+TypeScript consumers.
+
 The useful property is that composing access produces access that can be
 composed again. A component can participate in a larger assembly without knowing
 where the assembly placed it. The common contract states what must survive that

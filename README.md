@@ -61,6 +61,9 @@ children; [decision 0006](docs/decisions/0006-declared-composites-realize-deixis
 relates this to Deixis's node model.
 The [composition guide](docs/composition.md) explains what this enables across
 consumers and which additional agreements make their integration meaningful.
+The [runnable use-case catalogue](examples/README.md) shows it in working Go and
+TypeScript programs: a shopping cart retains state and guards when its parent
+is rebuilt, and a pending request still reaches its original invocation.
 
 ## Who owns what
 
@@ -98,6 +101,7 @@ Haskell. See the [language bindings](docs/languages.md) and
 | [wire/hs](wire/hs/README.md) | Haskell `Bitwire` module and Cabal source package. |
 | [docs](docs/README.md) | Purpose, contract, profile boundary, decisions and integration plan. |
 | [conformance](conformance/README.md) | Independent cases and pinned public Nightseam drivers. |
+| [examples](examples/README.md) | Runnable use cases, their models, commands and implementation owners. |
 | [scripts](scripts/README.md) | Portable repository checks, also used in CI. |
 
 Components contain their language presentations, following Nightseam and Archon.

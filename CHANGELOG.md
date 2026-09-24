@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add a runnable use-case catalogue linking Nightseam's Go and TypeScript
+  consumers for service trees, remounting, retained cart state and guards,
+  pending-call cancellation and WebSocket calls. Document the bookshop model,
+  example ownership, commands, packaging checks and source-versus-release status.
+
 - Run Nightseam's actual requester-cancellation tests through bound, selected and reconstructed declared access in the production acceptance gate, alongside the 39 independent composition cases.
 - Define declared composites as a realization of Deixis `Node[T]` (decision 0006): an origin at every node beside complete named children, exact UTF-8 segment keys, both reconstruction directions, agreement across complete cuts and an explicit observational equivalence. This supersedes the unreleased decision 0005's policy-bearing node value; interception becomes a guard composed around access. All eight native presentations are aligned without adding Wire methods.
 - Replace the declared fixtures with 39 independent cases, run through a test-only reference interpreter and through released Nightseam v0.6.0's child-only `Mount`, locally and over WebSockets in both directions. Production may differ only by exactly recorded gaps: no origin-bearing construction, and conflicting, invalid or missing children accepted at construction.
