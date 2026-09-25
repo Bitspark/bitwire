@@ -3,8 +3,11 @@
 ## The boundary
 
 Bitwire owns the shared Wire contract, language presentations and independent
-conformance criteria. A runtime implements it; a generator derives adapters to
-it; a consumer supplies application meaning. The
+conformance criteria. Under [decision 0007](docs/decisions/0007-using-bitwire-never-requires-nightseam.md)
+it also owns the operators, transports, carriers and network protocol that make
+the contract usable without a runtime: using Bitwire never requires Nightseam.
+A runtime builds on it; a generator derives adapters to it; a consumer supplies
+application meaning. The
 [scope decision](docs/decisions/0001-shared-wire-contract.md) is the starting point.
 
 A new primitive needs an observable requirement and an explanation of why
@@ -21,8 +24,11 @@ implementation, validation, registry publication and consumer adoption separatel
 in the [language matrix](docs/languages.md). Do not label compilation as runtime
 conformance or a draft as a released guarantee.
 
-The packages have no runtime dependency on another Bitspark repository. Tests may
+The packages have no runtime dependency on another Bitspark repository, and
+`node scripts/check.mjs` fails if one depends on or imports Nightseam. Tests may
 exercise a pinned external implementation without changing that package boundary.
+Expected observations come from the specification, never from Bitwire's own
+implementations.
 
 ## How a change lands
 

@@ -10,9 +10,12 @@ The command uses shell-free child processes and resolves the checkout from its
 own location. It runs identically on Windows and Linux:
 
 1. Check repository-relative Markdown links against tracked and unignored files.
-2. Check Go formatting, then run `go vet` and `go test` to compile the declarations.
-3. Check and build the TypeScript declarations using the pinned compiler.
-4. Run `scripts/composition.mjs`, comparing Go and TypeScript reference composition
+2. Check that no published package depends on or imports Nightseam, in any
+   language ([decision 0007](../docs/decisions/0007-using-bitwire-never-requires-nightseam.md)).
+   Test-only conformance under `conformance/` is exempt.
+3. Check Go formatting, then run `go vet` and `go test` to compile the declarations.
+4. Check and build the TypeScript declarations using the pinned compiler.
+5. Run `scripts/composition.mjs`, comparing Go and TypeScript reference composition
    observations to a shared independent oracle for the 0.2 contract.
 
 The link check checks local destinations and heading fragments, not remote URLs.

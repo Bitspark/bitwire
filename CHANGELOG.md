@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Decide that using Bitwire never requires Nightseam (decision 0007). Bitwire takes ownership of the operators its laws describe, the transport seam and transports (an in-memory pipe, WebSocket and a framed byte stream for stdio and TCP), carriers including the protocol engine, the network protocol as `bitwire/1` (unchanged on the wire) and a carrier contract. Nightseam keeps dispatch, the invocation lifecycle, live references, the generator, declaration identity and authentication. This supersedes decision 0001's carrier and profile ownership. A new check fails if any published package, in any language, depends on or imports Nightseam; the operators, carriers and protocol themselves are pending.
+
 - Record research 0001 on what declared composition implies, with an outside expert's advice verified against the runtime. Clarify decision 0006, the contract and all eight binding documents. Behavior may reveal which routes respond. Retained parts carry authority. Composites attenuate routes but are not a membrane. A composite of selected views restricts by first segment, while origin-only leaves give an exact operation set. Capture, not carrier acceptance, fixes a request's route. Ordering is partial: a forwarder keeps its source's delivery order. Routing through opaque children may cycle, and nothing claims it terminates.
 
 - Add a self-contained poster at `poster/index.html` for new consumers: the
