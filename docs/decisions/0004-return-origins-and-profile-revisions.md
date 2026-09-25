@@ -45,6 +45,11 @@ not rewritten.
 
 ## Compatibility is qualified by profile revision
 
+**Superseded** by [decision 0008](0008-a-protocol-revision-has-its-own-identity.md)
+on 2026-09-25: a protocol revision is a name, an immutable behavioral revision and
+the hashes of its normative artifacts, never tightened in place. The section below
+is unchanged history.
+
 We accept Nightseam's
 [recorded decision at v0.6.0](https://github.com/Bitspark/nightseam/blob/5cc9723a24646c40ed1861f892b2b23eb6d785d7/docs/decisions/request-serials-increase-in-publication-order.md)
 as the explicit pre-1.0 compatibility disposition requested by ADR0003. It

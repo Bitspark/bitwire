@@ -67,7 +67,7 @@ Bitwire owns access semantics, language declarations and independent criteria.
 Under [decision 0007](decisions/0007-using-bitwire-never-requires-nightseam.md) it
 also owns the operators, transports, carriers and network protocol. Until each is
 delivered, Nightseam's is the implementation in use. Nightseam owns its dispatch,
-invocation lifecycle, generator and live-reference machinery. Consumers own domain
+generator and live-reference machinery. Consumers own domain
 contracts, attachment rules and application policy. Bitwire packages have no
 runtime dependency on those consumers or on Nightseam, and `node scripts/check.mjs`
 fails if a published package depends on or imports Nightseam. Identity

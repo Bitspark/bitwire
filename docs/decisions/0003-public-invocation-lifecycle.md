@@ -5,6 +5,11 @@ implementation evidence remain required in
 [Nightseam #439](https://github.com/Bitspark/nightseam/issues/439) and
 [Bitwire #20](https://github.com/Bitspark/bitwire/issues/20).
 
+**2026-09-25 update:** under [decision 0007](0007-using-bitwire-never-requires-nightseam.md),
+as amended, the lifecycle's state machine moves to Bitwire because carriers create
+it; dispatch and route capture stay in Nightseam. The requirements below are
+unchanged.
+
 **2026-09-22 update:** Nightseam #439 has landed in v0.6.0. The
 [current baseline](../../conformance/current/README.md) separates executable
 evidence from remaining Bitwire #20 review. [Decision 0004](0004-return-origins-and-profile-revisions.md)

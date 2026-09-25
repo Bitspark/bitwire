@@ -103,7 +103,8 @@ program can do with Bitwire alone is still limited to the contract:
 | TypeScript | Delivered | Pending, step 2 | Pending, step 3 | Pending, step 5 |
 | Python, Rust, Swift, C++, Java, Haskell | Delivered | Pending, step 7 | Pending, step 7 | Pending, step 7 |
 
-Steps refer to the decision's [delivery table](decisions/0007-using-bitwire-never-requires-nightseam.md#delivery).
+The in-process pair creates invocations, so the invocation lifecycle's state
+machine arrives with the operators. Steps refer to the decision's [delivery table](decisions/0007-using-bitwire-never-requires-nightseam.md#delivery).
 Until a piece is delivered, it comes from Nightseam, which has peers and
 transports in all eight languages.
 
