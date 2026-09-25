@@ -6,6 +6,7 @@ choice. An accepted repository boundary does not imply a completed implementatio
 
 | Decision | Status |
 | --- | --- |
+| [0009: Which carriers Bitwire provides, and how byte streams carry frames](0009-carriers-bitwire-provides-and-byte-stream-framing.md) | Accepted; carrier groups and the `bitwire-stream/1` framing. The [carrier specification](../wire/carriers.md) is a draft; nothing is implemented. |
 | [0008: A protocol revision has its own identity](0008-a-protocol-revision-has-its-own-identity.md) | Accepted; supersedes 0004's compatibility section. Takes effect when 0007 publishes the protocol. |
 | [0007: Using Bitwire never requires Nightseam](0007-using-bitwire-never-requires-nightseam.md) | Accepted and amended the same day: the invocation lifecycle moves to Bitwire, no aliases. Supersedes 0001's carrier and profile ownership. The independence check is enforced; operators, carriers and the protocol are pending. |
 | [0006: Declared composites realize Deixis nodes over origin behavior](0006-declared-composites-realize-deixis-nodes.md) | Accepted; Go/TypeScript reference and unreleased production construction pass all cases. Released Nightseam child-only specialization retains recorded gaps. |
