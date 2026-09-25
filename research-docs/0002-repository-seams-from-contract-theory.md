@@ -3,7 +3,8 @@
 **ID:** 0002
 **Date:** 25 September 2026
 **Status:** submitted
-**Run-ID:** run_2250f8a8-a75f-411f-b77f-aa7d88452eae
+**Run-ID:** run_a52b7f3e-c9dd-4f31-bd52-6f6df457b82f
+**Submission log:** run_2250f8a8-a75f-411f-b77f-aa7d88452eae (account-1) failed inside the consult service after 28 seconds: "Nightjar session-control request timed out" (nightjar_unavailable), while that account was re-authenticating. The same uploaded document was resubmitted once, pinned to account-2.
 **Document-ID:** doc_b6ca2a65-e4c8-453c-9165-3b5e25dead52
 
 ## Question
