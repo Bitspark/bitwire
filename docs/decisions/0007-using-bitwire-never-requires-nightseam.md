@@ -5,7 +5,9 @@ should be required to use Nightseam. This supersedes the part of
 [decision 0001](0001-shared-wire-contract.md) that left carriers and the network
 profile in Nightseam. The direction is decided; only the independence check is
 implemented. Each piece remains where it is today until it is delivered
-([Delivery](#delivery)).
+([Delivery](#delivery)). Delivery is tracked in
+[#39](https://github.com/Bitspark/bitwire/issues/39), and Nightseam's side in
+[nightseam#719](https://github.com/Bitspark/nightseam/issues/719).
 
 ## Question
 
