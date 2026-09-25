@@ -5,6 +5,11 @@ and 7 of [decision 0007](0007-using-bitwire-never-requires-nightseam.md). The
 draft [carrier specification](../wire/carriers.md) holds the details. Nothing is
 implemented yet.
 
+**Partly superseded** by [decision 0010](0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md)
+on 2026-09-25: Bitwire specifies these carriers and the framing, and bitruntime
+implements them. Where this record says "Bitwire provides", read "bitruntime
+implements". The groups and the framing stand.
+
 ## Question
 
 Decision 0007 makes Bitwire the home of carriers, and WebSocket is one of them.

@@ -1,5 +1,11 @@
 # 0007: Using Bitwire never requires Nightseam
 
+**Implementation home superseded** by [decision 0010](0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md)
+on 2026-09-25: the Go and TypeScript implementations live in bitruntime, and Bitwire
+keeps the contract, the protocol and carrier specifications and the conformance
+cases. The rule below, and its independence check, stand. The record below is
+unchanged history.
+
 **Status:** accepted, 2026-09-25, on the user's direction: no one using Bitwire
 should be required to use Nightseam. This supersedes the part of
 [decision 0001](0001-shared-wire-contract.md) that left carriers and the network

@@ -58,19 +58,20 @@ a new primitive is not an exemption from those requirements.
 ## Dependency direction
 
 ```text
-Nightseam runtime and generated adapters ──┐
-Bitlink's planned protocol adapters ───────┼──> Bitwire contract, operators and carriers
-Consumer-owned space/service composition ─┘
+bitruntime (planned) and its implementations ──┐
+Bitlink's planned adapters and generation ──────┼──> Bitwire contract
+Consumer-owned space/service composition ──────┘
 ```
 
-Bitwire owns access semantics, language declarations and independent criteria.
-Under [decision 0007](decisions/0007-using-bitwire-never-requires-nightseam.md) it
-also owns the operators, transports, carriers and network protocol. Until each is
-delivered, Nightseam's is the implementation in use. Nightseam owns its dispatch,
-generator and live-reference machinery. Consumers own domain
+Bitwire owns access semantics, language declarations, the protocol and carrier
+specifications, and independent criteria. [Decision 0010](decisions/0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md)
+places the implementations in bitruntime, the contract language in bittype, and
+adapters and their generation in Bitlink. Until those exist, frozen Nightseam
+v0.6.0 is the implementation in use. Consumers own domain
 contracts, attachment rules and application policy. Bitwire packages have no
-runtime dependency on those consumers or on Nightseam, and `node scripts/check.mjs`
-fails if a published package depends on or imports Nightseam. Identity
+runtime dependency on those consumers, on Nightseam or on bitruntime, and
+`node scripts/check.mjs` fails if a published package depends on or imports
+Nightseam or bitruntime. Identity
 cryptography and authentication are outside this access contract; access alone
 is not proof of authority.
 
