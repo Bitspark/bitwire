@@ -70,7 +70,7 @@ is rebuilt, and a pending request still reaches its original invocation.
 | Project | Responsibility |
 | --- | --- |
 | **Bitwire** | Shared access contract, language declarations and independent conformance criteria. Under [decision 0007](docs/decisions/0007-using-bitwire-never-requires-nightseam.md), also the operators, transports, carriers and network protocol, as each is delivered. |
-| **Nightseam** | Its runtime, dispatch, invocation lifecycle, live-reference machinery and generator. Its carriers, peers and tunnels serve until Bitwire's are delivered. |
+| **Nightseam** | Its runtime, dispatch, live-reference machinery and generator. Its carriers, peers and tunnels serve until Bitwire's are delivered. |
 | **Bitlink** | Its planned protocol projections and generated adapters. |
 | **Bitsystem** | Typed spaces and the kernel/system operations exposed through them. |
 

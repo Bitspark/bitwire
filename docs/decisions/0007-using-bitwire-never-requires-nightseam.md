@@ -8,6 +8,17 @@ implemented. Each piece remains where it is today until it is delivered
 ([Delivery](#delivery)). Delivery is tracked in
 [#39](https://github.com/Bitspark/bitwire/issues/39), and Nightseam's side in
 [nightseam#719](https://github.com/Bitspark/nightseam/issues/719).
+**Amended** the same day on the user's decisions after bitsystem3's carrier-stack
+research, whose findings were re-checked against Nightseam `dfacbb27`:
+
+- the invocation lifecycle's state machine moves to Bitwire, because carriers
+  create it at acceptance;
+- no aliases of moved packages;
+- received context becomes delivered evidence;
+- conformance drivers are built by each implementation;
+- protocol identity follows [decision 0008](0008-a-protocol-revision-has-its-own-identity.md).
+
+See [Amendments](#amendments-25-september-2026).
 
 ## Question
 
@@ -35,33 +46,33 @@ and adds to it. Nothing Bitwire publishes depends on a runtime.
 
 | Bitwire owns | Nightseam owns |
 | --- | --- |
-| The access contract, its laws and independent conformance, as before | Dispatch: registration, route capture and the invocation lifecycle facility required by [decision 0003](0003-public-invocation-lifecycle.md) |
+| The access contract, its laws and independent conformance, as before | Dispatch: registration, and route capture into the invocation a carrier created |
 | Operators that need only the Wire interface: selection, mounting, forwarding, declared composition and decomposition | Live references and their `live.` vocabulary |
 | The transport seam and its transports: an in-memory pipe, WebSocket, and one framed byte stream for stdio, TCP and Unix sockets | The generator, generated adapters and declaration identity (`identity.`) |
-| Carriers: the in-process pair, the protocol engine that realizes an Endpoint over a transport, and tunnels | Authentication (`auth.`) and other optional profiles |
+| Carriers: the in-process pair, the protocol engine that realizes an Endpoint over a transport, and tunnels; and the invocation lifecycle's state machine they create, required by [decision 0003](0003-public-invocation-lifecycle.md) | Authentication (`auth.`) and other optional profiles |
 | The network protocol and a carrier contract | Tracing and observation integrations, attached through public hooks |
 
-**The line between them** is the one research 0001 drew. A carrier *accepts* a
-message; a dispatcher *captures* its route. Up to acceptance, and for what an
-accepted request is still owed on its connection (its response and its cancels),
-the carrier is responsible. Choosing a handler, capturing a route and running an
-invocation belong to the runtime.
+**The line between them** is the one research 0001 drew, placed one step later
+than first written. A carrier *accepts* a request and creates its invocation; a
+dispatcher *captures* the request's route into that invocation. Up to acceptance,
+for the invocation's state, and for what an accepted request is still owed on its
+connection (its response and its cancels), Bitwire is responsible. Choosing a
+handler, capturing a route and running a handler belong to the runtime.
 
 **The protocol engine** mints request ids, correlates responses and cancels,
 gives each received request a fresh return capability, enforces bounds, and
 closes or aborts. It establishes a received message's context only through public
-hooks, so that Nightseam's authentication, observers, trace propagator and
-invocation lifecycle attach to it without private access. Decision 0003 already
-requires public, profile-specific facilities; this extends that requirement to
-the engine.
+hooks, so that Nightseam's authentication, observers and trace propagator attach
+to it without private access. Decision 0003 already requires public,
+profile-specific facilities; this extends that requirement to the engine.
 
 **The protocol.** Bitwire owns the specification that Nightseam publishes as
 `nightseam.duplex/1`, including the rule by which a layer adds its own vocabulary
 under a reserved prefix. Its first Bitwire revision is that profile unchanged:
 the same frames accepted and refused, the same close codes and the same bounds.
-It is pinned to the Nightseam revision that the move copies, and any difference
-from the v0.6.0 baseline in [decision 0004](0004-return-origins-and-profile-revisions.md)
-is recorded then.
+[Decision 0008](0008-a-protocol-revision-has-its-own-identity.md) fixes what
+identifies it: revision 1 is the behavior of the v0.6.0 baseline that [decision 0004](0004-return-origins-and-profile-revisions.md)
+accepted, with a manifest of hashes.
 
 The name never travels on a connection. An envelope carries only `version` `1`,
 and no WebSocket subprotocol is offered by default
@@ -76,7 +87,10 @@ in a later revision.
 - messages, and their order within a stated scope;
 - the identity of the original return capability within a process;
 - the mapping of return capabilities and context across a process boundary;
-- what acceptance and closing promise at its boundary.
+- what acceptance and closing promise at its boundary;
+- one classification of closed errors;
+- which close codes may be sent and which may only be observed, so that 1006 is
+  never transmitted.
 
 It binds carriers written outside Bitwire too. Anyone can add a transport by
 implementing the public seam.
@@ -136,9 +150,9 @@ them.
 
 **Nightseam** revises its decision that
 [the reusable foundation lives in Nightseam](https://github.com/Bitspark/nightseam/blob/dfacbb2783598c55d5ba78273e6ee8d11ebd9cee/docs/decisions/the-reusable-foundation-lives-in-nightseam.md):
-carriers, peers, tunnels and the profile's specification leave its list. Its
-runtime, dispatch, invocation lifecycle, live references, generator, declaration
-model and identity, and optional authentication stay.
+carriers, peers, tunnels, the invocation lifecycle's state machine and the
+profile's specification leave its list. Its runtime, dispatch, live references,
+generator, declaration model and identity, and optional authentication stay.
 
 - Its peer splits. The protocol engine moves. The method-name API (`Handle`,
   `Call`, `Emit`), live references, the identity check and authentication then
@@ -148,8 +162,9 @@ model and identity, and optional authentication stay.
   ([PR #713](https://github.com/Bitspark/nightseam/pull/713)) has no compatibility
   constraint yet. It can move to Bitwire before Nightseam releases it, or ship
   there first and later become an alias.
-- Its released v0.6.0 paths can remain as aliases of Bitwire's until Nightseam
-  retires them in a later release.
+- It keeps no aliases or re-exports of moved packages, following
+  [nightseam#468](https://github.com/Bitspark/nightseam/issues/468). Consumers
+  stay on v0.6.0 until they switch to Bitwire's packages directly.
 - The stdio carrier proposed in
   [nightseam#663](https://github.com/Bitspark/nightseam/issues/663) becomes an
   instance of Bitwire's framed byte stream.
@@ -167,10 +182,10 @@ gap until then.
 | Step | Scope | Needs Nightseam |
 | --- | --- | --- |
 | 1 | This decision and the independence check | No |
-| 2 | Go and TypeScript operators: selection, mounting, forwarding, declared composition and decomposition; the in-process pair | No |
+| 2 | Go and TypeScript operators: selection, mounting, forwarding, declared composition and decomposition; the invocation lifecycle's state machine; the in-process pair | No |
 | 3 | Go and TypeScript transports: the seam, the in-memory pipe, WebSocket, and a framed byte stream with stdio and TCP | No |
-| 4 | The protocol specification as `bitwire/1`, and the carrier contract | Review, since Nightseam then follows it |
-| 5 | The Go and TypeScript protocol engine, interoperating byte for byte with Nightseam peers; Bitwire's reference realization no longer imports Nightseam | Agreement on the engine's public hooks |
+| 4 | The protocol specification as `bitwire/1` with its manifest (decision 0008); the carrier contract; the conformance runner protocol, tables and scenarios | Review, since Nightseam then follows it |
+| 5 | The Go and TypeScript protocol engine, interoperating byte for byte with Nightseam peers; received-context evidence in all eight languages (contract 0.3.0); Bitwire's reference realization no longer imports Nightseam | Agreement on the engine's public hooks |
 | 6 | Nightseam builds on Bitwire's operators, transports and engine | Nightseam's work |
 | 7 | Python, Rust, Swift, C++, Java and Haskell; tunnels | No |
 
@@ -182,4 +197,48 @@ the other six languages still need Nightseam's peers to connect processes.
 - The engine's public hooks, and package names and coordinates.
 - Research decisions 4, 5 and 6.
 - Any change to what `bitwire/1` accepts or refuses.
-- How Bitwire versions later protocol revisions.
+
+## Amendments (25 September 2026)
+
+bitsystem3's carrier-stack research reached this decision after it merged. Its
+verified findings, re-checked against Nightseam `dfacbb27`, led to the user's
+decisions below. The sections above now read accordingly.
+
+**The invocation lifecycle's state machine moves to Bitwire.** Carriers create
+it at acceptance. Nightseam's local pair creates an invocation for every request
+it accepts ([`wire_pair.go:138`](https://github.com/Bitspark/nightseam/blob/dfacbb2783598c55d5ba78273e6ee8d11ebd9cee/runtime/go/wire_pair.go#L138)).
+Its dispatcher refuses any request whose return capability carries none
+([`dispatcher.go:154-167`](https://github.com/Bitspark/nightseam/blob/dfacbb2783598c55d5ba78273e6ee8d11ebd9cee/runtime/go/dispatcher.go#L154-L167)).
+Leaving the state machine in Nightseam would mean that Bitwire's carriers
+create return capabilities no dispatcher accepts, or that they need Nightseam to
+supply every invocation. The state machine imports only Bitwire's types
+([`invocation.go`](https://github.com/Bitspark/nightseam/blob/dfacbb2783598c55d5ba78273e6ee8d11ebd9cee/runtime/go/invocation.go)),
+and decision 0003 already specifies it as a public facility. Dispatch and route
+capture stay in Nightseam.
+
+**No aliases.** The first version of this decision let Nightseam keep its
+released paths as aliases. That contradicted the user's earlier ruling in
+[nightseam#468](https://github.com/Bitspark/nightseam/issues/468), under which
+Nightseam removed its aliases and re-exports of Bitwire's declarations.
+Consumers stay on v0.6.0 until they switch directly.
+
+**Received context becomes delivered evidence.** Today each runtime recognizes
+its own return capabilities privately: an unexported method in Go, module-private
+maps in TypeScript. Once the engine is in Bitwire and the handler helpers are in
+Nightseam, private recognition across the two repositories is impossible.
+Received context becomes an opaque, unforgeable evidence field delivered beside
+a message. The [contract](../wire/contract.md#local-capabilities-and-context)
+already allows an opaque local context field. Making it unforgeable changes the
+contract in all eight languages, planned as Bitwire 0.3.0 and designed with the
+engine's hooks in step 5.
+
+**Conformance moves with the protocol.** The conformance runner protocol and the
+machine-readable tables and scenarios move in step 4. Each implementation builds
+its own drivers from Bitwire's published cases. Bitwire's runner currently copies
+its TypeScript drivers into the Nightseam checkout; that stops.
+
+**Protocol identity** follows [decision 0008](0008-a-protocol-revision-has-its-own-identity.md).
+
+The carrier contract also gains two rules the research found missing: one
+classification of closed errors, and a split between close codes that may be
+sent and those that may only be observed.

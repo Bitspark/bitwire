@@ -90,8 +90,8 @@ its own responsibility:
 
 | Layer | What it contributes |
 | --- | --- |
-| Bitwire | Addressed access, preservation and ownership laws, native declarations and independent expectations. Under [decision 0007](decisions/0007-using-bitwire-never-requires-nightseam.md), also operators, transports, correlation and the network protocol. |
-| Runtime, such as Nightseam | Scheduling, dispatch, invocation lifecycle and reference machinery. Nightseam also supplies transport and correlation until Bitwire's carriers are delivered. |
+| Bitwire | Addressed access, preservation and ownership laws, native declarations and independent expectations. Under [decision 0007](decisions/0007-using-bitwire-never-requires-nightseam.md), also operators, transports, correlation, the invocation lifecycle and the network protocol. |
+| Runtime, such as Nightseam | Scheduling, dispatch and reference machinery. Nightseam also supplies transport, correlation and the invocation lifecycle until Bitwire's are delivered. |
 | Generated adapter | The declared methods, events and value conversions exposed to application code. |
 | Domain consumer | What operations mean, how components attach and which actions are authorized. |
 

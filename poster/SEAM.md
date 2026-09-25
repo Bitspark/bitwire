@@ -264,7 +264,7 @@ evidence (`docs/languages.md:36-45`).
 | Project | Responsibility | Cite |
 | --- | --- | --- |
 | Bitwire | Shared access contract, language declarations, independent conformance criteria; under decision 0007 also operators, transports, carriers and the network protocol, as each is delivered | `README.md:72` |
-| Nightseam | Runtime, dispatch, invocation lifecycle, live references, generator; its carriers, peers and tunnels serve until Bitwire's are delivered | `README.md:73` |
+| Nightseam | Runtime, dispatch, live references, generator; its carriers, peers, tunnels and invocation lifecycle serve until Bitwire's are delivered | `README.md:73` |
 | Bitlink | Planned protocol projections and generated adapters | `README.md:74` |
 | Bitsystem | Typed spaces and kernel/system operations exposed through them | `README.md:75` |
 
