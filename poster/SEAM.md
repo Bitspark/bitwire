@@ -19,7 +19,7 @@ Bitwire is a **multi-language surface** over one written contract. It ships
 - The Go package has "no endpoint implementation". `wire/go/README.md:111`
 - "No generator or transport is a dependency of the contract packages."
   `README.md:108-109`; packages have no runtime dependency on another Bitspark
-  repository. `COLLABORATION.md:41-42`
+  repository. `COLLABORATION.md:27-28`
 
 It is not a library you call for behavior, not an engine and not an executable.
 Its value is the shared meaning of a tiny interface, plus independent cases that
@@ -237,10 +237,13 @@ evidence (`docs/languages.md:36-45`).
 
 ## Negative space
 
-- Not a runtime, carrier, codec, generator or endpoint implementation. (above)
-- Not a new network protocol: the profile remains `nightseam.duplex/1`; no
-  `bitwire.duplex/1`; importing Bitwire does not implement the network profile.
-  `docs/wire/profile.md:4-6`, `README.md:77-80`
+- Not yet a carrier, codec or endpoint implementation (above), and never a
+  runtime or generator. Decision 0007 brings the operators, carriers and network
+  protocol here, so that using Bitwire never requires Nightseam; none is
+  delivered yet. `docs/decisions/0007-using-bitwire-never-requires-nightseam.md`
+- Not a new network protocol: the profile is `nightseam.duplex/1`, which decision
+  0007 moves here as `bitwire/1` with the same bytes on the wire; until then
+  importing Bitwire does not implement it. `docs/wire/profile.md:4-6`, `README.md:77-80`
 - Not arbitrary-payload or profile-polymorphic. `docs/wire/contract.md:32-34`
 - No routing policy in the primitive. `docs/wire/contract.md:79-81`
 - No completion signal. `docs/wire/contract.md:92-93`
@@ -254,14 +257,14 @@ evidence (`docs/languages.md:36-45`).
 - An arbitrary Wire is not decomposable; no enumeration, undo or codec.
   `docs/decisions/0006-declared-composites-realize-deixis-nodes.md:419-427`
 - A new primitive needs an observable requirement that composition cannot meet.
-  `COLLABORATION.md:27-29`
+  `COLLABORATION.md:13-15`
 
 ## Ownership
 
 | Project | Responsibility | Cite |
 | --- | --- | --- |
-| Bitwire | Shared access contract, language declarations, independent conformance criteria | `README.md:72` |
-| Nightseam | Runtime, carriers, peers, tunnels, live references, generator | `README.md:73` |
+| Bitwire | Shared access contract, language declarations, independent conformance criteria; under decision 0007 also operators, transports, carriers and the network protocol, as each is delivered | `README.md:72` |
+| Nightseam | Runtime, dispatch, invocation lifecycle, live references, generator; its carriers, peers and tunnels serve until Bitwire's are delivered | `README.md:73` |
 | Bitlink | Planned protocol projections and generated adapters | `README.md:74` |
 | Bitsystem | Typed spaces and kernel/system operations exposed through them | `README.md:75` |
 

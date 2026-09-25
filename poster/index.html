@@ -588,12 +588,12 @@ type Endpoint interface {
     <div class="head">
       <span class="strip mini" aria-hidden="true"><span class="o"></span><span class="c">limits</span></span>
       <h2 id="limits-h">Where Bitwire stops</h2>
-      <p class="lead measure">Bitwire owns what the interface means. Everything that makes messages actually move lives in the projects that depend on it.</p>
+      <p class="lead measure">Bitwire owns what the interface means. Today, what makes messages actually move lives in the projects that depend on it. <a href="https://github.com/Bitspark/bitwire/blob/main/docs/decisions/0007-using-bitwire-never-requires-nightseam.md">Decision 0007</a> brings the operators, carriers and network protocol here, so that using Bitwire never requires Nightseam.</p>
     </div>
     <div class="limits">
       <figure class="deps" style="margin:0" aria-labelledby="deps-cap">
         <div class="src">
-          <div class="box"><b>Nightseam</b> · runtime, carriers, peers, tunnels, live references, generator</div>
+          <div class="box"><b>Nightseam</b> · runtime, dispatch, live references, generator; carriers until Bitwire's land</div>
           <div class="box"><b>Bitlink</b> · planned protocol projections and generated adapters</div>
           <div class="box"><b>Your composition</b> · what operations mean, how parts attach, who is allowed</div>
         </div>
@@ -606,7 +606,7 @@ type Endpoint interface {
         <ul class="nothere">
           <li>An endpoint runtime, queue, transport or codec.</li>
           <li>A generator.</li>
-          <li>A new network protocol. Messages keep Nightseam's <code>nightseam.duplex/1</code> profile.</li>
+          <li>A new network protocol. Messages keep the <code>nightseam.duplex/1</code> profile, which moves here as <code>bitwire/1</code> with the same bytes.</li>
           <li>Authentication. Reaching a path is not permission.</li>
           <li>Routing policy or a completion signal in the primitive.</li>
           <li>Profile negotiation. Deployments agree on a revision out of band.</li>

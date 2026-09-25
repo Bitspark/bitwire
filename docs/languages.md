@@ -90,6 +90,23 @@ API from PR #713 at a pinned source revision, with no gaps accepted. Native
 construction and actual requester-cancellation tests supplement those cases in
 both languages. Adoption by a released runtime package is still pending.
 
+## Independence from Nightseam
+
+[Decision 0007](decisions/0007-using-bitwire-never-requires-nightseam.md) requires
+that using Bitwire never requires Nightseam. `node scripts/check.mjs` already
+fails if any published package below depends on or imports Nightseam. What a
+program can do with Bitwire alone is still limited to the contract:
+
+| Language | Contract | Operators | In-process pair and transports | Protocol engine |
+| --- | --- | --- | --- | --- |
+| Go | Delivered | Pending, step 2 | Pending, step 3 | Pending, step 5 |
+| TypeScript | Delivered | Pending, step 2 | Pending, step 3 | Pending, step 5 |
+| Python, Rust, Swift, C++, Java, Haskell | Delivered | Pending, step 7 | Pending, step 7 | Pending, step 7 |
+
+Steps refer to the decision's [delivery table](decisions/0007-using-bitwire-never-requires-nightseam.md#delivery).
+Until a piece is delivered, it comes from Nightseam, which has peers and
+transports in all eight languages.
+
 ## Native representations
 
 The [contract](wire/contract.md) is normative. Representations must preserve exact

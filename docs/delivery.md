@@ -1,5 +1,14 @@
 # First delivery
 
+## Independence from Nightseam
+
+[Decision 0007](decisions/0007-using-bitwire-never-requires-nightseam.md) moves the
+operators, transports, carriers and network protocol into Bitwire, so that using
+Bitwire never requires Nightseam. Its [delivery table](decisions/0007-using-bitwire-never-requires-nightseam.md#delivery)
+orders the work. The decision and the independence check are delivered. Go and
+TypeScript operators and transports need nothing from Nightseam; the protocol
+engine needs agreement on its public hooks.
+
 ## Declared composites, unreleased
 
 [Issue #29](https://github.com/Bitspark/bitwire/issues/29) and
@@ -92,7 +101,10 @@ upstream acceptance obligation.
 ## Dependency direction
 
 Published Bitwire libraries have no dependency on Nightseam, Bitlink or Bitsystem.
+`node scripts/check.mjs` enforces this for Nightseam in every language.
 A test-only driver can depend on a pinned public Nightseam source revision.
+Drivers that test Nightseam keep that dependency. Bitwire's own reference
+realization drops it once decision 0007's operators and carriers are delivered.
 The driver reports what implementation and contract were exercised. Local
 development overrides cannot satisfy the final public consumer-install check.
 

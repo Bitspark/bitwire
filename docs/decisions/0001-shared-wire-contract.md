@@ -1,5 +1,10 @@
 # 0001: The shared Wire contract has an independent home
 
+**Partly superseded** by [decision 0007](0007-using-bitwire-never-requires-nightseam.md)
+on 2026-09-25. Using Bitwire must never require Nightseam, so the operators,
+carriers and network profile left in Nightseam below move to Bitwire. The record
+below is unchanged history.
+
 **Status:** accepted scope, 2026-09-21. **Delivery:** [0.1.0](../delivery.md).
 
 ## Question

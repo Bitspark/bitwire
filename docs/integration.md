@@ -59,16 +59,20 @@ a new primitive is not an exemption from those requirements.
 
 ```text
 Nightseam runtime and generated adapters ──┐
-Bitlink's planned protocol adapters ───────┼──> Bitwire contract
+Bitlink's planned protocol adapters ───────┼──> Bitwire contract, operators and carriers
 Consumer-owned space/service composition ─┘
 ```
 
 Bitwire owns access semantics, language declarations and independent criteria.
-Nightseam owns its carriers, invocation profile, generator and live-reference
-machinery. Consumers own domain contracts, attachment rules and application
-policy. Bitwire packages have no runtime dependency on those consumers or on
-Nightseam. Identity cryptography and authentication are outside this access
-contract; access alone is not proof of authority.
+Under [decision 0007](decisions/0007-using-bitwire-never-requires-nightseam.md) it
+also owns the operators, transports, carriers and network protocol. Until each is
+delivered, Nightseam's is the implementation in use. Nightseam owns its dispatch,
+invocation lifecycle, generator and live-reference machinery. Consumers own domain
+contracts, attachment rules and application policy. Bitwire packages have no
+runtime dependency on those consumers or on Nightseam, and `node scripts/check.mjs`
+fails if a published package depends on or imports Nightseam. Identity
+cryptography and authentication are outside this access contract; access alone
+is not proof of authority.
 
 ## Next steps
 

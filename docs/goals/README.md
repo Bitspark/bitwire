@@ -27,6 +27,9 @@ the first check. Conformance requires executing the observations.
 ## Explicit dependencies
 
 Contract packages depend on neither Nightseam nor Bitlink, a transport, an
-authentication system or the Bitsystem kernel. Higher layers supply their own
-type interpretations, scope machinery and application policy. Public examples
+authentication system or the Bitsystem kernel. Operator and carrier packages
+depend on the contract and never on a runtime: using Bitwire never requires
+Nightseam ([decision 0007](../decisions/0007-using-bitwire-never-requires-nightseam.md)).
+Higher layers supply their own type interpretations, scope machinery and
+application policy. Public examples
 and verification require no private checkout or organization secrets.

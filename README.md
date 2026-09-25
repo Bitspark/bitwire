@@ -19,7 +19,7 @@ reference and ten historical 0.1.0 cases remain distinct. The
 [language matrix](docs/languages.md) records publication and adoption separately;
 full lifecycle acceptance review remains open in
 [#20](https://github.com/Bitspark/bitwire/issues/20).
-No production endpoint runtime is included.
+No production endpoint runtime is included yet ([decision 0007](docs/decisions/0007-using-bitwire-never-requires-nightseam.md)).
 
 ## The interface
 
@@ -69,18 +69,18 @@ is rebuilt, and a pending request still reaches its original invocation.
 
 | Project | Responsibility |
 | --- | --- |
-| **Bitwire** | Shared access contract, language declarations and independent conformance criteria. |
-| **Nightseam** | Its runtime, carriers, peers, tunnels, live-reference machinery and generator. |
+| **Bitwire** | Shared access contract, language declarations and independent conformance criteria. Under [decision 0007](docs/decisions/0007-using-bitwire-never-requires-nightseam.md), also the operators, transports, carriers and network protocol, as each is delivered. |
+| **Nightseam** | Its runtime, dispatch, invocation lifecycle, live-reference machinery and generator. Its carriers, peers and tunnels serve until Bitwire's are delivered. |
 | **Bitlink** | Its planned protocol projections and generated adapters. |
 | **Bitsystem** | Typed spaces and the kernel/system operations exposed through them. |
 
 Sharing an interface is necessary for composition. Interoperability also requires
 agreement on the message profile, operation addresses, contract identity and live
-reference rules. The starting profile remains `nightseam.duplex/1`; creating this
-repository does not rename it or establish a new on-the-network protocol.
+reference rules. The profile is `nightseam.duplex/1`; decision 0007 moves its
+specification here as `bitwire/1`, with the same bytes on the wire.
 
 The [ownership decision](docs/decisions/0001-shared-wire-contract.md) records the
-scope. [Integration status](docs/integration.md) distinguishes the intended
+scope, and [decision 0007](docs/decisions/0007-using-bitwire-never-requires-nightseam.md) that using Bitwire never requires Nightseam. [Integration status](docs/integration.md) distinguishes the intended
 dependency direction from today's implementations.
 
 The complete scope includes Go, TypeScript, Python, Rust, Swift, C++, Java and
