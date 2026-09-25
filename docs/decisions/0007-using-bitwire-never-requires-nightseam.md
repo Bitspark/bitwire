@@ -183,7 +183,7 @@ gap until then.
 | --- | --- | --- |
 | 1 | This decision and the independence check | No |
 | 2 | Go and TypeScript operators: selection, mounting, forwarding, declared composition and decomposition; the invocation lifecycle's state machine; the in-process pair | No |
-| 3 | Go and TypeScript transports: the seam, the in-memory pipe, WebSocket, and a framed byte stream with stdio and TCP | No |
+| 3 | Go and TypeScript transports: the seam, the in-memory pipe, WebSocket, and the framed byte stream `bitwire-stream/1` ([decision 0009](0009-carriers-bitwire-provides-and-byte-stream-framing.md)) with stdio, TCP and Unix sockets | No |
 | 4 | The protocol specification as `bitwire/1` with its manifest (decision 0008); the carrier contract; the conformance runner protocol, tables and scenarios | Review, since Nightseam then follows it |
 | 5 | The Go and TypeScript protocol engine, interoperating byte for byte with Nightseam peers; received-context evidence in all eight languages (contract 0.3.0); Bitwire's reference realization no longer imports Nightseam | Agreement on the engine's public hooks |
 | 6 | Nightseam builds on Bitwire's operators, transports and engine | Nightseam's work |
