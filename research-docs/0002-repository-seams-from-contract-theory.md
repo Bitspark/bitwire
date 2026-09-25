@@ -2,7 +2,7 @@
 
 **ID:** 0002
 **Date:** 25 September 2026
-**Status:** submitted
+**Status:** applied
 **Run-ID:** run_a52b7f3e-c9dd-4f31-bd52-6f6df457b82f
 **Submission log:** run_2250f8a8-a75f-411f-b77f-aa7d88452eae (account-1) failed inside the consult service after 28 seconds: "Nightjar session-control request timed out" (nightjar_unavailable), while that account was re-authenticating. The same uploaded document was resubmitted once, pinned to account-2.
 **Document-ID:** doc_b6ca2a65-e4c8-453c-9165-3b5e25dead52
@@ -975,3 +975,94 @@ more.
 5. **What are we not seeing?** For example, places where the theory's seams and
    workable repository seams should deliberately diverge, or risks in splitting
    one project into four or five repositories at once with a very small team.
+
+## Applied
+
+**Advice:** [0002-repository-seams-from-contract-theory.advice.md](0002-repository-seams-from-contract-theory.advice.md).
+
+- It came from run `run_a52b7f3e-c9dd-4f31-bd52-6f6df457b82f`, and
+  `nightfall consult verify` judged it genuine advice.
+- One warning: the capture replaced the advisor's citation links with markers,
+  so its source URLs are not in the file. The references it names by title are
+  listed at the end of this section.
+
+**Revision the expert read:** commit `3ed8788`. Since then only the header lines
+have changed (status and run records), so no advice rests on text the expert did
+not see.
+
+**Checked against:**
+
+- Nightseam `origin/main` `dfacbb27`;
+- Bitwire `main` `74afa06`;
+- the consumer inventory and repository visibility on GitHub.
+
+**Verdicts:**
+
+- **HOLDS:** the premise is intact.
+- **ADAPT:** directionally right, but a detail differs.
+- **STALE:** the premise was not true.
+
+**Outcomes:**
+
+- **Decision:** needs the maintainer's call.
+- **Later:** belongs to the design of a piece not yet built.
+- **Recorded:** accepted as analysis; nothing to change.
+
+| # | Recommendation | Verdict and evidence | Outcome |
+| --- | --- | --- | --- |
+| 1 | The theory defines semantic boundaries and correctness obligations. Independent ownership, compatibility commitments and release decisions decide which boundaries become repositories. | HOLDS. The theory itself leaves "package extraction … and the outstanding domain-graph choices" as separate design questions. | Decision: adopt as the governing principle. |
+| 2 | A repository needs a charter: the decisions it owns, what it promises and how that is versioned, the independent evidence that checks it, and which real change becomes easier. The module boundary is the default unit of work; a repository is an explicit compatibility commitment. | HOLDS. It extends the family design's "a consumer outside the parent proves it" rule rather than replacing it. | Decision: adopt; each new repository opens with a charter. |
+| 3 | The brief's argument separating the contract from "wire, carrier and peer instances" is a category mistake: a repository holds source, not running instances. | HOLDS. The brief did argue this way in its "for two" case and in Map 3's framing. | Recorded: correction accepted. |
+| 4 | **(a)** Keep Bitwire as the normative contract and conformance repository. Put the Go and TypeScript implementations in **bitruntime**. Supersede the implementation placement of decision 0007 and keep its independence rule. | HOLDS. Decision 0008 already makes protocol revisions immutable, so fixes and new revisions don't touch a published one. Bitwire already checks an external implementation (`conformance/drivers/nightseam`, `conformance/current`) and records exact gaps. | Decision. |
+| 5 | Operators, dispatch, live references and tunnels become modules inside bitruntime, not repositories. | HOLDS. None has an independent consumer or compatibility policy today. | Decision, as part of 4. |
+| 6 | **(b)** One modular, wire-independent contract language in **bittype**, with a value-type core usable on its own. Abstract operations and callable signatures extend that core; their mapping to paths and the profile belongs to the binding. Don't create bitmodel yet. | HOLDS. `protocol.json` mixes operations with `"profile": "nightseam.duplex/1"`. The canonical declaration graph already covers sides, operations and errors, and excludes the profile's envelope layouts. | Decision. |
+| 7 | Bitlink owns the model-to-wire binding, not every generated interface. The test: would the declaration make sense unchanged with a different adapter and no Bitwire? | HOLDS. It narrows the family design's claim that generated interfaces are the wire's calling convention. | Decision, as part of the map. |
+| 8 | An adapter generator takes the chosen native realization explicitly. If only one realization per language is supported at first, that is a stated restriction. | HOLDS. This is the theory's `AdapterGen` signature. | Later: generator design. |
+| 9 | **(c)** Canonical declaration identity gets one normative specification, shared vectors, and one library per language, used by both the generator and the generated-code support. Before moving it, audit what the canonical graph contains. Keep declaration identity, profile revision, generated-code compatibility and behavior distinct. | HOLDS. Two Go implementations exist today: `internal/render/declaration.go` and `runtime/go/declaration_identity.go`. The runtime copy exists to close generic applications at run time, which a shared library can do. | Decision (home: bittype). Later: the audit. |
+| 10 | Start the domain-neutral generation kernel as a separate module inside bittype, forbidden to import the declaration language. Extract it when its interface stabilizes. A general plug-in platform is not a prerequisite for the first generator. | HOLDS. Today's `spi.Target` exposes `render.Family` and the concerns `model`, `protocol` and `live`, so it is not neutral. | Decision. |
+| 11 | Split runtime support by meaning: validation to bitschema; absence/null to bittype; wire conversions, the identity exchange and reference conversion to Bitlink; correlation, dispatch, carriers and reference mechanics to bitruntime. | HOLDS. It matches the coupling inventory and both candidate maps. | Decision, as part of the map. |
+| 12 | Publish a generated-code compatibility contract, and record language, format, binding, generator and support versions in generated artifacts or their build manifest. | ADAPT. Nightseam decided that generated files carry no version: a header version rewrites every file on every release and breaks byte-identical checks. Use a generation manifest beside the output, not file headers. | Later: generator design. |
+| 13 | A generator that emits calls to bitruntime need not link bitruntime. | HOLDS. The link exists today only through `internal/examples`, which validates examples with the runtime's validator. That validator belongs in bitschema. | Later. |
+| 14 | Live references and tunnels depend on the smallest stated capabilities (an Endpoint plus lifetime and scope facilities), with the peer as one implementation. No catch-all session interface, and no new obligation on every Wire. | HOLDS. `live.Over(*runtime.Peer, …)` and `tunnel.New(*runtime.Peer, …)`. | Later: the engine-hook design (Bitwire #39, step 5). |
+| 15 | Give each built-in vocabulary one authoritative owner. Wire-only vocabularies live with the wire specification; the identity exchange lives in Bitlink. Declarations for the generator are derived from, or checked against, those. | HOLDS. `live.release` is a method in the built-in declaration and an event in the runtime and prose (nightseam#724). | Later: the protocol move (Bitwire #39, step 4). |
+| 16 | The regular-expression dialect goes with the validation semantics it serves. The JSON string guard becomes a tiny neutral module, and the protocol engine depends only on it. | HOLDS. `runtime/go/peer.go` imports `internal/scalarjson`, and `internal/pattern` is shared by the declaration checker and the runtime validator. | Later. |
+| 17 | **(d)** Give the theory a normative, versioned home in bitverse, and have each repository declare which theory revision and laws it claims to satisfy. | ADAPT. bitverse is **private**. The theory is public today (in Nightseam), and Bitwire, which is public, may cite only public sources. The normative area needs a public home: bitverse made public, or a public repository of its own. | Decision. |
+| 18 | Assign each law's tests to the owner of its semantics. Compare observations, not generated text. Add deliberately unlawful implementations. Qualify conformance reports by specification revision, suite revision and implementation version. | HOLDS. Bitwire already mutates its reference (a missing child falling back to the origin fails 3 cases) and pins fixture hashes and revisions. | Later: each owner, as its repository forms. |
+| 19 | An observation model covering transport failures, ownership and concurrency is a specification task in its own right. | HOLDS. It matches research 0001's recommendation of a lifecycle specification for faults. | Later. |
+| 20 | **(e)** Migrate as a partial order with gates: bitsystem3 first, then BitTree as the first generated consumer; repo-tool and nightforge independently once authority or live references pass; nighthall once tunnels and its v0.3.0 baseline are covered; bitsystem last. | HOLDS. It corrects the brief: bitsystem3 needs the handwritten-adapter path (dispatcher, helpers, selection, connection setup), not only carriers. | Decision. |
+| 21 | Record each consumer's actual baseline. Extract from identified commits, keeping released v0.6.0 apart from the 40 unreleased commits. | HOLDS. | Later. |
+| 22 | Build a runtime slice first, then one generated vertical slice covering absence/null, errors, reverse calls and generic identity, before declaring interfaces stable. Don't design every repository before a slice runs. | HOLDS. | Decision: the plan. |
+| 23 | Carrying the declaration language forward unchanged is allowed. A successor-owned implementation can accept the old syntax at first, separating extraction from redesign. | HOLDS. The brief lists it as allowed. It contradicts the family design's "the declaration language is new", which is open to challenge. | Decision. |
+| 24 | Keep authority in an isolated module of its only consumer (repo-tool), above Archon. Extract the authority layer when a reusable contract is demonstrated. | HOLDS. repo-tool is the only grants user; Archon excludes authority. | Decision. |
+| 25 | Make the identity check's outcome explicit: checked and matching, checked and mismatching, or unavailable under a stated policy. | HOLDS. `CheckIdentity` returns success on `method_not_found` (nightseam#720; research 0001 decision 2). | Later: Bitlink. |
+| 26 | Don't make `render.Family` the universal interface between repositories; use typed, versioned artifacts and narrow projections. | HOLDS. The same direction as Nightseam's open kernel threads. | Later: kernel design. |
+| 27 | Don't make BitTree mandatory infrastructure because both sides can be represented as trees. | HOLDS. The family design casts it as the substrate; Deixis is the structural correspondence. | Decision (on the family design). |
+| 28 | The principle: "A module owns a coherent semantic decision. A repository owns an independently useful compatibility commitment. The theory states the obligations across those boundaries; executable, versioned checks make those obligations credible." | HOLDS. | Decision: adopt with 1 and 2. |
+
+No recommendation was stale.
+
+**A finding of the verification, not the advice.** bitverse, Bitlink, bitschema
+and Deixis are private; Bitwire, Archon and Nightseam are public. Public
+repositories will depend on bittype, bitruntime and Bitlink, and on the theory
+as a normative source. Their visibility should be decided when they are created.
+
+**References the advice names by title** (their links were lost in capture):
+
+- Parnas, *On the Criteria To Be Used in Decomposing Systems into Modules* (1972);
+- Test262, an independent conformance suite for ECMAScript;
+- the WebAssembly specification repository, which holds the specification,
+  reference interpreter and tests together;
+- Protocol Buffers: compiler, runtimes, conformance tests, the plug-in protocol,
+  and its cross-version runtime guarantees;
+- Smithy: service and operation shapes in one model, with protocol traits kept
+  separate.
+
+**Integrated in this change:** this document and its advice. Every architectural
+recommendation needs the maintainer's decision first, so no decision record
+changes here. The recommended outcome, if adopted, is one decision that
+supersedes decision 0007's implementation home and records:
+
+- the governing principle (rows 1, 2 and 28);
+- the map in rows 4 to 11 and 17;
+- the migration plan in rows 20, 22 and 23;
+- authority staying with its consumer (row 24).

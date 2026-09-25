@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Record research 0002 on repository boundaries that follow the contract theory, with an outside expert's advice verified against the code. The advice keeps Bitwire as the normative contract and conformance repository, moves the production implementations to a separate runtime repository, gives value types and abstract operations one wire-independent contract language, places adapters and their generation where model and wire meet, consolidates canonical declaration identity, and proposes a gated migration order. No decision record changes yet; the recommended outcome awaits the maintainer.
+
 - Decide which carriers Bitwire provides and how byte streams carry frames (decision 0009). Carriers are grouped by what their transport lacks: WebSocket; one framing, `bitwire-stream/1`, for stdio, TCP and Unix sockets; forwarding and tunnels; the in-process pair. Connectionless transports wait for a consumer and a contract of their own, and unreliable ones are excluded. Byte streams carry `Content-Length` records with a close record and reply, checking the receive limit before reading a body. A draft carrier specification (`docs/wire/carriers.md`) holds the groups, the carrier contract and the record format.
 
 - Decide that a protocol revision has its own identity (decision 0008): a name, an immutable behavioral revision and the hashes of its normative artifacts, never tightened in place. `bitwire/1` is the behavior of the accepted Nightseam v0.6.0 baseline. From revision 2, a bootstrap exchange establishes the revision, roles, extensions and receive limits. This supersedes decision 0004's compatibility section.
