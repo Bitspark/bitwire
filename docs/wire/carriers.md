@@ -4,8 +4,9 @@
 [0007](../decisions/0007-using-bitwire-never-requires-nightseam.md),
 [0008](../decisions/0008-a-protocol-revision-has-its-own-identity.md) and
 [0009](../decisions/0009-carriers-bitwire-provides-and-byte-stream-framing.md).
-Nothing here is implemented yet. Bitwire's carriers arrive in decision 0007's
-steps 2 to 5, tracked in [#39](https://github.com/Bitspark/bitwire/issues/39).
+Under [decision 0010](../decisions/0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md),
+Bitwire specifies carriers and bitruntime implements them. Nothing here is
+implemented yet; the work is tracked in [#39](https://github.com/Bitspark/bitwire/issues/39).
 
 ## Transport and carrier
 
@@ -50,7 +51,7 @@ loses, duplicates or reorders frames breaks correlation.
 Carriers are grouped by what their transport lacks, because that decides what
 has to be added.
 
-| Group | Examples | What must be added | Bitwire provides |
+| Group | Examples | What must be added | The project provides (bitruntime) |
 | --- | --- | --- | --- |
 | Framed, duplex and reliable | WebSocket; WebRTC data channels in reliable, ordered mode; browser message ports (iframes, workers), Node worker threads, Electron IPC; Windows named pipes in message mode | At most a close convention. Data channels and message ports carry no close code or reason, and message ports have no backpressure. | WebSocket (step 3). Others may implement the interface. |
 | Reliable byte streams | stdio of a child process; TCP; TLS; Unix domain sockets; named pipes in byte mode; SSH channels; QUIC, HTTP/2 and WebTransport streams | Framing and a close record: [`bitwire-stream/1`](#the-framed-byte-stream-bitwire-stream1) | The framed stream, with stdio, TCP and Unix sockets (step 3). The same framing serves the others. |

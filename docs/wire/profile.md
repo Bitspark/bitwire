@@ -2,8 +2,8 @@
 
 Bitwire 0.2 defines shared relative-path access and its structured message
 vocabulary. The network profile is **`nightseam.duplex/1`**, which [decision 0007](../decisions/0007-using-bitwire-never-requires-nightseam.md)
-moves here as `bitwire/1`, unchanged on the wire. Until then, importing Bitwire
-alone does not implement it. Declaration interpretation and live references stay Nightseam's.
+moves here as `bitwire/1`, unchanged on the wire. Bitwire specifies it; bitruntime
+implements it ([decision 0010](../decisions/0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md)), so importing Bitwire alone never does.
 
 ## Structured messages
 
@@ -48,8 +48,8 @@ preservation and explains how native presentations can carry them.
 
 | Bitwire specifies | The selected Nightseam profile supplies |
 | --- | --- |
-| Relative paths, single receive attachment, admission surface and detach | Physical framing, canonical path encoding, carrier behavior and close codes; moving to Bitwire under decision 0007 |
-| Structured frame vocabulary and preservation of represented data | Complete envelope validation, id minting/correlation, cancellation and configured bounds; moving to Bitwire under decision 0007 |
+| Relative paths, single receive attachment, admission surface and detach | Physical framing, canonical path encoding, carrier behavior and close codes; specified by Bitwire under decision 0007, implemented by bitruntime under 0010 |
+| Structured frame vocabulary and preservation of represented data | Complete envelope validation, id minting/correlation, cancellation and configured bounds; specified by Bitwire under decision 0007, implemented by bitruntime under 0010 |
 | Stable local capability identity and received-context preservation | Creation, validation and recognition of invocation context, tracing and observation |
 | Selection/mount/forwarding observations and borrowed endpoint lifetime | Declaration identity checks, preparation, live-value conversion, scopes and release barriers |
 | Declared-composite realization, segment-to-key mapping and reconstruction laws ([0006](../decisions/0006-declared-composites-realize-deixis-nodes.md)) | Any production construction facility with origins, its retained parts and their runtime integration |

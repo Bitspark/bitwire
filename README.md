@@ -19,7 +19,7 @@ reference and ten historical 0.1.0 cases remain distinct. The
 [language matrix](docs/languages.md) records publication and adoption separately;
 full lifecycle acceptance review remains open in
 [#20](https://github.com/Bitspark/bitwire/issues/20).
-No production endpoint runtime is included yet ([decision 0007](docs/decisions/0007-using-bitwire-never-requires-nightseam.md)).
+No production endpoint runtime is included; implementations live in bitruntime ([decision 0010](docs/decisions/0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md)).
 
 ## The interface
 
@@ -69,8 +69,8 @@ is rebuilt, and a pending request still reaches its original invocation.
 
 | Project | Responsibility |
 | --- | --- |
-| **Bitwire** | Shared access contract, language declarations and independent conformance criteria. Under [decision 0007](docs/decisions/0007-using-bitwire-never-requires-nightseam.md), also the operators, transports, carriers and network protocol, as each is delivered. |
-| **Nightseam** | Its runtime, dispatch, live-reference machinery and generator. Its carriers, peers and tunnels serve until Bitwire's are delivered. |
+| **Bitwire** | Shared access contract, language declarations, protocol and carrier specifications, and independent conformance criteria. |
+| **bitruntime**, planned | The Go and TypeScript implementations: operators, carriers, protocol engine, dispatch, live references, tunnels ([decision 0010](docs/decisions/0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md)). Until it exists, Nightseam v0.6.0, now frozen, is the implementation in use. |
 | **Bitlink** | Its planned protocol projections and generated adapters. |
 | **Bitsystem** | Typed spaces and the kernel/system operations exposed through them. |
 
@@ -80,7 +80,7 @@ reference rules. The profile is `nightseam.duplex/1`; decision 0007 moves its
 specification here as `bitwire/1`, with the same bytes on the wire.
 
 The [ownership decision](docs/decisions/0001-shared-wire-contract.md) records the
-scope, and [decision 0007](docs/decisions/0007-using-bitwire-never-requires-nightseam.md) that using Bitwire never requires Nightseam. [Integration status](docs/integration.md) distinguishes the intended
+scope, [decision 0007](docs/decisions/0007-using-bitwire-never-requires-nightseam.md) that using Bitwire never requires Nightseam, and [decision 0010](docs/decisions/0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md) where the implementations live. [Integration status](docs/integration.md) distinguishes the intended
 dependency direction from today's implementations.
 
 The complete scope includes Go, TypeScript, Python, Rust, Swift, C++, Java and

@@ -10,8 +10,9 @@ The command uses shell-free child processes and resolves the checkout from its
 own location. It runs identically on Windows and Linux:
 
 1. Check repository-relative Markdown links against tracked and unignored files.
-2. Check that no published package depends on or imports Nightseam, in any
-   language ([decision 0007](../docs/decisions/0007-using-bitwire-never-requires-nightseam.md)).
+2. Check that no published package depends on or imports Nightseam or bitruntime,
+   in any language ([decisions 0007](../docs/decisions/0007-using-bitwire-never-requires-nightseam.md)
+   and [0010](../docs/decisions/0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md)).
    Test-only conformance under `conformance/` is exempt.
 3. Check Go formatting, then run `go vet` and `go test` to compile the declarations.
 4. Check and build the TypeScript declarations using the pinned compiler.

@@ -2,12 +2,14 @@
 
 ## Independence from Nightseam
 
-[Decision 0007](decisions/0007-using-bitwire-never-requires-nightseam.md) moves the
-operators, transports, carriers and network protocol into Bitwire, so that using
-Bitwire never requires Nightseam. Its [delivery table](decisions/0007-using-bitwire-never-requires-nightseam.md#delivery)
-orders the work. The decision and the independence check are delivered. Go and
-TypeScript operators and transports need nothing from Nightseam; the protocol
-engine needs agreement on its public hooks.
+[Decision 0007](decisions/0007-using-bitwire-never-requires-nightseam.md) made
+using Bitwire independent of Nightseam, and its independence check is delivered.
+[Decision 0010](decisions/0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md) moves the
+implementations to a separate runtime repository, bitruntime. Bitwire delivers
+the protocol specification, the carrier contract, the conformance runner protocol
+and the received-context contract change. bitruntime delivers the operators,
+transports, carriers and protocol engine. The migration order of Nightseam's
+dependents is in decision 0010.
 
 ## Declared composites, unreleased
 
@@ -103,8 +105,9 @@ upstream acceptance obligation.
 Published Bitwire libraries have no dependency on Nightseam, Bitlink or Bitsystem.
 `node scripts/check.mjs` enforces this for Nightseam in every language.
 A test-only driver can depend on a pinned public Nightseam source revision.
-Drivers that test Nightseam keep that dependency. Bitwire's own reference
-realization drops it once decision 0007's operators and carriers are delivered.
+Drivers that test Nightseam keep that dependency. Bitwire's conformance then
+runs against bitruntime the same way: as an external implementation, from a
+test-only module.
 The driver reports what implementation and contract were exercised. Local
 development overrides cannot satisfy the final public consumer-install check.
 

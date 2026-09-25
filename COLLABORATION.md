@@ -3,9 +3,9 @@
 ## The boundary
 
 Bitwire owns the shared Wire contract, language presentations and independent
-conformance criteria. Under [decision 0007](docs/decisions/0007-using-bitwire-never-requires-nightseam.md)
-it also owns the operators, transports, carriers and network protocol that make
-the contract usable without a runtime: using Bitwire never requires Nightseam.
+conformance criteria, and the protocol and carrier specifications. It ships no
+production implementation: [decision 0010](docs/decisions/0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md)
+puts those in bitruntime, and using Bitwire never requires Nightseam.
 A runtime builds on it; a generator derives adapters to it; a consumer supplies
 application meaning. The
 [scope decision](docs/decisions/0001-shared-wire-contract.md) is the starting point.

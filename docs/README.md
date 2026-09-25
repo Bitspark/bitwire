@@ -10,7 +10,7 @@ separate the shared boundary, executable checks and consumer adoption.
 | [Runnable examples](../examples/README.md) | Service trees, remounting, retained cart state and guards, cancellation and cross-language calls. |
 | [Wire contract](wire/contract.md) | The surface, paths, receiver and composition laws. |
 | [Message profile](wire/profile.md) | The existing Nightseam profile and the limits of interface compatibility. |
-| [Carriers](wire/carriers.md) | Draft: transports and carriers, which ones Bitwire provides, the carrier contract and the framed byte stream. |
+| [Carriers](wire/carriers.md) | Draft: transports and carriers, which ones the project provides, the carrier contract and the framed byte stream. |
 | [Integration](integration.md) | Ownership, current dependencies and the next adoption steps. |
 | [Language bindings](languages.md) | Eight-language scope, package coordinates and delivery status. |
 | [First delivery](delivery.md) | The implementation lanes and the public Nightseam handover. |

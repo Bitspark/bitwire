@@ -93,20 +93,20 @@ both languages. Adoption by a released runtime package is still pending.
 ## Independence from Nightseam
 
 [Decision 0007](decisions/0007-using-bitwire-never-requires-nightseam.md) requires
-that using Bitwire never requires Nightseam. `node scripts/check.mjs` already
-fails if any published package below depends on or imports Nightseam. What a
-program can do with Bitwire alone is still limited to the contract:
+that using Bitwire never requires Nightseam. `node scripts/check.mjs` fails if any
+published package below depends on or imports Nightseam or bitruntime.
+[Decision 0010](decisions/0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md) places the
+implementations in bitruntime, which does not exist yet:
 
-| Language | Contract | Operators | In-process pair and transports | Protocol engine |
+| Language | Contract (Bitwire) | Operators (bitruntime) | In-process pair and transports (bitruntime) | Protocol engine (bitruntime) |
 | --- | --- | --- | --- | --- |
-| Go | Delivered | Pending, step 2 | Pending, step 3 | Pending, step 5 |
-| TypeScript | Delivered | Pending, step 2 | Pending, step 3 | Pending, step 5 |
-| Python, Rust, Swift, C++, Java, Haskell | Delivered | Pending, step 7 | Pending, step 7 | Pending, step 7 |
+| Go | Delivered | Pending | Pending | Pending |
+| TypeScript | Delivered | Pending | Pending | Pending |
+| Python, Rust, Swift, C++, Java, Haskell | Delivered | Not planned until a consumer needs it | Not planned | Not planned |
 
 The in-process pair creates invocations, so the invocation lifecycle's state
-machine arrives with the operators. Steps refer to the decision's [delivery table](decisions/0007-using-bitwire-never-requires-nightseam.md#delivery).
-Until a piece is delivered, it comes from Nightseam, which has peers and
-transports in all eight languages.
+machine arrives with the operators. Until bitruntime delivers a piece, it comes
+from frozen Nightseam v0.6.0.
 
 ## Native representations
 

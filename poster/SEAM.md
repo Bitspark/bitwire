@@ -237,10 +237,9 @@ evidence (`docs/languages.md:36-45`).
 
 ## Negative space
 
-- Not yet a carrier, codec or endpoint implementation (above), and never a
-  runtime or generator. Decision 0007 brings the operators, carriers and network
-  protocol here, so that using Bitwire never requires Nightseam; none is
-  delivered yet. `docs/decisions/0007-using-bitwire-never-requires-nightseam.md`
+- Not a carrier, codec, endpoint implementation, runtime or generator. Bitwire
+  specifies the protocol and carriers; bitruntime implements them, and using
+  Bitwire never requires Nightseam. `docs/decisions/0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md`
 - Not a new network protocol: the profile is `nightseam.duplex/1`, which decision
   0007 moves here as `bitwire/1` with the same bytes on the wire; until then
   importing Bitwire does not implement it. `docs/wire/profile.md:4-6`, `README.md:77-80`
@@ -263,8 +262,8 @@ evidence (`docs/languages.md:36-45`).
 
 | Project | Responsibility | Cite |
 | --- | --- | --- |
-| Bitwire | Shared access contract, language declarations, independent conformance criteria; under decision 0007 also operators, transports, carriers and the network protocol, as each is delivered | `README.md:72` |
-| Nightseam | Runtime, dispatch, live references, generator; its carriers, peers, tunnels and invocation lifecycle serve until Bitwire's are delivered | `README.md:73` |
+| Bitwire | Shared access contract, language declarations, protocol and carrier specifications, independent conformance criteria | `README.md:72` |
+| bitruntime (planned) | The Go and TypeScript implementations; until it exists, frozen Nightseam v0.6.0 | `README.md:73` |
 | Bitlink | Planned protocol projections and generated adapters | `README.md:74` |
 | Bitsystem | Typed spaces and kernel/system operations exposed through them | `README.md:75` |
 
