@@ -1,0 +1,124 @@
+{
+  "name": "events beyond what a peer holds while its handler blocks are backpressure, told to the observer, and end the stalled peer",
+  "layer": "peer",
+  "protocol": {
+    "revision": "bitwire/1",
+    "normativeDigest": "7797682b0f05f86c508eafbd3be23c2084acd2f5cfc766922f9372b652dc416e"
+  },
+  "scope": "core",
+  "optional": "observer",
+  "source": {
+    "path": "protocol/bitwire-1/source/conformance/scenarios/peer/inbound-backpressure.json",
+    "sha256": "5c400de2bf8cc17506b46f02a5381d1dd26fd5ae3f0b4fccc1e299efcc944c28"
+  },
+  "replaces": "runtime/go/backpressure_test.go's inbound queue case and runtime/ts/src/peer.test.ts's",
+  "needs": [
+    "observer",
+    "peer"
+  ],
+  "steps": [
+    {
+      "on": "runner",
+      "op": "pair.peers",
+      "args": {
+        "server": "a",
+        "server_options": {
+          "observe": true,
+          "queue_capacity": 1,
+          "write_timeout_ms": 500
+        }
+      },
+      "bind": {
+        "server": "pa",
+        "client": "pb"
+      }
+    },
+    {
+      "on": "a",
+      "op": "peer.on_event",
+      "args": {
+        "on": "$pa",
+        "name": "flood",
+        "behavior": {
+          "kind": "block"
+        }
+      }
+    },
+    {
+      "on": "b",
+      "op": "peer.emit",
+      "args": {
+        "on": "$pb",
+        "event": "flood",
+        "data": 1
+      }
+    },
+    {
+      "on": "b",
+      "op": "peer.emit",
+      "args": {
+        "on": "$pb",
+        "event": "flood",
+        "data": 2
+      }
+    },
+    {
+      "on": "b",
+      "op": "peer.emit",
+      "args": {
+        "on": "$pb",
+        "event": "flood",
+        "data": 3
+      },
+      "expect": "$any",
+      "expect_error": {
+        "code": "$any"
+      },
+      "note": "the stalled side ends within its write deadline; a sender's emit past the stall succeeds or fails as its runtime reports a send, so the step holds either"
+    },
+    {
+      "on": "b",
+      "op": "peer.emit",
+      "args": {
+        "on": "$pb",
+        "event": "flood",
+        "data": 4
+      },
+      "repeat": {
+        "max": 8,
+        "until": "error"
+      },
+      "expect": "$any",
+      "expect_error": {
+        "code": "$any"
+      }
+    },
+    {
+      "on": "a",
+      "op": "peer.await_close",
+      "args": {
+        "on": "$pa"
+      },
+      "expect": {
+        "clean": false
+      }
+    },
+    {
+      "on": "a",
+      "op": "peer.observed",
+      "args": {
+        "on": "$pa"
+      },
+      "expect": {
+        "$contains": [
+          {
+            "type": "backpressure",
+            "queued": "$int",
+            "stalled": true,
+            "deadline": true
+          }
+        ]
+      }
+    }
+  ]
+}

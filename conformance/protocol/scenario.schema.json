@@ -1,0 +1,221 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:bitwire:conformance:scenario:1",
+  "title": "A bitwire/1 conformance scenario: two testees, a and b, the steps the runner drives them through, and the protocol identity it tests. The conformance contract (CONTRACT.md, edition 1) defines its meaning.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "name",
+    "layer",
+    "protocol",
+    "scope",
+    "steps"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique within its layer."
+    },
+    "layer": {
+      "enum": [
+        "seam",
+        "peer",
+        "tunnel"
+      ]
+    },
+    "protocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "revision",
+        "normativeDigest"
+      ],
+      "properties": {
+        "revision": {
+          "const": "bitwire/1"
+        },
+        "normativeDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "description": "The protocol identity this scenario tests: the pair in protocol/bitwire-1/SCOPE.md."
+    },
+    "scope": {
+      "enum": [
+        "core",
+        "tunnel"
+      ],
+      "description": "The conformance scope this scenario supports: core, or core and tunnel."
+    },
+    "optional": {
+      "enum": [
+        "observer",
+        "defect"
+      ],
+      "description": "A diagnostic that needs one runtime's observer, or a scenario with a known defect listed in selection.json. Either supports no conformance claim."
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^protocol/bitwire-1/source/conformance/scenarios/(seam|peer|tunnel)/[a-z0-9-]+\\.json$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "description": "Present on a derivative: the archived upstream scenario it comes from, byte-identical in the protocol bundle. Absent on a scenario bitwire authored."
+    },
+    "replaces": {
+      "type": "string",
+      "description": "Upstream record of the gate the scenario replaced; informative."
+    },
+    "description": {
+      "type": "string"
+    },
+    "needs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "listen",
+          "pipe",
+          "observer",
+          "propagator",
+          "lazy",
+          "seam",
+          "peer",
+          "tunnel"
+        ]
+      },
+      "description": "Layers and features the steps ask for, the union over both sides."
+    },
+    "mirror": {
+      "type": "boolean",
+      "default": false,
+      "description": "Also run with a and b exchanged."
+    },
+    "foreach": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "table",
+        "as"
+      ],
+      "properties": {
+        "table": {
+          "enum": [
+            "tables/frames.json",
+            "tables/serials.json",
+            "tables/unicode.json"
+          ],
+          "description": "A normative table, relative to protocol/bitwire-1/source/conformance/."
+        },
+        "as": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "where": {
+          "type": "object",
+          "description": "Rows are kept whose members equal these."
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/step"
+      }
+    }
+  },
+  "$defs": {
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "on",
+        "op"
+      ],
+      "properties": {
+        "on": {
+          "enum": [
+            "a",
+            "b",
+            "runner"
+          ]
+        },
+        "op": {
+          "type": "string",
+          "pattern": "^[a-z]+\\.[a-z_]+$"
+        },
+        "args": {
+          "type": "object"
+        },
+        "bind": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]*$"
+            },
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$"
+              }
+            }
+          ]
+        },
+        "expect": {},
+        "expect_error": {
+          "type": "object"
+        },
+        "assert": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "absent": {
+              "type": "string"
+            },
+            "present": {
+              "type": "string"
+            }
+          }
+        },
+        "repeat": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "max"
+          ],
+          "properties": {
+            "max": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "until": {
+              "enum": [
+                "error",
+                "ok",
+                "match"
+              ]
+            }
+          }
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

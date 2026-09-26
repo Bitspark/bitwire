@@ -1,0 +1,104 @@
+{
+  "name": "a malformed frame ends the connection",
+  "layer": "peer",
+  "protocol": {
+    "revision": "bitwire/1",
+    "normativeDigest": "7797682b0f05f86c508eafbd3be23c2084acd2f5cfc766922f9372b652dc416e"
+  },
+  "scope": "core",
+  "source": {
+    "path": "protocol/bitwire-1/source/conformance/scenarios/peer/malformed-frame-ends-the-connection.json",
+    "sha256": "690f5d18ff02965d26a2d85722b0576490a4a3ab6774625bd9ce3a62b9e3dafc"
+  },
+  "replaces": "runtime/go/peer_test.go TestMalformedWireFramesDisconnect, runtime/ts/src/peer.test.ts's malformed and traceparent tables, runtime/go/presence_test.go's shape table",
+  "needs": [
+    "peer",
+    "seam"
+  ],
+  "foreach": {
+    "table": "tables/frames.json",
+    "as": "row",
+    "where": {
+      "valid": false
+    }
+  },
+  "steps": [
+    {
+      "on": "runner",
+      "op": "pair.peer_and_conn",
+      "args": {
+        "peer": "b",
+        "role": "server"
+      },
+      "bind": {
+        "peer": "pb",
+        "conn": "ca"
+      }
+    },
+    {
+      "on": "b",
+      "op": "peer.handle",
+      "args": {
+        "on": "$pb",
+        "method": "echo",
+        "behavior": {
+          "kind": "echo"
+        }
+      }
+    },
+    {
+      "on": "b",
+      "op": "peer.handle",
+      "args": {
+        "on": "$pb",
+        "method": "wait",
+        "behavior": {
+          "kind": "wait"
+        }
+      }
+    },
+    {
+      "on": "b",
+      "op": "peer.handle",
+      "args": {
+        "on": "$pb",
+        "method": "read",
+        "behavior": {
+          "kind": "echo"
+        }
+      }
+    },
+    {
+      "on": "a",
+      "op": "conn.send",
+      "args": {
+        "on": "$ca",
+        "kind": "text",
+        "text": "$row.frame"
+      }
+    },
+    {
+      "on": "b",
+      "op": "peer.await_close",
+      "args": {
+        "on": "$pb"
+      },
+      "expect": {
+        "clean": false,
+        "code": 4011
+      },
+      "note": "the profile's own close: a side that broke it is told so, and told the same thing by either language"
+    },
+    {
+      "on": "a",
+      "op": "conn.await_close",
+      "args": {
+        "on": "$ca"
+      },
+      "expect": {
+        "code": 4011
+      },
+      "note": "and the raw side reads that code off the wire, where an abort would have left it 1006 and nothing to act on"
+    }
+  ]
+}
