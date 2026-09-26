@@ -1,0 +1,19 @@
+{
+  "name": "bitwire-conformance-runtime-ts",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Test-only: runs Bitwire's independent cases against bitruntime's TypeScript package. Never published.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": { "node": ">=24.0.0" },
+  "dependencies": {
+    "@bitspark/bitruntime": "https://github.com/Bitspark/bitruntime/releases/download/v0.2.0/bitspark-bitruntime-0.2.0.tgz",
+    "@bitspark/bitwire": "0.3.0",
+    "ws": "8.21.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.0",
+    "@types/ws": "8.18.1",
+    "typescript": "7.0.2"
+  }
+}

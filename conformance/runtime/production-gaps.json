@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "implementation": "bitruntime v0.2.0, tag v0.2.0 at e28bb1adefbc8a5cb1b03f172b4e7212584bd7a2: core.At, core.Mount, core.Forward, core.NewPair and engine WebSocket peers (Go); @bitspark/bitruntime 0.2.0, tag v0.2.0 at e28bb1adefbc8a5cb1b03f172b4e7212584bd7a2: at, mount, forward, pair and engine Peers over WebSockets (TypeScript)",
+  "gaps": [
+    {
+      "id": "origin-bearing-construction",
+      "requirement": "ADR0006: compose(origin, children) admits a composite whose own value is not the refusing origin.",
+      "evidence": "bitruntime has no addressed constructor taking an origin. core.Mount is the child-only specialization: it takes only children and refuses [] as missing. https://github.com/Bitspark/bitruntime/blob/e28bb1adefbc8a5cb1b03f172b4e7212584bd7a2/core/go/addressed.go#L56-L84 Its port deliberately omits nightseam's unreleased declared-composition API, which bitwire decision 0012 supersedes: https://github.com/Bitspark/bitruntime/blob/e28bb1adefbc8a5cb1b03f172b4e7212584bd7a2/docs/port-from-nightseam.md core.Compose builds a WireTree of addressless Wires; the trees family exercises it, and no inverse turns an opaque AddressedWire child into a tree. The TypeScript mount is the same specialization: it takes only a map of children and refuses [] with MissingPathError. https://github.com/Bitspark/bitruntime/blob/e28bb1adefbc8a5cb1b03f172b4e7212584bd7a2/core/ts/src/addressed.ts#L29-L48 compose builds a WireTree of addressless Wires there too.",
+      "cases": [
+        "origin-and-descendants",
+        "nested-selection-agrees",
+        "missing-never-falls-back",
+        "empty-branch-versus-missing",
+        "root-cut-reconstruction",
+        "complete-cuts-agree",
+        "children-alone-lose-origin",
+        "fresh-origin-resets-parent-state",
+        "equivalent-substitution",
+        "copied-subtree-breaks-sharing",
+        "altered-children-detected",
+        "invalid-path-never-reaches-origin",
+        "selection-retains-original-binding",
+        "forwarded-reconstruction",
+        "mounted-carrier-reconstruction",
+        "pending-across-reconstruction"
+      ],
+      "observed": {
+        "go": {"unsupported": "originBearingComposite"},
+        "ts": {"unsupported": "originBearingComposite"}
+      }
+    },
+    {
+      "id": "conflicting-segments-accepted",
+      "requirement": "ADR0006: construction refuses conflicting child segments before a native map can discard one.",
+      "evidence": "core.Mount accepts only an already-built Go map. The later entry replaced the earlier one before Mount ran, so [\"a\"] reached the replacing child and the retained description no longer matches the routes. https://github.com/Bitspark/bitruntime/blob/e28bb1adefbc8a5cb1b03f172b4e7212584bd7a2/core/go/addressed.go#L61-L67 The TypeScript mount likewise accepts only an already-built Map, with the same result. https://github.com/Bitspark/bitruntime/blob/e28bb1adefbc8a5cb1b03f172b4e7212584bd7a2/core/ts/src/addressed.ts#L37-L38",
+      "cases": ["conflicting-children"],
+      "observed": {
+        "go": {"trace": [["delivered", ["leaf"], 1]], "partsExact": false, "unchanged": true, "sendOnly": true, "borrowedUsable": true},
+        "ts": {"trace": [["delivered", ["leaf"], 1]], "partsExact": false, "unchanged": true, "sendOnly": true, "borrowedUsable": true}
+      }
+    },
+    {
+      "id": "invalid-segments-accepted",
+      "requirement": "ADR0006: construction refuses a segment outside the exact UTF-8 key image.",
+      "evidence": "core.Mount copies the key without validation. The child becomes unreachable because sending validates the path later (core.ErrInvalidPath). https://github.com/Bitspark/bitruntime/blob/e28bb1adefbc8a5cb1b03f172b4e7212584bd7a2/core/go/addressed.go#L61-L78 The TypeScript mount copies a lone-surrogate key without validation; sending validates the path later (InvalidPathError). https://github.com/Bitspark/bitruntime/blob/e28bb1adefbc8a5cb1b03f172b4e7212584bd7a2/core/ts/src/addressed.ts#L37-L47",
+      "cases": ["invalid-key"],
+      "observed": {
+        "go": {"trace": [["refused"]], "partsExact": true, "unchanged": true, "sendOnly": true, "borrowedUsable": true},
+        "ts": {"trace": [["refused"]], "partsExact": true, "unchanged": true, "sendOnly": true, "borrowedUsable": true}
+      }
+    },
+    {
+      "id": "missing-children-accepted",
+      "requirement": "ADR0006: every child is complete Wire access; construction refuses a missing child value.",
+      "evidence": "core.Mount accepts a nil child and later refuses sends to that key as missing (core.ErrMissingPath). https://github.com/Bitspark/bitruntime/blob/e28bb1adefbc8a5cb1b03f172b4e7212584bd7a2/core/go/addressed.go#L61-L84 The TypeScript mount accepts an undefined child and later refuses sends to that key with MissingPathError. https://github.com/Bitspark/bitruntime/blob/e28bb1adefbc8a5cb1b03f172b4e7212584bd7a2/core/ts/src/addressed.ts#L37-L47",
+      "cases": ["missing-child-value"],
+      "observed": {
+        "go": {"trace": [["refused"]], "partsExact": true, "unchanged": true, "sendOnly": true, "borrowedUsable": true},
+        "ts": {"trace": [["refused"]], "partsExact": true, "unchanged": true, "sendOnly": true, "borrowedUsable": true}
+      }
+    }
+  ],
+  "limitations": [
+    {
+      "id": "endpoint-typed-children",
+      "requirement": "ADR0006: a child is complete send access; composition requires no receive attachment or closure authority from it.",
+      "evidence": "core.Mount (Go) and mount (TypeScript, a ReadonlyMap<string, Endpoint>) type their children as Endpoint. The production driver adapts send-only children (instrumented access, guards, selected views) with a receive attachment that refuses and a Close that owns nothing. Mount then works for sending; its receiving mode would refuse such a child."
+    },
+    {
+      "id": "owner-retained-parts",
+      "requirement": "ADR0006: the construction owner retains Parts; send access reveals none.",
+      "evidence": "core.Mount and mount expose no parts. The production driver retains the entries it supplied, which ADR0006 permits. Clearing the supplied map after construction left routing unchanged, so Mount copies its input."
+    }
+  ]
+}

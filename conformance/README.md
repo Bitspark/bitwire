@@ -7,7 +7,63 @@ not establish the new structural contract. See
 [decision 0012](https://github.com/Bitspark/bitwire/blob/main/docs/decisions/0012-explicit-data-and-wire-trees.md).
 
 **Status: current released 0.2 composition and scoped lifecycle evidence, a
-test-only reference, and a preserved historical 0.1.0 runtime baseline.**
+test-only reference, bitruntime Go candidate and TypeScript release evidence
+against the same cases, and a preserved historical 0.1.0 runtime baseline.**
+
+## bitruntime runtime conformance
+
+Run `node scripts/conformance-runtime.mjs`; `--language=go` or `--language=ts`
+selects one half, and `--keep-scratch` retains the build and install tree. It
+runs bitwire's existing independent cases against bitruntime's Go module and
+TypeScript package, as the current baseline runs them against nightseam v0.6.0.
+Both halves require bitwire v0.3.0 and the bitruntime artifacts pinned in
+[bitruntime.json](runtime/bitruntime.json), never a local checkout or path. Each
+driver receives its inputs with every expectation withheld, and one report gives
+the case files' SHA-256s and every family's result in each language.
+
+- **Go.** The test-only module [`runtime/go`](runtime/go/go.mod) requires the
+  public bitruntime module at a pinned pre-release revision. The runner refuses
+  any other module graph, revision or sum, and runs every driver with
+  `GOWORK=off` under the race detector (required in CI).
+- **TypeScript.** The private, test-only package
+  [`runtime/ts`](runtime/ts/package.json) depends on bitruntime's v0.2.0
+  release asset, `@bitspark/bitwire` 0.3.0 and `ws` 8.21.3, and its
+  `.npmrc` takes the `@bitspark` scope from the public npm registry. The
+  runner downloads the release asset and checks its SHA-256 and integrity and
+  that tag v0.2.0 names the pinned revision. It refuses a lockfile entry that is
+  not a public, integrity-pinned artifact or that names another bitruntime or
+  bitwire, installs with `npm ci` in scratch, type-checks the drivers with
+  TypeScript and runs them with Node 24's type stripping.
+
+| Family | Driver and oracle | Carriers | Go at the pin | TypeScript at the pin |
+| --- | --- | --- | --- | --- |
+| Lifecycle | [Cases](current/lifecycle.json) through `Invocation` | none, public state | 5/5 | 5/5 |
+| Composition | The six [reference](reference/expected.json) groups; drivers ported from nightseam's upstream ones | local pair, WebSocket client and server sending | 6/6 on each | 6/6 on each |
+| Declared, reference | The 39 [declared](declared/cases.json) cases through the test-only interpreter over bitruntime's carriers | the same three | 39/39 on each | 39/39 on each |
+| Declared, production | The same cases through bitruntime's child-only addressed mount, with its selection and forwarding | the same three | 20 conform; 19 match bitruntime's own [gap ledger](runtime/production-gaps.json) | the same |
+| Trees | The [0.3 observations](trees/expected.json) through bitruntime's tree construction, selection, sending and addressed bridge | none, structural | 14/14 | 14/14 |
+
+The Go drivers use `core.Invocation`, `core.NewPair`, the WebSocket engine,
+`dispatch`, `core.At`, `core.Mount`, `core.Forward`, `core.Compose`,
+`core.Select`, `core.Send` and `core.AsAddressed`. The TypeScript drivers
+use the same facilities from `@bitspark/bitruntime`: `Invocation`, `pair`,
+`at`, `mount`, `forward`, `compose`, `select`, `send` and
+`asAddressed` from `/core`, `createDispatcher` from `/dispatch`, and
+`Peer` from `/engine` over `webSocketConnection` from `/transports`.
+
+As in the nightseam baseline, the two echoed `same-id` placeholders are
+instantiated as `c:1`: bitruntime's `bitwire/1` is nightseam v0.6.0's profile
+and refuses `same-id` as a request identifier on both carriers. Nothing else in
+any oracle changes. bitruntime keeps its own gap ledger so a gap it closes is
+removed there, never from nightseam's. Its observations equal nightseam's in
+both languages: each mount is a renamed port, and bitruntime deliberately omits
+the unreleased declared-composition API that decision 0012 supersedes. No case
+reaches bitruntime's documented forwarding and disconnection changes, because
+every refusal in these fixtures happens before a carrier or forwarder.
+
+Lifecycle, composition and declared results remain evidence about the 0.2
+addressed contract (`AddressedWire` in 0.3); trees is the 0.3 structural
+contract.
 
 ## Current released runtime baseline
 

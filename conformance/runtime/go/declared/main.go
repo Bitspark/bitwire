@@ -1,0 +1,837 @@
+// Declared-composite driver for ADR0006 against bitruntime: a port of
+// ../../../current/go/declared/main.go, which runs this harness over Nightseam
+// v0.6.0. Two realizations share one harness: a test-only reference
+// interpreter and bitruntime's child-only addressed Mount. Both use
+// bitruntime's At, Forward, local pairs and WebSocket peers. Neither is a
+// Bitwire API, and the reference is not evidence about a production runtime.
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"reflect"
+	"sort"
+	"time"
+	"unicode/utf8"
+
+	"bitwire.conformance/runtime/internal/carrier"
+	core "github.com/Bitspark/bitruntime/core/go"
+	transports "github.com/Bitspark/bitruntime/transports/go"
+	wire "github.com/Bitspark/bitwire/wire/go"
+)
+
+// origin is a node's own value: behavior at its empty relative path. It never
+// receives a path. Refusal is a value too, not a missing origin.
+type origin struct {
+	name     string
+	instance int
+	handle   func(wire.Message) error
+}
+
+var refuse = &origin{handle: func(wire.Message) error { return core.ErrMissingPath }}
+
+type entry struct {
+	key   string
+	child wire.AddressedWire
+}
+
+// A realization constructs declared composites from their own value and
+// complete child access. Parts are the construction owner's retained description.
+type realization interface {
+	compose(own *origin, entries []entry) (wire.AddressedWire, error)
+	parts(composite wire.AddressedWire) (*origin, []entry, bool)
+	expose(composite wire.AddressedWire) wire.AddressedWire
+	teardown()
+}
+
+var errUnsupported = errors.New("origin-bearing composite")
+
+// ---- Reference realization: a test-only interpreter of ADR0006 ----
+
+type composite struct {
+	own      *origin
+	children map[string]wire.AddressedWire
+}
+type sendAccess struct {
+	send func([]string, wire.Message) error
+}
+
+func (a *sendAccess) Send(p []string, m wire.Message) error { return a.send(p, m) }
+
+type reference struct {
+	retained map[wire.AddressedWire]*composite
+}
+
+func (r *reference) compose(own *origin, entries []entry) (wire.AddressedWire, error) {
+	if own == nil {
+		return nil, errors.New("a composite requires its own value")
+	}
+	c := &composite{own, make(map[string]wire.AddressedWire, len(entries))}
+	for _, e := range entries {
+		if !utf8.ValidString(e.key) {
+			return nil, errors.New("segment outside the exact UTF-8 key image")
+		}
+		if e.child == nil {
+			return nil, errors.New("missing child access")
+		}
+		if _, found := c.children[e.key]; found {
+			return nil, errors.New("conflicting child segment")
+		}
+		c.children[e.key] = e.child
+	}
+	access := &sendAccess{func(p []string, m wire.Message) error {
+		for _, segment := range p {
+			if !utf8.ValidString(segment) {
+				return core.ErrInvalidPath
+			}
+		}
+		return c.send(p, m)
+	}}
+	r.retained[access] = c
+	return access, nil
+}
+func (c *composite) send(p []string, m wire.Message) error {
+	if len(p) == 0 {
+		return c.own.handle(m)
+	}
+	child, found := c.children[p[0]]
+	if !found {
+		return core.ErrMissingPath
+	}
+	return child.Send(append([]string{}, p[1:]...), m)
+}
+func (r *reference) parts(w wire.AddressedWire) (*origin, []entry, bool) {
+	c := r.retained[w]
+	if c == nil {
+		return nil, nil, false
+	}
+	entries := []entry{}
+	for key, child := range c.children {
+		entries = append(entries, entry{key, child})
+	}
+	return c.own, entries, true
+}
+func (r *reference) expose(w wire.AddressedWire) wire.AddressedWire { return w }
+func (r *reference) teardown()                                      {}
+
+// ---- Production realization: bitruntime's child-only addressed Mount ----
+
+type production struct {
+	retained map[wire.AddressedWire][]entry
+	mounts   []wire.Endpoint
+}
+
+// sendOnlyChild adapts complete send access to Mount's Endpoint parameter. It
+// grants no receive attachment and owns nothing to close.
+type sendOnlyChild struct{ wire.AddressedWire }
+
+func (sendOnlyChild) Receive(wire.Receiver) (func(), error) {
+	return nil, errors.New("send-only child")
+}
+func (sendOnlyChild) Close(wire.Code, string) error { return nil }
+
+func (r *production) compose(own *origin, entries []entry) (wire.AddressedWire, error) {
+	if own != refuse {
+		return nil, errUnsupported
+	}
+	routes := make(map[string]wire.Endpoint, len(entries))
+	for _, e := range entries {
+		switch child := e.child.(type) {
+		case nil:
+			routes[e.key] = nil
+		case wire.Endpoint:
+			routes[e.key] = child
+		default:
+			routes[e.key] = sendOnlyChild{child}
+		}
+	}
+	mounted := core.Mount(routes)
+	for key := range routes {
+		delete(routes, key) // A retained description must not depend on the caller's map.
+	}
+	r.retained[mounted] = append([]entry{}, entries...)
+	r.mounts = append(r.mounts, mounted)
+	return mounted, nil
+}
+func (r *production) parts(w wire.AddressedWire) (*origin, []entry, bool) {
+	entries, found := r.retained[w]
+	if !found {
+		return nil, nil, false
+	}
+	return refuse, append([]entry{}, entries...), true
+}
+func (r *production) expose(w wire.AddressedWire) wire.AddressedWire { return core.At(w, nil) }
+func (r *production) teardown() {
+	for _, mounted := range r.mounts {
+		check(mounted.Close(transports.CodeNormal, "released"))
+	}
+}
+
+// ---- Instrumented child access and interception used by the fixtures ----
+
+type forwarded struct {
+	path  []string
+	count int
+}
+type env struct {
+	sender    wire.AddressedWire
+	expected  *wire.Message
+	contexts  map[*wire.ReturnAddress]*struct{}
+	marker    *struct{}
+	unchanged bool
+	last      *forwarded
+	trace     []any
+	instances map[string]int
+}
+
+func (e *env) verify(m wire.Message) {
+	e.unchanged = e.unchanged && e.expected != nil && reflect.DeepEqual(m.Frame, e.expected.Frame) &&
+		m.Return == e.expected.Return && m.Return != nil && e.contexts[m.Return] == e.marker
+}
+func (e *env) next(name string) int {
+	e.instances[name]++
+	return e.instances[name]
+}
+func (e *env) newOrigin(name string) *origin {
+	o := &origin{name: name, instance: e.next(name)}
+	count := 0
+	o.handle = func(m wire.Message) error {
+		e.verify(m)
+		count++
+		e.last = &forwarded{[]string{name}, count}
+		return core.At(e.sender, []string{name}).Send(nil, m)
+	}
+	return o
+}
+
+// access is complete, stateful child access with its own instance counter.
+type access struct {
+	name     string
+	instance int
+	count    int
+	env      *env
+}
+
+func (e *env) newAccess(name string) *access { return &access{name, e.next(name), 0, e} }
+func (a *access) Send(p []string, m wire.Message) error {
+	a.env.verify(m)
+	a.count++
+	a.env.last = &forwarded{append([]string{a.name}, p...), a.count}
+	return core.At(a.env.sender, []string{a.name}).Send(p, m)
+}
+
+type policy struct {
+	id                         string
+	instance, limit, remaining int
+}
+
+// guard is interception composed around access; it is not a node value.
+type guard struct {
+	policy *policy
+	inner  wire.AddressedWire
+	env    *env
+}
+
+func (g *guard) Send(p []string, m wire.Message) error {
+	g.env.trace = append(g.env.trace, []any{"check", g.policy.id, append([]string{}, p...)})
+	if g.policy.remaining == 0 {
+		return errors.New("guard refused")
+	}
+	if g.policy.remaining > 0 {
+		g.policy.remaining--
+	}
+	return g.inner.Send(p, m)
+}
+
+// ---- Fixture interpretation ----
+
+type declaration struct {
+	ID       string
+	Origin   *string
+	Children [][2]string
+	Access   string
+}
+type step struct {
+	Op         string
+	Target     []string `json:"path"`
+	Keep       [][]string
+	Selections [][]string
+	Via, Key   string
+	To, Node   string
+	Mode, ID   string
+	Origin     *string
+	Limit      int
+}
+
+type testCase struct {
+	ID, Kind, Root, Fault string
+	Steps                 []step
+	Relay, Mount          bool
+}
+type input struct {
+	Declarations []declaration
+	Cases        []testCase
+}
+
+type harness struct {
+	R          realization
+	env        *env
+	decls      map[string]declaration
+	built      map[string]wire.AddressedWire
+	origins    map[string]*origin
+	root, view wire.AddressedWire
+	partsExact bool
+}
+
+func sameEntries(got, want []entry) bool {
+	if len(got) != len(want) {
+		return false
+	}
+	index := map[string]wire.AddressedWire{}
+	for _, e := range want {
+		index[e.key] = e.child
+	}
+	for _, e := range got {
+		child, found := index[e.key]
+		if !found || child != e.child {
+			return false
+		}
+		delete(index, e.key)
+	}
+	return len(index) == 0
+}
+
+// construct records R1 for every composite and mutates the caller's input
+// afterward: the composite must retain its own copy of the description.
+func (h *harness) construct(own *origin, entries []entry) (wire.AddressedWire, error) {
+	input := append([]entry{}, entries...)
+	w, err := h.R.compose(own, input)
+	if err != nil {
+		return nil, err
+	}
+	for i := range input {
+		input[i] = entry{"mutated", nil}
+	}
+	o, got, ok := h.R.parts(w)
+	exact := ok && o == own && sameEntries(got, entries)
+	if exact && len(got) > 0 {
+		got[0].child = nil // Returned parts are a copy of the retained description.
+		o, got, ok = h.R.parts(w)
+		exact = ok && o == own && sameEntries(got, entries)
+	}
+	h.partsExact = h.partsExact && exact
+	return w, nil
+}
+func (h *harness) compose(own *origin, entries []entry) wire.AddressedWire {
+	w, err := h.construct(own, entries)
+	check(err)
+	return w
+}
+func (h *harness) originNamed(name string) *origin {
+	if o := h.origins[name]; o != nil {
+		return o
+	}
+	o := h.env.newOrigin(name)
+	h.origins[name] = o
+	return o
+}
+func (h *harness) build(id string, fault string, rootID string, visiting map[string]bool) (wire.AddressedWire, error) {
+	if w := h.built[id]; w != nil {
+		return w, nil
+	}
+	d, found := h.decls[id]
+	if !found {
+		return nil, errors.New("missing declaration")
+	}
+	if d.Access != "" {
+		w := h.env.newAccess(d.Access)
+		h.built[id] = w
+		return w, nil
+	}
+	if visiting[id] {
+		return nil, errors.New("cyclic declaration")
+	}
+	visiting[id] = true
+	children := d.Children
+	if id == rootID && fault == "cycle" {
+		children = append(append([][2]string{}, children...), [2]string{"loop", rootID})
+	}
+	entries := []entry{}
+	for _, c := range children {
+		child, err := h.build(c[1], fault, rootID, visiting)
+		if err != nil {
+			return nil, err
+		}
+		entries = append(entries, entry{c[0], child})
+	}
+	if id == rootID {
+		switch fault {
+		case "duplicate":
+			leaf, err := h.build("leaf", "", rootID, visiting)
+			check(err)
+			entries = append(entries, entry{"a", leaf})
+		case "invalidKey":
+			leaf, err := h.build("leaf", "", rootID, visiting)
+			check(err)
+			entries = append(entries, entry{string([]byte{0xff}), leaf})
+		case "missingChild":
+			entries = append(entries, entry{"hole", nil})
+		}
+	}
+	own := refuse
+	if d.Origin != nil {
+		own = h.originNamed(*d.Origin)
+	}
+	w, err := h.construct(own, entries)
+	if err != nil {
+		return nil, err
+	}
+	delete(visiting, id)
+	h.built[id] = w
+	return w, nil
+}
+
+func (h *harness) caller() wire.AddressedWire {
+	if g, ok := h.root.(*guard); ok {
+		return g
+	}
+	return h.R.expose(h.root)
+}
+func renderOrigin(o *origin) any {
+	if o == refuse {
+		return nil
+	}
+	return []any{o.name, o.instance}
+}
+func (h *harness) render(w wire.AddressedWire) any {
+	if own, entries, ok := h.R.parts(w); ok {
+		sort.Slice(entries, func(i, j int) bool { return bytes.Compare([]byte(entries[i].key), []byte(entries[j].key)) < 0 })
+		children := []any{}
+		for _, e := range entries {
+			children = append(children, []any{e.key, h.render(e.child)})
+		}
+		return map[string]any{"origin": renderOrigin(own), "children": children}
+	}
+	switch v := w.(type) {
+	case *access:
+		return map[string]any{"access": []any{v.name, v.instance}}
+	case *guard:
+		return map[string]any{"guard": []any{v.policy.id, v.policy.instance}, "inner": h.render(v.inner)}
+	}
+	return "opaque"
+}
+func (h *harness) structure(w wire.AddressedWire, path []string) any {
+	if len(path) == 0 {
+		return h.render(w)
+	}
+	_, entries, ok := h.R.parts(w)
+	if !ok {
+		panic("structure path leaves the declared composites")
+	}
+	for _, e := range entries {
+		if e.key == path[0] {
+			return h.structure(e.child, path[1:])
+		}
+	}
+	return "missing"
+}
+
+// replaceAt rebuilds the declared ancestors of path from their retained parts.
+// A guard retains its original policy instance around a rebuilt inner access.
+func (h *harness) replaceAt(w wire.AddressedWire, path []string, f func(wire.AddressedWire) wire.AddressedWire) wire.AddressedWire {
+	if g, ok := w.(*guard); ok && len(path) > 0 {
+		return &guard{g.policy, h.replaceAt(g.inner, path, f), h.env}
+	}
+	if len(path) == 0 {
+		return f(w)
+	}
+	own, entries, ok := h.R.parts(w)
+	if !ok {
+		panic("edit path leaves the declared composites")
+	}
+	for i := range entries {
+		if entries[i].key == path[0] {
+			entries[i].child = h.replaceAt(entries[i].child, path[1:], f)
+		}
+	}
+	return h.compose(own, entries)
+}
+func (h *harness) rootComposite(f func(wire.AddressedWire) wire.AddressedWire) {
+	if g, ok := h.root.(*guard); ok {
+		h.root = &guard{g.policy, f(g.inner), h.env}
+		return
+	}
+	h.root = f(h.root)
+}
+func containsPath(paths [][]string, path []string) bool {
+	for _, p := range paths {
+		if reflect.DeepEqual(append([]string{}, p...), append([]string{}, path...)) {
+			return true
+		}
+	}
+	return false
+}
+
+// rebuild performs one complete cut: kept subtrees are reused whole, and every
+// other declared composite is rebuilt from its retained parts.
+func (h *harness) rebuild(w wire.AddressedWire, at []string, keep [][]string) wire.AddressedWire {
+	if containsPath(keep, at) {
+		return w
+	}
+	if g, ok := w.(*guard); ok {
+		return &guard{g.policy, h.rebuild(g.inner, at, keep), h.env}
+	}
+	own, entries, ok := h.R.parts(w)
+	if !ok {
+		return w // Opaque child access is retained whole.
+	}
+	for i := range entries {
+		entries[i].child = h.rebuild(entries[i].child, append(append([]string{}, at...), entries[i].key), keep)
+	}
+	return h.compose(own, entries)
+}
+func (h *harness) copySubtree(w wire.AddressedWire) wire.AddressedWire {
+	if a, ok := w.(*access); ok {
+		return h.env.newAccess(a.name)
+	}
+	own, entries, ok := h.R.parts(w)
+	if !ok {
+		panic("cannot copy opaque access")
+	}
+	if own != refuse {
+		own = h.env.newOrigin(own.name)
+	}
+	for i := range entries {
+		entries[i].child = h.copySubtree(entries[i].child)
+	}
+	return h.compose(own, entries)
+}
+
+func check(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+func wait[T any](ch <-chan T) T {
+	select {
+	case v := <-ch:
+		return v
+	case <-time.After(5 * time.Second):
+		panic("delivery deadline exceeded")
+	}
+}
+
+type scope struct{ cleanups []func() }
+
+func (s *scope) close() {
+	for i := len(s.cleanups) - 1; i >= 0; i-- {
+		s.cleanups[i]()
+	}
+}
+func (s *scope) pair() (wire.Endpoint, wire.Endpoint) {
+	return carrier.Pair(func(release func()) { s.cleanups = append(s.cleanups, release) })
+}
+func event(value string) wire.Message {
+	data, err := json.Marshal(value)
+	check(err)
+	return wire.Message{Frame: wire.ProfileFrame{Version: 1, Kind: wire.ProfileEvent, Data: data}}
+}
+
+type delivery struct {
+	path    []string
+	message wire.Message
+}
+
+var refuseWire wire.AddressedWire = &sendAccess{func([]string, wire.Message) error { return core.ErrMissingPath }}
+
+func (h *harness) send(w wire.AddressedWire, path []string, message wire.Message, deliveries <-chan delivery) {
+	h.env.expected, h.env.last = &message, nil
+	if err := w.Send(path, message); err != nil {
+		if h.env.last != nil {
+			panic("a destination accepted a refused send")
+		}
+		h.env.trace = append(h.env.trace, []any{"refused"})
+		return
+	}
+	got := wait(deliveries)
+	if !bytes.Equal(got.message.Frame.Data, message.Frame.Data) || got.message.Frame.Kind != message.Frame.Kind {
+		panic("message changed or unexpected delivery")
+	}
+	if h.env.last == nil || !reflect.DeepEqual(got.path, h.env.last.path) {
+		panic("delivery does not match its declared destination")
+	}
+	h.env.trace = append(h.env.trace, []any{"delivered", got.path, h.env.last.count})
+}
+func (h *harness) marked(value string) wire.Message {
+	m := event(value)
+	m.Return = &wire.ReturnAddress{Wire: refuseWire}
+	h.env.contexts[m.Return] = h.env.marker
+	return m
+}
+func borrowed(sender wire.AddressedWire, deliveries <-chan delivery) bool {
+	if sender.Send([]string{"borrowed"}, event("borrowed")) != nil {
+		return false
+	}
+	got := wait(deliveries)
+	return reflect.DeepEqual(got.path, []string{"borrowed"}) && string(got.message.Frame.Data) == `"borrowed"`
+}
+
+func newHarness(R realization, fixture input, sender wire.AddressedWire) *harness {
+	h := &harness{R: R, decls: map[string]declaration{}, built: map[string]wire.AddressedWire{}, origins: map[string]*origin{}, partsExact: true}
+	h.env = &env{sender: sender, contexts: map[*wire.ReturnAddress]*struct{}{}, marker: &struct{}{}, unchanged: true, trace: []any{}, instances: map[string]int{}}
+	for _, d := range fixture.Declarations {
+		if _, found := h.decls[d.ID]; found {
+			panic("duplicate declaration")
+		}
+		h.decls[d.ID] = d
+	}
+	return h
+}
+func refusal(err error) any {
+	if errors.Is(err, errUnsupported) {
+		return map[string]any{"unsupported": "originBearingComposite"}
+	}
+	return map[string]any{"construction": "refused"}
+}
+func (h *harness) node(id string) wire.AddressedWire {
+	w, err := h.build(id, "", "", map[string]bool{})
+	check(err)
+	return w
+}
+
+func (h *harness) apply(t testCase, index int, s step, deliveries <-chan delivery) {
+	switch s.Op {
+	case "send", "invalidPath":
+		w := h.caller()
+		if s.Via == "view" {
+			if h.view == nil {
+				panic("no captured view")
+			}
+			w = h.view
+		}
+		for _, prefix := range s.Selections {
+			w = core.At(w, prefix)
+		}
+		path := s.Target
+		if s.Op == "invalidPath" {
+			path = []string{string([]byte{0xff})}
+		}
+		h.send(w, path, h.marked(fmt.Sprintf("%s:%d", t.ID, index)), deliveries)
+	case "direct":
+		h.send(h.node(s.Node), s.Target, h.marked(fmt.Sprintf("%s:%d", t.ID, index)), deliveries)
+	case "structure":
+		root := h.root
+		if g, ok := root.(*guard); ok && len(s.Target) > 0 {
+			root = g.inner
+		}
+		h.env.trace = append(h.env.trace, []any{"structure", h.structure(root, s.Target)})
+	case "rebuild":
+		h.root = h.rebuild(h.root, []string{}, s.Keep)
+	case "origin":
+		h.root = h.replaceAt(h.root, s.Target, func(w wire.AddressedWire) wire.AddressedWire {
+			own, entries, ok := h.R.parts(w)
+			if !ok {
+				panic("origin of opaque access")
+			}
+			if s.Origin == nil {
+				own = refuse
+			} else {
+				own = h.env.newOrigin(own.name)
+			}
+			return h.compose(own, entries)
+		})
+	case "substitute":
+		h.root = h.replaceAt(h.root, s.Target, func(w wire.AddressedWire) wire.AddressedWire {
+			if s.Mode == "copy" {
+				return h.copySubtree(w)
+			}
+			return h.rebuild(w, []string{}, nil)
+		})
+	case "omit", "rename", "add":
+		h.root = h.replaceAt(h.root, s.Target, func(w wire.AddressedWire) wire.AddressedWire {
+			own, entries, ok := h.R.parts(w)
+			if !ok {
+				panic("edit of opaque access")
+			}
+			next := []entry{}
+			for _, e := range entries {
+				if e.key == s.Key && s.Op == "omit" {
+					continue
+				}
+				if e.key == s.Key && s.Op == "rename" {
+					e.key = s.To
+				}
+				next = append(next, e)
+			}
+			if s.Op == "add" {
+				next = append(next, entry{s.Key, h.node(s.Node)})
+			}
+			return h.compose(own, next)
+		})
+	case "replace":
+		h.root = h.replaceAt(h.root, s.Target, func(wire.AddressedWire) wire.AddressedWire { return h.node(s.Node) })
+	case "view":
+		h.view = h.caller()
+		for _, prefix := range s.Selections {
+			h.view = core.At(h.view, prefix)
+		}
+	case "guard":
+		h.root = &guard{&policy{s.ID, h.env.next("policy:" + s.ID), s.Limit, s.Limit}, h.root, h.env}
+	case "freshGuard":
+		g := h.root.(*guard)
+		h.root = &guard{&policy{g.policy.id, h.env.next("policy:" + g.policy.id), g.policy.limit, g.policy.limit}, g.inner, h.env}
+	case "guardChild":
+		h.root = h.replaceAt(h.root, append(append([]string{}, s.Target...), s.Key), func(w wire.AddressedWire) wire.AddressedWire {
+			return &guard{&policy{s.ID, h.env.next("policy:" + s.ID), s.Limit, s.Limit}, w, h.env}
+		})
+	case "rebuildFromViews":
+		g := h.root.(*guard)
+		own, entries, ok := h.R.parts(g.inner)
+		if !ok {
+			panic("guarded access is not a composite")
+		}
+		for i := range entries {
+			entries[i].child = core.At(g, []string{entries[i].key})
+		}
+		h.root = &guard{g.policy, h.compose(own, entries), h.env}
+	case "teardown":
+		h.R.teardown()
+	default:
+		panic("unknown step: " + s.Op)
+	}
+}
+
+func (s *scope) carriers(t testCase) (wire.Endpoint, wire.AddressedWire, wire.Endpoint) {
+	source, receiver := s.pair()
+	var sender wire.AddressedWire = source
+	if t.Mount {
+		mounted := core.Mount(map[string]wire.Endpoint{"mounted": source})
+		sender = core.At(mounted, []string{"mounted"})
+		s.cleanups = append(s.cleanups, func() { _ = mounted.Close(transports.CodeNormal, "done") })
+	}
+	if t.Relay {
+		outgoing, target := s.pair()
+		off, err := core.Forward(receiver, outgoing)
+		check(err)
+		s.cleanups = append(s.cleanups, off)
+		receiver = target
+	}
+	return source, sender, receiver
+}
+
+func observe(R realization, fixture input, t testCase) any {
+	s := &scope{}
+	defer s.close()
+	source, sender, receiver := s.carriers(t)
+	deliveries := make(chan delivery, 64)
+	off, err := receiver.Receive(wire.Receiver{Message: func(p []string, m wire.Message) {
+		deliveries <- delivery{append([]string{}, p...), m}
+	}})
+	check(err)
+	s.cleanups = append(s.cleanups, off)
+	h := newHarness(R, fixture, sender)
+	root, err := h.build(t.Root, t.Fault, t.Root, map[string]bool{})
+	if err != nil {
+		return refusal(err)
+	}
+	h.root = root
+	for index, action := range t.Steps {
+		h.apply(t, index, action, deliveries)
+	}
+	_, endpoint := h.caller().(wire.Endpoint)
+	h.R.teardown()
+	return map[string]any{"trace": h.env.trace, "partsExact": h.partsExact, "unchanged": h.env.unchanged, "sendOnly": !endpoint, "borrowedUsable": borrowed(source, deliveries)}
+}
+
+// pending admits a real request through the composite, then rebuilds, rebinds
+// and tears the composition down before its late reply and captured cancel.
+func pending(R realization, fixture input, t testCase) any {
+	s := &scope{}
+	defer s.close()
+	source, sender, receiver := s.carriers(t)
+	captured := make(chan wire.Message, 1)
+	cancelled := make(chan string, 1)
+	deliveries := make(chan delivery, 4)
+	replies := make(chan string, 1)
+	off, err := receiver.Receive(wire.Receiver{Message: func(p []string, m wire.Message) {
+		if m.Frame.Kind == wire.ProfileEvent {
+			deliveries <- delivery{append([]string{}, p...), m}
+			return
+		}
+		lifecycle := m.Return.Wire
+		check(lifecycle.Send([]string{"invocation.capture", "old"}, wire.Message{Frame: wire.ProfileFrame{Version: 1, Kind: wire.ProfileEvent, Data: json.RawMessage("null")}, Return: &wire.ReturnAddress{Wire: &sendAccess{func(p []string, m wire.Message) error {
+			if len(p) != 0 || m.Frame.Kind != wire.ProfileCancel {
+				panic("invalid captured control")
+			}
+			cancelled <- "old"
+			return nil
+		}}}}))
+		check(lifecycle.Send([]string{"invocation.ready", "old"}, event("ready")))
+		check(lifecycle.Send([]string{"invocation.begin", "old"}, event("begin")))
+		captured <- m
+	}})
+	check(err)
+	s.cleanups = append(s.cleanups, off)
+	h := newHarness(R, fixture, sender)
+	root, err := h.build(t.Root, "", t.Root, map[string]bool{})
+	if err != nil {
+		return refusal(err)
+	}
+	h.root = root
+	original := &wire.ReturnAddress{Wire: &sendAccess{func(p []string, m wire.Message) error {
+		if len(p) != 0 || m.Frame.Kind != wire.ProfileResponse || m.Frame.Error != nil {
+			panic("unexpected reply")
+		}
+		var result string
+		check(json.Unmarshal(m.Frame.Result, &result))
+		replies <- result
+		return nil
+	}}}
+	request := wire.Message{Frame: wire.ProfileFrame{Version: 1, Kind: wire.ProfileRequest, ID: "c:1", Params: json.RawMessage("null")}, Return: original}
+	h.env.contexts[original] = h.env.marker
+	h.env.expected = &request
+	check(core.At(core.At(h.caller(), []string{"a"}), []string{"b"}).Send(nil, request))
+	old := wait(captured)
+	h.root = h.rebuild(h.root, []string{}, nil)
+	for _, path := range [][]string{{"a", "b"}, {"alias"}} {
+		h.apply(t, 0, step{Op: "replace", Target: path, Node: "replacement"}, deliveries)
+	}
+	h.send(core.At(h.caller(), []string{"alias"}), nil, h.marked("new"), deliveries)
+	h.R.teardown()
+	check(old.Return.Wire.Send(nil, wire.Message{Frame: wire.ProfileFrame{Version: 1, Kind: wire.ProfileResponse, ID: old.Frame.ID, Result: json.RawMessage(`"old"`)}}))
+	late := wait(replies)
+	check(old.Return.Wire.Send([]string{"invocation.control"}, wire.Message{Frame: wire.ProfileFrame{Version: 1, Kind: wire.ProfileCancel, ID: old.Frame.ID}}))
+	controls := []string{wait(cancelled)}
+	check(old.Return.Wire.Send([]string{"invocation.release", "old"}, event("release")))
+	check(old.Return.Wire.Send([]string{"invocation.done", "old"}, event("done")))
+	return map[string]any{"trace": h.env.trace, "lateReply": late, "cancelled": controls, "unchanged": h.env.unchanged, "borrowedUsable": borrowed(source, deliveries)}
+}
+
+func main() {
+	carrier.Kind()
+	if len(os.Args) != 3 || (os.Args[1] != "reference" && os.Args[1] != "production") {
+		panic("usage: declared reference|production inputs.json")
+	}
+	data, err := os.ReadFile(os.Args[2])
+	check(err)
+	var fixture input
+	check(json.Unmarshal(data, &fixture))
+	output := []any{}
+	for _, t := range fixture.Cases {
+		var R realization = &reference{map[wire.AddressedWire]*composite{}}
+		if os.Args[1] == "production" {
+			R = &production{retained: map[wire.AddressedWire][]entry{}}
+		}
+		var observations any
+		if t.Kind == "pending" {
+			observations = pending(R, fixture, t)
+		} else {
+			observations = observe(R, fixture, t)
+		}
+		output = append(output, map[string]any{"id": t.ID, "observations": observations})
+	}
+	check(json.NewEncoder(os.Stdout).Encode(output))
+}
