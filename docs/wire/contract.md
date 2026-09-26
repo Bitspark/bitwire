@@ -90,7 +90,8 @@ read(tree, path)          = tree.at(path).own().read()
 ```
 
 The final equations require an existing path; read is the sibling DataTree
-operation. Missing selection invokes no primitive. Equivalence preserves exact
+operation. Missing selection invokes no primitive, and derived sending on a missing
+path is refused: it never reports admission. Equivalence preserves exact
 keys, complete structure, own/child capability identities and shared instances;
 it does not copy primitive state. Constructors and derived sending belong to
 bitruntime, not this declarations package.

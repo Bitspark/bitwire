@@ -11,6 +11,12 @@ defines the realization: an origin at every node, complete named children, and
 construction parts retained by their owner. Run `node scripts/conformance-current.mjs`
 to exercise the [fixtures](cases.json) in Go and TypeScript.
 
+**Disposition under decision 0012:** [`../wiretree/disposition.json`](../wiretree/disposition.json)
+maps each of these 39 cases, the 19 recorded gaps and both limitations to
+current [full-tree cases](../wiretree/README.md) or to an explicit historical
+addressed limitation. This fixture and its gap ledgers stay unchanged; the
+disposition pins them by digest.
+
 ## Two realizations, one oracle
 
 The runner removes every `expected` value before handing inputs to a driver, and

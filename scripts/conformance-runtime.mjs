@@ -11,6 +11,7 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { compareCases, compareProduction, declaredInputs, lifecycleInputs, nightseamCompositionExpected } from './conformance-results.mjs';
+import { compareWiretree, validateDisposition, wiretreeFailures, wiretreeInputs } from './wiretree-lib.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const module = join(root, 'conformance/runtime/go');
@@ -45,6 +46,8 @@ const files = {
   composition: 'conformance/reference/expected.json',
   trees: 'conformance/trees/expected.json',
   gaps: 'conformance/runtime/production-gaps.json',
+  wiretree: 'conformance/wiretree/cases.json',
+  disposition: 'conformance/wiretree/disposition.json',
 };
 const digest = (algorithm, data, encoding = 'hex') => createHash(algorithm).update(data).digest(encoding);
 const sha256 = path => digest('sha256', bytes(path));
@@ -55,6 +58,19 @@ const declared = read(files.declared);
 const composition = nightseamCompositionExpected(read(files.composition));
 const trees = read(files.trees);
 const gaps = read(files.gaps);
+const wiretree = read(files.wiretree);
+const disposition = validateDisposition(read(files.disposition), wiretree, bytes);
+// Deliberately unlawful TypeScript realizations: each must fail the case aimed at it.
+const mutants = [
+  ['fallback', 'local', 'missing-never-falls-back'],
+  ['wrapping-own', 'local', 'root-cut-reconstruction'],
+  ['normalizing', 'local', 'own-and-descendants'],
+  ['fabricating', 'local', 'refusing-versus-missing'],
+  ['latin1-bridge', 'local', 'bridge-exact-utf8-image'],
+  ['lossy-bridge', 'local', 'bridge-exact-utf8-image'],
+  ['incomplete-children', 'local', 'own-and-descendants'],
+  ['retargeting-serve', 'carrier', 'carrier-cancel-across-replacement'],
+];
 const carriers = [['local', '0'], ['peer', '0'], ['peer', '1']];
 const scratch = mkdtempSync(join(tmpdir(), 'bitwire-runtime-'));
 
@@ -168,6 +184,8 @@ try {
   writeFileSync(lifecycleInput, JSON.stringify(lifecycleInputs(lifecycle)));
   const declaredInput = join(scratch, 'declared-inputs.json');
   writeFileSync(declaredInput, JSON.stringify(declaredInputs(declared)));
+  const wiretreeInput = join(scratch, 'wiretree-inputs.json');
+  writeFileSync(wiretreeInput, JSON.stringify(wiretreeInputs(wiretree)));
   const total = declared.cases.length;
   const toolchain = [];
 
@@ -177,11 +195,12 @@ try {
     let driver, facilities;
     if (language === 'go') {
       verifyModules();
-      const programs = Object.fromEntries(['lifecycle', 'composition', 'declared', 'trees'].map(name => [name, build(name)]));
+      const programs = Object.fromEntries(['lifecycle', 'composition', 'declared', 'trees', 'wiretree'].map(name => [name, build(name)]));
       driver = (name, arguments_ = [], env = {}) => run(programs[name], arguments_, env);
       facilities = {
         lifecycle: 'core.Invocation', composition: 'NewPair/peers, dispatch, At, Mount and Forward',
         production: 'core.Mount/At/Forward', trees: 'core.Compose/Select/Send/AsAddressed',
+        carriers: 'NewPair/peers, dispatch.NewDispatcher, Forward, Mount and At',
       };
       toolchain.push(`${run('go', ['env', 'GOVERSION']).trim()}${race ? ' with race detector' : ' (race detector unavailable locally)'}`);
     } else {
@@ -192,6 +211,7 @@ try {
       facilities = {
         lifecycle: 'Invocation', composition: 'pair/Peer, createDispatcher, at, mount and forward',
         production: 'mount/at/forward', trees: 'compose/select/send/asAddressed',
+        carriers: 'pair/Peer, createDispatcher, forward, mount and at',
       };
       const typescript = run(process.execPath, [compiler, '--version'], {}, target).trim().replace(/^Version /, '');
       toolchain.push(`node ${process.version} with type stripping, checked by TypeScript ${typescript}`);
@@ -224,12 +244,37 @@ try {
 
     assert.deepEqual(JSON.parse(driver('trees')), trees, `${language}/trees: full tree observations differ from bitwire's oracle`);
     pass(`${language}/trees`, `${Object.keys(trees).length}/${Object.keys(trees).length} observations through ${facilities.trees}`);
+
+    // Full trees: structural and bridge cases without a carrier, then carrier
+    // composition on each carrier. The reference is a test-only interpreter;
+    // production is bitruntime's tree operations. bind and serve are test-only
+    // adapters in both, because bitruntime has no public facility for them yet.
+    for (const realization of ['reference', 'production']) {
+      const trees_ = realization === 'production' ? facilities.trees : 'the test-only interpreter';
+      const label = `${language}/wiretree/${realization}`;
+      const local = compareWiretree(wiretree, JSON.parse(driver('wiretree', [realization, 'local', wiretreeInput])), ['structure', 'bridge'], label);
+      pass(label, `${local}/${local} structural and bridge cases through ${trees_}`);
+      for (const [carrier, reverse] of carriers) {
+        const at = `${label}/${carrier}/${reverse}`;
+        const count = compareWiretree(wiretree, JSON.parse(driver('wiretree', [realization, 'carrier', wiretreeInput], carrierEnv(carrier, reverse))), ['carrier'], at);
+        pass(at, `${count}/${count} carrier cases through ${trees_} over ${facilities.carriers} (test-only bind and serve)`);
+      }
+    }
+    if (language === 'ts') {
+      for (const [mutant, scope, target] of mutants) {
+        const actual = JSON.parse(driver('wiretree', [`mutant:${mutant}`, scope, wiretreeInput], scope === 'carrier' ? carrierEnv('local', '0') : {}));
+        const failed = wiretreeFailures(wiretree, actual, scope === 'carrier' ? ['carrier'] : ['structure', 'bridge']);
+        assert.ok(failed.includes(target), `the unlawful realization ${mutant} passes ${target}`);
+        pass(`ts/wiretree/mutant/${mutant}`, `rejected by ${target}${failed.length > 1 ? ` and ${failed.length - 1} other case${failed.length === 2 ? '' : 's'}` : ''}`);
+      }
+    }
   }
 
   console.log('\nReport');
   console.log(`  bitwire contract: ${pin.bitwireVersion} (github.com/Bitspark/bitwire at ${pin.bitwireRevision}; npm @bitspark/bitwire ${pin.npm.bitwireVersion})`);
   console.log(`  bitwire cases:    checkout ${checkout}${modified ? ' with local changes to the case files' : ''}`);
   for (const [name, path] of Object.entries(files)) console.log(`    ${sha256(path)}  ${path}${name === 'gaps' ? ' (bitruntime gap ledger)' : ''}`);
+  console.log(`  Disposition:      all ${disposition.declared} historical declared cases, ${disposition.gaps} recorded gaps (${disposition.gapCases} cases) and ${disposition.limitations} limitations mapped to current cases or historical addressed limitations`);
   if (languages.includes('go')) console.log(`  Go:               ${pin.module} ${pin.version} (${pin.revision}), ${pin.profile}`);
   if (languages.includes('ts')) {
     console.log(`  TypeScript:       ${pin.npm.package} ${pin.npm.version} (${pin.npm.tag} at ${pin.npm.revision}), ${pin.profile}`);
@@ -240,7 +285,8 @@ try {
   console.log('  Carriers:         local = the local pair (Go core.NewPair, TypeScript pair); peer/0 = WebSocket client sends;');
   console.log('                    peer/1 = WebSocket server sends (Go engine/websocket; TypeScript engine Peer over ws)');
   for (const line of results) console.log(`    ${line}`);
-  console.log('Historical 0.2 addressed evidence (lifecycle, declared, composition) and 0.3 structural evidence (trees).');
+  console.log('Historical 0.2 addressed evidence (lifecycle, declared, composition); 0.3 structural evidence (trees, wiretree structure/bridge);');
+  console.log('0.3 carrier composition evidence (wiretree carrier), with test-only bind and serve adapters.');
 } finally {
   if (args.includes('--keep-scratch')) console.log(`Retained scratch: ${scratch}`);
   else {
