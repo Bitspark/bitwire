@@ -133,3 +133,8 @@ reporting; [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) describes participation.
 ## License
 
 Apache License, Version 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
+
+## Source layout
+
+Read [LAYOUT.md](LAYOUT.md) for the component-first, two-letter language
+directory convention and this repository's adoption notes.

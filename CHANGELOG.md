@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Document the family component-first layout with two-letter language directories,
+  command paths and explicit adoption notes for existing source.
+
 - Record that bitruntime, bittype and bittheory now exist as public repositories, each opening with the charter decision 0010 requires; the theory repository is named bittheory.
 
 - Decide that Bitwire holds the contract and a separate repository, bitruntime, implements it (decision 0010, after research 0002). This supersedes where decision 0007 put the implementations; 0007's rule and independence check stand, and the check now also refuses a dependency on bitruntime. The decision records the family map (bittype for a new, wire-independent contract language and declaration identity; bitschema; Bitlink for adapters and their generation; a public repository for the contract theory), public visibility for the new repositories, and a gated migration order for Nightseam's six dependents.
