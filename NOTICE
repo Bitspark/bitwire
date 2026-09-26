@@ -14,3 +14,10 @@ from Nightseam's native Wire surfaces at revision
 1c63f1c4d7e4b5987d4bd32e294177645c92ed8f. Their package NOTICE files identify
 the source files and extraction changes. The Haskell presentation is derived
 from the common Bitwire specification.
+
+The test-only bitruntime composition driver in
+conformance/runtime/go/composition/main.go is adapted from Nightseam's
+conformance/bitwire/go/main.go at v0.6.0, revision
+5cc9723a24646c40ed1861f892b2b23eb6d785d7, licensed under the Apache License,
+Version 2.0: Copyright 2026 Bitspark and the Nightseam contributors. Each
+Nightseam facility is replaced by the bitruntime facility its port records.

@@ -101,3 +101,13 @@ test('production differs from the oracle only by exactly recorded gaps', () => {
   assert.throws(() => compareProduction(declared, productionRows('go'), repeated, 'go', 'repeated'));
   assert.throws(() => compareProduction(declared, productionRows('go').slice(1), ledger, 'go', 'missing'));
 });
+
+test('bitruntime keeps its own gap ledger, recorded only for the languages it runs', () => {
+  const runtime = JSON.parse(readFileSync(new URL('../conformance/runtime/production-gaps.json', import.meta.url)));
+  const gaps = new Map(runtime.gaps.flatMap(gap => gap.cases.map(id => [id, gap.observed.go])));
+  const rows = expectedRows().map(row => gaps.has(row.id) ? { id: row.id, observations: structuredClone(gaps.get(row.id)) } : row);
+  const result = compareProduction(declared, rows, runtime, 'go', 'bitruntime');
+  assert.equal(result.gaps.length, gaps.size);
+  // No TypeScript observation is claimed before a TypeScript driver runs.
+  assert.throws(() => compareProduction(declared, rows, runtime, 'ts', 'bitruntime/ts'), /no ts observation/);
+});
