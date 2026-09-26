@@ -51,9 +51,10 @@
     },
     "optional": {
       "enum": [
-        "observer"
+        "observer",
+        "defect"
       ],
-      "description": "A diagnostic that needs one runtime's observer; it supports no conformance claim."
+      "description": "A diagnostic that needs one runtime's observer, or a scenario with a known defect listed in selection.json. Either supports no conformance claim."
     },
     "source": {
       "type": "object",

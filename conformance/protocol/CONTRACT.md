@@ -127,14 +127,20 @@ follows [driver.go:Testee.Request]:
 2. When `error` is present, it is an object with a nonempty string `code`.
    `message` is read when it is a string. Every member is kept for matching. An
    error takes precedence over any `ok`.
-3. Otherwise the answer is `ok`. An answer with no `ok` reads as `{}`: the
-   upstream Go testee omits an empty or null `ok`, so this rule is part of
-   driver 1. An `ok` of `null` reads as null.
+3. Otherwise the answer is `ok`. An answer with no `ok` reads as `{}`; that is
+   the upstream runner's reading, and a testee writes `ok` on every success,
+   `{}` when there is nothing to say. An `ok` of `null` reads as null.
 4. Numbers keep the spelling the testee wrote. They compare as values (see
    [Literals](#62-literals)).
 
 An answer that breaks rule 1 or 2, or whose `ok` is not JSON, makes the testee
 dead (see [3.8](#38-a-testee-that-fails-the-exchange)).
+
+Edition 1 reads member names exactly (`id`, `ok`, `error`, `code`,
+`message`) and nothing may follow the object on its line. The upstream Go runner
+also accepted other capitalizations and trailing data; a testee that relies on
+either is outside driver 1. Invalid UTF-8, or an unpaired surrogate escape, in
+an answer is decoded as U+FFFD before matching.
 
 ### 3.4 Error codes
 
@@ -143,15 +149,17 @@ dead (see [3.8](#38-a-testee-that-fails-the-exchange)).
 | `unsupported` | The testee does not implement the op, or the feature its arguments ask for. The case's result is `unsupported` [run.go:Run]. |
 | `timeout` | The op did not settle within its `within_ms`. |
 | `unknown_handle` | `on` names nothing this testee minted. |
-| `invalid` | The arguments are malformed, or `on` names a handle of the wrong kind. |
-| `closed` | `conn.receive` on a connection a close ended, with `close_code` and `reason` members when a close frame carried them. |
-| `failed` | `conn.receive` on a connection whose transport broke (the upstream Go testee's closeError). |
+| `invalid` | The arguments are malformed, or `on` names a handle of the wrong kind. The upstream Go testee answers `unknown_handle` instead when `conn.accept` or `peer.accept` is given something that is not a listener; a runner accepts either for a wrong-kind handle, and no edition-1 scenario depends on it. |
+| `closed` | `conn.send`, `conn.close` or `conn.receive` on a connection a close ended. `conn.receive` adds `close_code` and `reason` when a close frame carried them. |
+| `failed` | An op whose transport broke, or could not be reached: `conn.send`, `conn.close` and `conn.receive` on a broken transport, and `conn.dial`, `peer.dial` and `peer.over` that could not connect (the upstream Go testee's closeError). |
+| `disconnected` | `peer.emit`, `peer.await_event`, `tunnel.open` or `tunnel.accept` after the peer's connection ended. |
 | Any other | An op's own refusal, its code verbatim, such as `tunnel.open`'s `channel_refused` or `contract_mismatch`. |
 
 **A call's outcome is not an error answer.** `call.await` answers `ok` with
 `{"error": {"code", "message", "data"?}}`. The code is the remote's public
-error code, or one of the driver's own: `cancelled`, `request_timeout` or
-`disconnected`.
+error code, or one the caller's side produced: `cancelled`, `request_timeout`,
+`disconnected`, `busy` (the caller's own limit of outstanding calls) or
+`failed`.
 
 Every error answer except `unsupported` is judged by the step (see
 [7.3](#73-judging-an-answer)).
@@ -192,8 +200,10 @@ binds and substitutes them.
   scenario's value after substitution [expect.go:substitute,
   driver.go:Testee.Request]. That serialization keeps each number's spelling
   and each string's content, but not member order, whitespace or string
-  escaping. A case that needs exact wire bytes writes them as a raw frame's
-  `text`.
+  escaping: the upstream runner sorts members, writes no whitespace and escapes
+  `<`, `>` and `&` in strings. A case that needs exact wire bytes writes them
+  as a raw frame's `text`. (DRIVER.md says the scenario's bytes pass
+  unchanged; edition 1 states what the runner does.)
 - Binary is base64 in a `base64` member. Durations are `_ms` integers. Times are
   never reported.
 - **Waiting.** An op that can wait on the other side takes `within_ms`
@@ -211,10 +221,13 @@ binds and substitutes them.
   An await op returns the first held entry that fits its arguments, and removes
   it. A close stays: every later `conn.receive` on that connection sees it.
   Nothing is reported unasked, and nothing is lost between asks.
-- **Consumption.** `consume` is `"eager"` by default: the connection receives
-  and holds frames as they arrive. A `"lazy"` connection receives nothing until
-  `conn.receive` asks, which is what a scenario about credit needs; it needs the
-  `lazy` feature.
+- **Consumption.** A connection from `conn.listen`/`conn.accept`,
+  `conn.dial` or `conn.pipe` is `"eager"` by default: it receives and holds
+  frames as they arrive. A `"lazy"` connection receives nothing until
+  `conn.receive` asks, which is what a scenario about credit needs; asking for
+  one needs the `lazy` feature. **A channel from `tunnel.open` or
+  `tunnel.accept` is `"lazy"` by default**, whether or not the testee has the
+  `lazy` feature [testee/tunnel.go:lazyChannel].
 
 ### 3.8 A testee that fails the exchange
 
@@ -261,7 +274,9 @@ The expansion uses these conventions:
   because a scenario's names start with a letter.
 - A scenario name given in `bind` replaces the runner's name for that handle.
 - `limit` is passed only when it is a number, and `consume` only when it is a
-  nonempty string.
+  nonempty string. Runner-op arguments are read before substitution, so a
+  placeholder there is dropped [pair.go:number]; a scenario writes them as
+  literals.
 - A step marked **unsupported** ends the case with that result and the reason
   given.
 
@@ -314,9 +329,9 @@ The frames connection beneath the profile.
 | `conn.accept` | **`on`** (listener), `consume`, `within_ms` | `{"handle"}`: the accepted connection |
 | `conn.dial` | **`url`**, `limit`, `consume` | `{"handle"}` |
 | `conn.pipe` | `limit`, `consume` | `{"a", "b"}`: two connected handles in one process. Needs `pipe`. |
-| `conn.send` | **`on`**, **`kind`** (`"text"` or `"binary"`), `text` or `base64`, `within_ms` | `{}` |
+| `conn.send` | **`on`**, **`kind`** (`"text"` or `"binary"`), `text` or `base64`, `within_ms` | `{}`; on an ended connection, `closed` or `failed` |
 | `conn.receive` | **`on`**, `within_ms` | `{"kind", "text"}` or `{"kind", "base64"}`. On an ended connection, an error: `closed` with `close_code` and `reason`, or `failed`. |
-| `conn.close` | **`on`**, `code`, `reason`, `within_ms` | `{}` |
+| `conn.close` | **`on`**, `code` (default 1000), `reason`, `within_ms` | `{}`; on an ended connection, `closed` or `failed` |
 | `conn.abort` | **`on`** | `{}` |
 | `conn.await_close` | **`on`**, `within_ms` | `{"code", "reason"}` as the connection ended: a close frame's, or `1006` and `""` for an abort or a broken transport |
 
@@ -330,15 +345,15 @@ The transport of `conn.listen` and `conn.dial` is the testee's configured one
 | `peer.listen` | `options`, `subprotocols` | `{"handle", "url"}`: a listener that accepts one peer at `url`, as the server. Needs `listen`. |
 | `peer.accept` | **`on`** (listener), `within_ms` | `{"handle", "subprotocol"}`: the accepted peer, with the listener's `options` |
 | `peer.dial` | **`url`**, `options`, `subprotocols` | `{"handle", "subprotocol"}`: the connected client peer |
-| `peer.over` | **`on`** (connection or channel), **`role`** (`"client"` or `"server"`), `options` | `{"handle"}`: a peer speaking the profile over that connection |
+| `peer.over` | **`on`** (connection or channel), **`role`** (`"client"` or `"server"`), `options` | `{"handle"}`: a peer speaking the profile over that connection. The connection must be lazily consumed; on an eager one the answer is `invalid` [testee/peer.go]. |
 | `peer.handle` | **`on`**, **`method`**, **`behavior`** | `{}`: registers a canned handler (below) |
 | `peer.on_event` | **`on`**, **`name`**, `behavior` (`record`, the default, `block` or `panic`) | `{}` |
 | `peer.call` | **`on`**, **`method`**, `params` (absent sends `null`), `timeout_ms` (a deadline for this call alone; absent or 0 leaves only the peer's), `meta` | `{"handle"}`: a call in flight |
 | `call.await` | **`on`**, `within_ms` | `{"result": …}` or `{"error": {"code", "message", "data"?}}` |
 | `call.cancel` | **`on`** | `{}`. The caller gives up, and its `call.await` then ends `cancelled`. |
-| `peer.emit` | **`on`**, **`event`**, `data`, `within_ms`, `meta` | `{}` |
+| `peer.emit` | **`on`**, **`event`**, `data` (absent sends `null`), `within_ms`, `meta` | `{}` |
 | `peer.await_event` | **`on`**, **`name`**, `within_ms` | `{"data": …, "meta"?}` |
-| `peer.await_request` | **`on`**, **`method`**, **`phase`** (`"started"` or `"ended"`), `within_ms` | `{"id", "method", "phase", "outcome", "meta"?}`. On `ended`, `outcome` is `ok`, `error`, `cancelled` or `panic`. |
+| `peer.await_request` | **`on`**, **`method`**, **`phase`** (`"started"` or `"ended"`), `within_ms` | `{"id", "method", "phase", "outcome", "meta"?}`. On `ended`, `outcome` is `ok`, `error`, `cancelled` or `panic`. The upstream Go testee answers `id` as `""` and omits `outcome` on `started`; scenarios hold neither. |
 | `peer.close` | **`on`** | `{}` |
 | `peer.await_close` | **`on`**, `within_ms` | `{"clean": bool, "code": int}` |
 
@@ -370,6 +385,7 @@ subprotocol answers `unsupported`.
 **`peer.await_close`.** `code` is the code the connection ended under:
 - **1000** where a side chose to close;
 - **4011** where a peer refused a frame;
+- **1009** where the receiver refused a frame over its limit;
 - **1006** where a side aborted and sent nothing;
 - otherwise whatever the remote sent when it closed first.
 
@@ -434,8 +450,9 @@ An event handler installed with `peer.on_event` does one of three things:
 | `gen.*`, `client.*`, `server.*` | Generated code |
 
 The upstream tables other than the three normative ones (`validator`,
-`naming`, `digests`, `declaration-digests` and `examples`) are not part of
-edition 1.
+`naming`, `digests`, `declaration-digests`, `examples`,
+`generic-composition`, `callable-identities`, `otel-events`, `recorded-wire`
+and the `auth-*` tables) are not part of edition 1.
 
 ### 4.6 Optional: the observer
 
@@ -539,7 +556,16 @@ It then reports no claim from that set.
   - a runner step has no `expect`, `expect_error`, `assert` or `repeat`;
 - the observer repeat rule ([4.6](#46-optional-the-observer));
 - `foreach` selects at least one row ([5.7](#57-foreach-and-where));
-- no two expanded scenarios share a layer and name [scenario.go:Load].
+- no two expanded scenarios share a layer and name [scenario.go:Load];
+- the scope matches the layer: `seam` and `peer` scenarios are `core`, and
+  `tunnel` scenarios are `tunnel`;
+- a scenario that needs `observer` is marked `"optional": "observer"`;
+- no step uses an excluded op ([4.5](#45-excluded-ops-and-arguments)), and only an
+  optional scenario uses `peer.observed` or the `observe` option;
+- each op family a step uses belongs to the scenario's layer or one beneath it:
+  `conn.*` everywhere, `peer.*` and `call.*` in `peer` and `tunnel`, and
+  `tunnel.*` only in `tunnel`. Upstream held this in a test
+  [scenario_test.go:allowedAcross]; edition 1 makes it a load check.
 
 ### 5.6 Argument substitution
 
@@ -622,7 +648,8 @@ beginning with `$`.** Unlike arguments, expectations have no `$$` escape.
 
 For example, `{"n": 1000}` holds against `{"n": 1e3}`, and `{"a": null}`
 refuses `{"a": 0}`. Because the comparison goes through binary64, two integers
-beyond 2^53 that round alike compare equal.
+beyond 2^53 that round alike compare equal. A number binary64 cannot represent,
+such as `1e400`, equals only a number with the same text.
 
 ### 6.3 Objects
 
@@ -660,7 +687,8 @@ example, `[1, "two", null]` holds against the same array, and `[1]` refuses
 A placeholder is `$` followed by a keyword and, for some keywords, `:` and an
 argument. The keyword is the text between `$` and the first `:`, and the
 argument is everything after that colon [expect.go:matchPlaceholder]. A keyword
-that takes no argument ignores any argument it is given.
+that takes no argument ignores any argument it is given, except `$absent`: only
+the exact string `"$absent"` is the member rule, and `$absent:x` fails the step.
 
 | Placeholder | Holds when | Example that holds |
 | --- | --- | --- |
@@ -755,6 +783,10 @@ consequences follow:
 
 For each case [run.go:Run]:
 
+0. **Applicability.** A case that is not applicable to the report's declared
+   transports or implementation ([8.2](#82-pairings-roles-and-transports)) is
+   skipped before anything runs, and so is an optional case that was not
+   requested.
 1. **Expansion.** The runner expands the runner steps for this pairing
    ([4.1](#41-runner-ops)). A failure to arrange the pair ends the case
    `unsupported`.
@@ -876,6 +908,17 @@ A case is **required** for a scope when its scenario is not `optional` and:
 The `propagator` feature is part of the core. Optional diagnostics may run, and
 are then reported, but never count toward or against a claim.
 
+Scope follows the layer because each upstream layer is exactly one conformance
+area: the seam and the peer make up the core, and the tunnel is the tunnel's.
+The selection states this explicitly, and overrides it where a scenario needs
+the observer or has a known defect.
+
+**Defective scenarios.** `selection.json` lists scenarios that expect more than
+`bitwire/1` requires, each with its reason. They are marked
+`"optional": "defect"`, run when requested, and reported, but they never count
+toward or against a claim. Removing one from that list is a new
+`contractDigest`.
+
 ### 8.2 Pairings, roles and transports
 
 - **Pairings.** A report lists its pairings. The implementation under test
@@ -910,6 +953,9 @@ are then reported, but never count toward or against a claim.
 
 A claim for a scope is **supported** when every required case passed, in every
 pairing and order the report lists and under every transport the claim names.
+The report must list at least one pairing that places the implementation under
+test on side `a` and one that places it on side `b` (pairing it with itself
+does both); a report with no pairing supports nothing.
 A required case may also be skipped as not applicable; the claim then names
 that limitation. Any other result on a required case (`fail`, `unsupported`,
 `harness`, or a skip for any other reason) means the claim is **not supported**
@@ -928,7 +974,7 @@ requires, with these members:
 | Member | Content |
 | --- | --- |
 | `protocol` | `{"revision": "bitwire/1", "normativeDigest"}` |
-| `scope` | `"core"`, or `"core and tunnel"` |
+| `scope` | `"core"`, or `"core and tunnel"`. (A scenario's `scope` names the area it tests, `core` or `tunnel`; a claim's names the conformance scope.) |
 | `roles` | `["client", "server"]` in edition 1 |
 | `transports` | For each claimed transport: its name, how the testee was configured for it, and whether it negotiates subprotocols |
 | `configuration` | The implementation's configuration where it departs from the default bounds, or `"default"`. Whether it accepts connections (`listen`). |
@@ -976,4 +1022,9 @@ with `"driver": 1`.
 | 7 | `matrix.json` holds counts per language and profile [profiles.go:Matrix.Write] | A per-case report with the identities that [`SCOPE.md`](../../protocol/bitwire-1/SCOPE.md#evidence-and-conformance-tooling) requires ([section 9](#9-reports)) | Addition |
 | 8 | A dead testee is replaced without being terminated [suite.go:run] | The runner terminates it ([3.8](#38-a-testee-that-fails-the-exchange)) | Clarification |
 | 9 | Documented only in runner code: the matching language, reading a missing `ok` as `{}`, runner deadlines, what an omitted `until` means, the `$$` escape, `where` equality | Stated in sections 3 to 7 exactly as the runner behaves | Clarification |
-| 10 | `DRIVER.md` lists `cancelled`, `request_timeout` and `disconnected` as answer error codes, and omits `failed` | They are `call.await` outcomes inside `ok`; `failed` is `conn.receive`'s code for a broken transport ([3.4](#34-error-codes)) | Clarification |
+| 10 | `DRIVER.md` lists `cancelled`, `request_timeout` and `disconnected` as answer error codes, and omits `failed` | `cancelled` and `request_timeout` are `call.await` outcomes inside `ok`; `disconnected` is both a call outcome and a top-level error of `peer.emit`, `peer.await_event` and `tunnel.*`; `failed` is the code of a broken or unreachable transport ([3.4](#34-error-codes)) | Clarification |
+| 11 | `DRIVER.md` says payloads pass unchanged | The runner's re-serialization is stated ([3.7](#37-values-waiting-and-consumption)) | Clarification |
+| 12 | The Go runner reads member names in any capitalization and ignores trailing data | Exact names, nothing after the object ([3.3](#33-answers)) | Narrowing |
+| 13 | The layer and op-family rule is held in a test [scenario_test.go:allowedAcross]; scope, observer marking and excluded ops are not checked | Load checks ([5.5](#55-loading)) | Addition |
+| 14 | No notion of a defective scenario | `"optional": "defect"` for scenarios that over-specify, listed with reasons in `selection.json` ([8.1](#81-required-cases)) | Addition |
+| 15 | No applicability step, and no minimum pairings for a claim | Applicability before expansion ([7.1](#71-order)); both orders required ([8.4](#84-claim-rule)) | Addition |

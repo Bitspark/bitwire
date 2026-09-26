@@ -6,6 +6,7 @@
     "normativeDigest": "7797682b0f05f86c508eafbd3be23c2084acd2f5cfc766922f9372b652dc416e"
   },
   "scope": "core",
+  "optional": "defect",
   "source": {
     "path": "protocol/bitwire-1/source/conformance/scenarios/peer/trace-members-verbatim.json",
     "sha256": "6b0ca52c7bc0d47fefc5b0d253c78d45a99e8da4c5d12070b3f6b1d8bbe1ad15"

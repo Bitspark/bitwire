@@ -22,8 +22,10 @@ exactly as they are. It adds:
 - the protocol identity it tests;
 - its scope (**core**, or **tunnel** for core and tunnel);
 - the archived source file and that file's SHA-256;
-- an `optional: observer` marker when it needs one runtime's observer. Such a
-  scenario is a diagnostic and supports no conformance claim.
+- an `optional` marker when it supports no conformance claim:
+  - `observer` when it needs one runtime's observer;
+  - `defect` when it expects more than `bitwire/1` requires. Each such case is
+    listed in `selection.json` with its reason.
 
 Two archived scenarios are out of scope and do not travel: the identity
 exchange, and a test-only recorder. New evidence is added as new scenarios
@@ -39,12 +41,16 @@ node scripts/protocol-scenarios.mjs generate   # rewrite them from the archive a
 `evidenceDigest`, computed with the protocol's digest procedure
 ([CONTRACT.md §1](CONTRACT.md#1-identity-and-status)). Reports record both.
 
-`node scripts/check.mjs` verifies them. `scripts/protocol-scenarios.test.mjs`
-also checks:
-- that the steps are unchanged;
-- the identity labels;
+`node scripts/check.mjs` runs `scripts/protocol-scenarios.test.mjs`. It checks:
+- that every derivative equals its archived source plus the labels;
+- that its steps are unchanged;
 - the selection;
-- the schema's shape.
+- every scenario, authored or derived, against the load rules of
+  [CONTRACT.md §5.5](CONTRACT.md#55-loading) that need no runner. Those rules
+  cover the members and enums, the protocol identity, scope and layer, the
+  observer marking, excluded ops and op families.
+
+It does not run a JSON Schema validator. The runner will.
 
 ## Known evidence defects
 
@@ -52,15 +58,18 @@ Two derivatives expect more than `bitwire/1` requires. By decision 0008 a
 scenario that contradicts its revision is a defect in the scenario, not in the
 protocol:
 
-- `peer/trace-members-verbatim` matches a regular expression that assumes the
-  envelope members `id`, `traceparent` and `tracestate` arrive in that order. The
-  envelope does not order its members.
-- `tunnel/declaration-digest` expects Nightseam Go's exact refusal message. The
-  tunnel requires only that the message name the family.
+- `peer/trace-members-verbatim`: its regular expression assumes the envelope
+  members `id`, `traceparent` and `tracestate` arrive in that order, on one line,
+  with no whitespace after the colons. The envelope orders no members.
+- `tunnel/declaration-digest`: it expects Nightseam Go's exact refusal message.
+  The tunnel requires only that the message name the family.
 
-They stay faithful to their archived sources. A bitwire-authored replacement
-follows with the runner, and until then a failure in only these two is
-reported as this defect ([#59](https://github.com/Bitspark/bitwire/issues/59)).
+They stay faithful to their archived sources and are marked
+`"optional": "defect"` through `selection.json`. They run and are reported,
+but under the claim rule ([CONTRACT.md §8.1](CONTRACT.md#81-required-cases))
+they count neither toward nor against a claim. Bitwire-authored replacements
+that test only what the revision requires follow with the runner
+([#59](https://github.com/Bitspark/bitwire/issues/59)).
 
 ## Not yet here
 

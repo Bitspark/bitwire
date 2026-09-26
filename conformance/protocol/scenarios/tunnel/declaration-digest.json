@@ -6,6 +6,7 @@
     "normativeDigest": "7797682b0f05f86c508eafbd3be23c2084acd2f5cfc766922f9372b652dc416e"
   },
   "scope": "tunnel",
+  "optional": "defect",
   "source": {
     "path": "protocol/bitwire-1/source/conformance/scenarios/tunnel/declaration-digest.json",
     "sha256": "e1eb208fb635a31272988f93b1f86eb02122d853917aa938845bdf31f05c68fd"
