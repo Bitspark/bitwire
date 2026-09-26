@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Record that bitruntime, bittype and bittheory now exist as public repositories, each opening with the charter decision 0010 requires; the theory repository is named bittheory.
+
 - Decide that Bitwire holds the contract and a separate repository, bitruntime, implements it (decision 0010, after research 0002). This supersedes where decision 0007 put the implementations; 0007's rule and independence check stand, and the check now also refuses a dependency on bitruntime. The decision records the family map (bittype for a new, wire-independent contract language and declaration identity; bitschema; Bitlink for adapters and their generation; a public repository for the contract theory), public visibility for the new repositories, and a gated migration order for Nightseam's six dependents.
 
 - Record research 0002 on repository boundaries that follow the contract theory, with an outside expert's advice verified against the code. The advice keeps Bitwire as the normative contract and conformance repository, moves the production implementations to a separate runtime repository, gives value types and abstract operations one wire-independent contract language, places adapters and their generation where model and wire meet, consolidates canonical declaration identity, and proposes a gated migration order. No decision record changes yet; the recommended outcome awaits the maintainer.

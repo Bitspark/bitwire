@@ -263,7 +263,7 @@ evidence (`docs/languages.md:36-45`).
 | Project | Responsibility | Cite |
 | --- | --- | --- |
 | Bitwire | Shared access contract, language declarations, protocol and carrier specifications, independent conformance criteria | `README.md:72` |
-| bitruntime (planned) | The Go and TypeScript implementations; until it exists, frozen Nightseam v0.6.0 | `README.md:73` |
+| bitruntime | The Go and TypeScript implementations (chartered, no code yet); until it delivers, frozen Nightseam v0.6.0 | `README.md:73` |
 | Bitlink | Planned protocol projections and generated adapters | `README.md:74` |
 | Bitsystem | Typed spaces and kernel/system operations exposed through them | `README.md:75` |
 

@@ -58,7 +58,7 @@ a new primitive is not an exemption from those requirements.
 ## Dependency direction
 
 ```text
-bitruntime (planned) and its implementations ──┐
+bitruntime and its implementations ────────────┐
 Bitlink's planned adapters and generation ──────┼──> Bitwire contract
 Consumer-owned space/service composition ──────┘
 ```
@@ -66,7 +66,7 @@ Consumer-owned space/service composition ──────┘
 Bitwire owns access semantics, language declarations, the protocol and carrier
 specifications, and independent criteria. [Decision 0010](decisions/0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md)
 places the implementations in bitruntime, the contract language in bittype, and
-adapters and their generation in Bitlink. Until those exist, frozen Nightseam
+adapters and their generation in Bitlink. Until they deliver, frozen Nightseam
 v0.6.0 is the implementation in use. Consumers own domain
 contracts, attachment rules and application policy. Bitwire packages have no
 runtime dependency on those consumers, on Nightseam or on bitruntime, and
