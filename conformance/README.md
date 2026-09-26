@@ -13,9 +13,9 @@ and a preserved historical 0.1.0 runtime baseline.**
 ## bitruntime runtime conformance
 
 Run `node scripts/conformance-runtime.mjs`. The test-only Go module
-[`runtime/go`](runtime/go/go.mod) runs Bitwire's existing independent cases
-against bitruntime, as the current baseline runs them against Nightseam v0.6.0.
-It requires Bitwire v0.3.0 and the public bitruntime module pinned in
+[`runtime/go`](runtime/go/go.mod) runs bitwire's existing independent cases
+against bitruntime, as the current baseline runs them against nightseam v0.6.0.
+It requires bitwire v0.3.0 and the public bitruntime module pinned in
 [bitruntime.json](runtime/bitruntime.json), with no replacement or local path.
 The runner refuses any other module graph, revision or sum, runs every driver
 with `GOWORK=off` under the race detector (required in CI), withholds every
@@ -24,16 +24,16 @@ expectation from the drivers, and reports the case files' SHA-256s.
 | Family | Driver and oracle | Carriers | Result at the pin |
 | --- | --- | --- | --- |
 | Lifecycle | [Cases](current/lifecycle.json) through `core.Invocation` | none, public state | 5/5 |
-| Composition | The six [reference](reference/expected.json) groups; driver ported from Nightseam's upstream one | local pair, WebSocket client and server sending | 6/6 on each |
+| Composition | The six [reference](reference/expected.json) groups; driver ported from nightseam's upstream one | local pair, WebSocket client and server sending | 6/6 on each |
 | Declared, reference | The 39 [declared](declared/cases.json) cases through the test-only interpreter over bitruntime's carriers | the same three | 39/39 on each |
 | Declared, production | The same cases through bitruntime's child-only addressed `core.Mount`, `At` and `Forward` | the same three | 20 conform; 19 match bitruntime's own [gap ledger](runtime/production-gaps.json) |
 | Trees | The [0.3 observations](trees/expected.json) through `core.Compose`, `Select`, `Send` and `AsAddressed` | none, structural | 14/14 |
 
-As in the Nightseam baseline, the two echoed `same-id` placeholders are
-instantiated as `c:1`: bitruntime's `bitwire/1` is Nightseam v0.6.0's profile
+As in the nightseam baseline, the two echoed `same-id` placeholders are
+instantiated as `c:1`: bitruntime's `bitwire/1` is nightseam v0.6.0's profile
 and refuses `same-id` as a request identifier on both carriers. Nothing else in
 any oracle changes. bitruntime keeps its own gap ledger so a gap it closes is
-removed there, never from Nightseam's. Its observations equal Nightseam's:
+removed there, never from nightseam's. Its observations equal nightseam's:
 `core.Mount` is a renamed port, and bitruntime deliberately omits the unreleased
 declared-composition API that decision 0012 supersedes. No case reaches
 bitruntime's documented forwarding and disconnection changes, because every
