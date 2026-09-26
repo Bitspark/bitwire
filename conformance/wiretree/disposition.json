@@ -20,145 +20,570 @@
     "addressed-mount": "Mount/mount is bitruntime's addressed routing operator: child-only, typed by a native map of Endpoints and validated on send. Its recorded gaps remain accurate observations of that operator. Tree construction is Compose/compose."
   },
   "cases": [
-    { "id": "origin-and-descendants", "gap": "origin-bearing-construction", "requirements": [
-      { "kind": "structural", "cases": ["own-and-descendants"], "note": "Own value at [] beside complete children, empty keys, the literal slash key and both Unicode spellings. Adds the binary key and a present refusing node." },
-      { "kind": "carrier", "cases": ["carrier-routing"] },
-      { "kind": "historical-addressed", "limitation": "suffix-delivery", "note": "[alias, x] and [a, b, x, y] were delivered to leaf with a suffix; in the full tree both are missing." }
-    ] },
-    { "id": "nested-selection-agrees", "gap": "origin-bearing-construction", "requirements": [
-      { "kind": "structural", "cases": ["nested-selection-agrees"], "note": "Nested and concatenated selection reach the same node; selection returns that node itself." },
-      { "kind": "historical-addressed", "limitation": "suffix-delivery", "note": "Selections through [alias] then [x] were delivered to leaf with [x]; in the full tree they are missing." }
-    ] },
-    { "id": "missing-never-falls-back", "gap": "origin-bearing-construction", "requirements": [
-      { "kind": "structural", "cases": ["missing-never-falls-back"], "note": "Meaning sharpened: missing paths are missing, not refused, and [empty] is a present node whose own refuses. No own value is invoked as fallback." }
-    ] },
-    { "id": "empty-branch-versus-missing", "gap": "origin-bearing-construction", "requirements": [
-      { "kind": "structural", "cases": ["refusing-versus-missing"], "note": "Meaning sharpened: the two sends were indistinguishable refusals; selection now distinguishes a present refusing node from a missing one." }
-    ] },
-    { "id": "root-cut-reconstruction", "gap": "origin-bearing-construction", "requirements": [
-      { "kind": "structural", "cases": ["root-cut-reconstruction"] }
-    ] },
-    { "id": "complete-cuts-agree", "gap": "origin-bearing-construction", "requirements": [
-      { "kind": "structural", "cases": ["complete-cuts-agree"] },
-      { "kind": "carrier", "cases": ["carrier-reconstruction"] }
-    ] },
-    { "id": "children-alone-lose-origin", "gap": "origin-bearing-construction", "requirements": [
-      { "kind": "structural", "cases": ["children-alone-lose-own"] }
-    ] },
-    { "id": "fresh-origin-resets-parent-state", "gap": "origin-bearing-construction", "requirements": [
-      { "kind": "structural", "cases": ["fresh-own-resets-state"] }
-    ] },
-    { "id": "equivalent-substitution", "gap": "origin-bearing-construction", "requirements": [
-      { "kind": "structural", "cases": ["equivalent-substitution"] }
-    ] },
-    { "id": "copied-subtree-breaks-sharing", "gap": "origin-bearing-construction", "requirements": [
-      { "kind": "structural", "cases": ["copied-subtree-breaks-sharing"] }
-    ] },
-    { "id": "altered-children-detected", "gap": "origin-bearing-construction", "requirements": [
-      { "kind": "structural", "cases": ["altered-children-detected"], "note": "Meaning sharpened: an omitted or renamed child is missing rather than refused." }
-    ] },
-    { "id": "invalid-path-never-reaches-origin", "gap": "origin-bearing-construction", "requirements": [
-      { "kind": "bridge", "cases": ["bridge-exact-utf8-image"], "note": "Tree paths are bytes and have no invalid form; an ill-formed addressed segment is refused by the bridge before any own Wire." }
-    ] },
-    { "id": "selection-retains-original-binding", "gap": "origin-bearing-construction", "requirements": [
-      { "kind": "structural", "cases": ["selected-subtree-keeps-identity"] }
-    ] },
-    { "id": "forwarded-reconstruction", "gap": "origin-bearing-construction", "requirements": [
-      { "kind": "carrier", "cases": ["carrier-relay-reconstruction"] }
-    ] },
-    { "id": "mounted-carrier-reconstruction", "gap": "origin-bearing-construction", "requirements": [
-      { "kind": "carrier", "cases": ["carrier-mount-reconstruction"] }
-    ] },
-    { "id": "pending-across-reconstruction", "gap": "origin-bearing-construction", "requirements": [
-      { "kind": "carrier", "cases": ["carrier-late-reply-across-replacement", "carrier-cancel-across-replacement"], "note": "The captured cancellation is now the requester's cancel frame through tree access, routed by the far dispatcher's captured traversal; the late reply returns to the original return capability." }
-    ] },
-    { "id": "mount-routing", "requirements": [
-      { "kind": "structural", "cases": ["refusing-own-and-descendants"], "note": "Meaning sharpened: [missing] is missing, while [], [a], [\"\"] and [empty] are present nodes whose own refuses." },
-      { "kind": "historical-addressed", "limitation": "suffix-delivery" }
-    ] },
-    { "id": "mount-nested-selection", "requirements": [
-      { "kind": "structural", "cases": ["nested-selection-agrees", "refusing-own-and-descendants"] },
-      { "kind": "historical-addressed", "limitation": "suffix-delivery", "note": "[alias] then [x, y] reached leaf with a suffix." }
-    ] },
-    { "id": "mount-complete-cuts-agree", "requirements": [
-      { "kind": "structural", "cases": ["refusing-complete-cuts-agree"] }
-    ] },
-    { "id": "mount-empty-branch-versus-missing", "requirements": [
-      { "kind": "structural", "cases": ["refusing-versus-missing"] }
-    ] },
-    { "id": "mount-altered-children-detected", "requirements": [
-      { "kind": "structural", "cases": ["altered-children-detected"] }
-    ] },
-    { "id": "conflicting-children", "gap": "conflicting-segments-accepted", "requirements": [
-      { "kind": "structural", "cases": ["duplicate-keys-refused"] }
-    ] },
-    { "id": "invalid-key", "gap": "invalid-segments-accepted", "requirements": [
-      { "kind": "structural", "cases": ["own-and-descendants"], "note": "Meaning changed: a key outside the UTF-8 image is a valid tree key, reachable structurally." },
-      { "kind": "bridge", "cases": ["bridge-exact-utf8-image"], "note": "It is unreachable through the bitwire/1 bridge, which never decodes or normalizes." },
-      { "kind": "carrier", "cases": ["carrier-routing"] }
-    ] },
-    { "id": "missing-child-value", "gap": "missing-children-accepted", "requirements": [
-      { "kind": "structural", "cases": ["missing-child-refused"] }
-    ] },
-    { "id": "cyclic-declaration", "requirements": [
-      { "kind": "structural", "cases": ["cycle-refused"], "note": "The historical case refused a cyclic description in the test harness. Construction itself now refuses a child graph that contains a cycle." }
-    ] },
-    { "id": "mount-invalid-path", "requirements": [
-      { "kind": "bridge", "cases": ["bridge-exact-utf8-image"] }
-    ] },
-    { "id": "mount-shared-child-state", "requirements": [
-      { "kind": "structural", "cases": ["shared-child-state"] }
-    ] },
-    { "id": "mount-equivalent-substitution", "requirements": [
-      { "kind": "structural", "cases": ["equivalent-substitution"] }
-    ] },
-    { "id": "mount-copied-subtree-breaks-sharing", "requirements": [
-      { "kind": "structural", "cases": ["copied-subtree-breaks-sharing"] }
-    ] },
-    { "id": "mount-forwarded-reconstruction", "requirements": [
-      { "kind": "carrier", "cases": ["carrier-relay-reconstruction"] }
-    ] },
-    { "id": "mount-mounted-carrier", "requirements": [
-      { "kind": "carrier", "cases": ["carrier-mount-reconstruction"] }
-    ] },
-    { "id": "mount-selection-retains-original-binding", "requirements": [
-      { "kind": "structural", "cases": ["selected-subtree-keeps-identity"] }
-    ] },
-    { "id": "mount-pending-across-reconstruction", "requirements": [
-      { "kind": "carrier", "cases": ["carrier-late-reply-across-replacement", "carrier-cancel-across-replacement"] }
-    ] },
-    { "id": "mount-teardown-keeps-borrowed", "requirements": [
-      { "kind": "carrier", "cases": ["carrier-teardown-keeps-borrowed"], "note": "Closing the serving dispatcher releases its routes, never the borrowed endpoint or the served tree." },
-      { "kind": "historical-addressed", "limitation": "suffix-delivery", "note": "The direct send to leaf with [x]." }
-    ] },
-    { "id": "guard-around-composite", "requirements": [
-      { "kind": "historical-addressed", "limitation": "path-observing-interception" }
-    ] },
-    { "id": "guard-state-survives-reconstruction", "requirements": [
-      { "kind": "structural", "cases": ["root-cut-reconstruction", "shared-child-state"], "note": "Retained primitive state survives reconstruction because reconstruction keeps the capability." },
-      { "kind": "historical-addressed", "limitation": "path-observing-interception" }
-    ] },
-    { "id": "fresh-guard-resets-state", "requirements": [
-      { "kind": "structural", "cases": ["fresh-own-resets-state"] },
-      { "kind": "historical-addressed", "limitation": "path-observing-interception" }
-    ] },
-    { "id": "guarded-child-complete-access", "requirements": [
-      { "kind": "historical-addressed", "limitation": "path-observing-interception" },
-      { "kind": "historical-addressed", "limitation": "suffix-delivery" }
-    ] },
-    { "id": "rebuilding-from-guarded-views-repeats-checks", "requirements": [
-      { "kind": "structural", "cases": ["equivalent-substitution", "nested-selection-agrees"], "note": "Rebuilding from selected children retains their identity." },
-      { "kind": "historical-addressed", "limitation": "addressed-views" }
-    ] }
+    {
+      "id": "origin-and-descendants",
+      "gap": "origin-bearing-construction",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "own-and-descendants"
+          ],
+          "note": "Own value at [] beside complete children, empty keys, the literal slash key and both Unicode spellings. Adds the binary key and a present refusing node."
+        },
+        {
+          "kind": "carrier",
+          "cases": [
+            "carrier-routing"
+          ]
+        },
+        {
+          "kind": "historical-addressed",
+          "limitation": "suffix-delivery",
+          "note": "[alias, x] and [a, b, x, y] were delivered to leaf with a suffix; in the full tree both are missing."
+        }
+      ]
+    },
+    {
+      "id": "nested-selection-agrees",
+      "gap": "origin-bearing-construction",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "nested-selection-agrees"
+          ],
+          "note": "Nested and concatenated selection reach the same node; selection returns that node itself."
+        },
+        {
+          "kind": "historical-addressed",
+          "limitation": "suffix-delivery",
+          "note": "Selections through [alias] then [x] were delivered to leaf with [x]; in the full tree they are missing."
+        }
+      ]
+    },
+    {
+      "id": "missing-never-falls-back",
+      "gap": "origin-bearing-construction",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "missing-never-falls-back"
+          ],
+          "note": "Meaning sharpened: missing paths are missing, not refused, and [empty] is a present node whose own refuses. No own value is invoked as fallback."
+        }
+      ]
+    },
+    {
+      "id": "empty-branch-versus-missing",
+      "gap": "origin-bearing-construction",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "refusing-versus-missing"
+          ],
+          "note": "Meaning sharpened: the two sends were indistinguishable refusals; selection now distinguishes a present refusing node from a missing one."
+        }
+      ]
+    },
+    {
+      "id": "root-cut-reconstruction",
+      "gap": "origin-bearing-construction",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "root-cut-reconstruction"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "complete-cuts-agree",
+      "gap": "origin-bearing-construction",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "complete-cuts-agree"
+          ]
+        },
+        {
+          "kind": "carrier",
+          "cases": [
+            "carrier-reconstruction"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "children-alone-lose-origin",
+      "gap": "origin-bearing-construction",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "children-alone-lose-own"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fresh-origin-resets-parent-state",
+      "gap": "origin-bearing-construction",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "fresh-own-resets-state"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "equivalent-substitution",
+      "gap": "origin-bearing-construction",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "equivalent-substitution"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "copied-subtree-breaks-sharing",
+      "gap": "origin-bearing-construction",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "copied-subtree-breaks-sharing"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "altered-children-detected",
+      "gap": "origin-bearing-construction",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "altered-children-detected"
+          ],
+          "note": "Meaning sharpened: an omitted or renamed child is missing rather than refused."
+        }
+      ]
+    },
+    {
+      "id": "invalid-path-never-reaches-origin",
+      "gap": "origin-bearing-construction",
+      "requirements": [
+        {
+          "kind": "bridge",
+          "cases": [
+            "bridge-exact-utf8-image"
+          ],
+          "note": "Tree paths are bytes and have no invalid form; an ill-formed addressed segment is refused by the bridge before any own Wire."
+        }
+      ]
+    },
+    {
+      "id": "selection-retains-original-binding",
+      "gap": "origin-bearing-construction",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "selected-subtree-keeps-identity"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "forwarded-reconstruction",
+      "gap": "origin-bearing-construction",
+      "requirements": [
+        {
+          "kind": "carrier",
+          "cases": [
+            "carrier-relay-reconstruction"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mounted-carrier-reconstruction",
+      "gap": "origin-bearing-construction",
+      "requirements": [
+        {
+          "kind": "carrier",
+          "cases": [
+            "carrier-mount-reconstruction"
+          ],
+          "note": "Through an addressed Mount of the carrier, reconstruction on either side keeps reaching the own value at [] and the descendants."
+        }
+      ]
+    },
+    {
+      "id": "pending-across-reconstruction",
+      "gap": "origin-bearing-construction",
+      "requirements": [
+        {
+          "kind": "carrier",
+          "cases": ["carrier-late-reply-across-replacement", "carrier-cancel-across-replacement"],
+          "note": "The captured cancellation is now the requester's cancel frame through tree access, routed by the far dispatcher's captured traversal. The late reply returns to the original return capability after the serving composition is torn down."
+        }
+      ]
+    },
+    {
+      "id": "mount-routing",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "refusing-own-and-descendants"
+          ],
+          "note": "Meaning sharpened: [missing] is missing, while [], [a], [\"\"] and [empty] are present nodes whose own refuses."
+        },
+        {
+          "kind": "historical-addressed",
+          "limitation": "suffix-delivery"
+        }
+      ]
+    },
+    {
+      "id": "mount-nested-selection",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": ["nested-selection-agrees", "refusing-own-and-descendants"],
+          "note": "Meaning sharpened: selecting [missing] is missing rather than refused; [] and [a] select present nodes whose own refuses."
+        },
+        {
+          "kind": "historical-addressed",
+          "limitation": "suffix-delivery",
+          "note": "[alias] then [x, y] reached leaf with a suffix."
+        }
+      ]
+    },
+    {
+      "id": "mount-complete-cuts-agree",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "refusing-complete-cuts-agree"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mount-empty-branch-versus-missing",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "refusing-versus-missing"
+          ],
+          "note": "Meaning sharpened: sending at [missing] is missing rather than refused; [empty] stays a present node whose own refuses."
+        }
+      ]
+    },
+    {
+      "id": "mount-altered-children-detected",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "altered-children-detected"
+          ],
+          "note": "Meaning sharpened: an omitted or renamed child is missing rather than refused."
+        }
+      ]
+    },
+    {
+      "id": "conflicting-children",
+      "gap": "conflicting-segments-accepted",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "duplicate-keys-refused"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "invalid-key",
+      "gap": "invalid-segments-accepted",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "own-and-descendants"
+          ],
+          "note": "Meaning changed: a key outside the UTF-8 image is a valid tree key, reachable structurally."
+        },
+        {
+          "kind": "bridge",
+          "cases": [
+            "bridge-exact-utf8-image"
+          ],
+          "note": "It is unreachable through the bitwire/1 bridge, which never decodes or normalizes; an ill-formed segment, including one a lossy decoder would turn into U+FFFD or byte ff, is refused before any primitive."
+        }
+      ]
+    },
+    {
+      "id": "missing-child-value",
+      "gap": "missing-children-accepted",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "missing-child-refused"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cyclic-declaration",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": ["cycle-refused", "foreign-child-accepted"],
+          "note": "The historical case refused a cyclic description in the test harness. Construction itself now refuses a child graph that contains a cycle, and accepts an acyclic child implemented outside the runtime, so the refusal is not a refusal of every foreign node."
+        }
+      ]
+    },
+    {
+      "id": "mount-invalid-path",
+      "requirements": [
+        {
+          "kind": "bridge",
+          "cases": [
+            "bridge-exact-utf8-image"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mount-shared-child-state",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "shared-child-state"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mount-equivalent-substitution",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "equivalent-substitution"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mount-copied-subtree-breaks-sharing",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "copied-subtree-breaks-sharing"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mount-forwarded-reconstruction",
+      "requirements": [
+        {
+          "kind": "carrier",
+          "cases": [
+            "carrier-relay-reconstruction"
+          ],
+          "note": "Includes the doubly empty path through the relay."
+        }
+      ]
+    },
+    {
+      "id": "mount-mounted-carrier",
+      "requirements": [
+        {
+          "kind": "carrier",
+          "cases": [
+            "carrier-mount-reconstruction"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mount-selection-retains-original-binding",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "selected-subtree-keeps-identity"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mount-pending-across-reconstruction",
+      "requirements": [
+        {
+          "kind": "carrier",
+          "cases": ["carrier-late-reply-across-replacement", "carrier-cancel-across-replacement"]
+        }
+      ]
+    },
+    {
+      "id": "mount-teardown-keeps-borrowed",
+      "requirements": [
+        {
+          "kind": "carrier",
+          "cases": [
+            "carrier-teardown-keeps-borrowed"
+          ],
+          "note": "Closing the serving dispatcher releases its routes, never the borrowed endpoint or the served tree."
+        },
+        {
+          "kind": "historical-addressed",
+          "limitation": "suffix-delivery",
+          "note": "The direct send to leaf with [x]."
+        }
+      ]
+    },
+    {
+      "id": "guard-around-composite",
+      "requirements": [
+        {
+          "kind": "historical-addressed",
+          "limitation": "path-observing-interception"
+        }
+      ]
+    },
+    {
+      "id": "guard-state-survives-reconstruction",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": ["root-cut-reconstruction", "shared-child-state"],
+          "note": "Retained primitive state survives reconstruction because reconstruction keeps the capability."
+        },
+        {
+          "kind": "historical-addressed",
+          "limitation": "path-observing-interception"
+        }
+      ]
+    },
+    {
+      "id": "fresh-guard-resets-state",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": [
+            "fresh-own-resets-state"
+          ]
+        },
+        {
+          "kind": "historical-addressed",
+          "limitation": "path-observing-interception"
+        }
+      ]
+    },
+    {
+      "id": "guarded-child-complete-access",
+      "requirements": [
+        {
+          "kind": "historical-addressed",
+          "limitation": "path-observing-interception"
+        },
+        {
+          "kind": "historical-addressed",
+          "limitation": "suffix-delivery"
+        }
+      ]
+    },
+    {
+      "id": "rebuilding-from-guarded-views-repeats-checks",
+      "requirements": [
+        {
+          "kind": "structural",
+          "cases": ["equivalent-substitution", "nested-selection-agrees"],
+          "note": "Rebuilding from selected children retains their identity."
+        },
+        {
+          "kind": "historical-addressed",
+          "limitation": "addressed-views"
+        }
+      ]
+    }
   ],
   "gaps": [
-    { "id": "origin-bearing-construction", "disposition": "met-structurally", "cases": ["own-and-descendants", "refusing-own-and-descendants", "complete-cuts-agree", "children-alone-lose-own"], "note": "Public Compose/compose(own, children) takes the own value. The ledger entries remain true of addressed Mount, which is child-only by design.", "limitation": "addressed-mount" },
-    { "id": "conflicting-segments-accepted", "disposition": "met-structurally", "cases": ["duplicate-keys-refused"], "limitation": "addressed-mount" },
-    { "id": "invalid-segments-accepted", "disposition": "meaning-changed", "cases": ["own-and-descendants", "bridge-exact-utf8-image"], "note": "No tree key is invalid. The bridge carries the exact UTF-8 image and refuses ill-formed segments before any primitive.", "limitation": "addressed-mount" },
-    { "id": "missing-children-accepted", "disposition": "met-structurally", "cases": ["missing-child-refused"], "limitation": "addressed-mount" }
+    {
+      "id": "origin-bearing-construction",
+      "disposition": "met-structurally",
+      "cases": [
+        "own-and-descendants",
+        "refusing-own-and-descendants",
+        "complete-cuts-agree",
+        "children-alone-lose-own"
+      ],
+      "note": "Public Compose/compose(own, children) takes the own value. The ledger entries remain true of addressed Mount, which is child-only by design. Its carrier members (forwarded-reconstruction, mounted-carrier-reconstruction, pending-across-reconstruction) are met through test-only adapters that bind a Wire to a carrier path and serve a tree on a dispatcher; production facilities for both are bitruntime#15.",
+      "limitation": "addressed-mount"
+    },
+    {
+      "id": "conflicting-segments-accepted",
+      "disposition": "met-structurally",
+      "cases": [
+        "duplicate-keys-refused"
+      ],
+      "limitation": "addressed-mount"
+    },
+    {
+      "id": "invalid-segments-accepted",
+      "disposition": "meaning-changed",
+      "cases": ["own-and-descendants", "bridge-exact-utf8-image"],
+      "note": "No tree key is invalid. The bridge carries the exact UTF-8 image and refuses ill-formed segments before any primitive.",
+      "limitation": "addressed-mount"
+    },
+    {
+      "id": "missing-children-accepted",
+      "disposition": "met-structurally",
+      "cases": [
+        "missing-child-refused"
+      ],
+      "limitation": "addressed-mount"
+    }
   ],
   "ledgerLimitations": [
-    { "id": "endpoint-typed-children", "disposition": "dissolved", "note": "Tree children are DeixisNode values whose own is a send-only Wire; construction needs no receive attachment or closure authority.", "cases": ["own-and-descendants"] },
-    { "id": "owner-retained-parts", "disposition": "superseded", "note": "Decision 0012 makes decomposition public; restricted callers receive the bridge.", "cases": ["bridge-exact-utf8-image"], "limitation": "owner-only-parts" }
+    {
+      "id": "endpoint-typed-children",
+      "disposition": "dissolved",
+      "note": "Tree children are DeixisNode values whose own is a send-only Wire; construction needs no receive attachment or closure authority.",
+      "cases": [
+        "own-and-descendants"
+      ]
+    },
+    {
+      "id": "owner-retained-parts",
+      "disposition": "superseded",
+      "note": "Decision 0012 makes decomposition public; restricted callers receive the bridge.",
+      "cases": [
+        "bridge-exact-utf8-image"
+      ],
+      "limitation": "owner-only-parts"
+    }
   ]
 }

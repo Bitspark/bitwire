@@ -63,9 +63,17 @@ export function validateWiretree(fixture) {
     assert.ok(declarations.has(test.root), `${test.id}: unknown root`);
     assert.ok(test.fault === undefined || (test.family === 'structure' && faults.has(test.fault)), `${test.id}: unknown fault`);
     assert.ok((!test.relay && !test.mount) || test.family === 'carrier', `${test.id}: relay and mount are carrier options`);
+    assert.ok(!test.foreign || test.family === 'structure', `${test.id}: foreign is a structure option`);
     for (const step of test.steps) {
       assert.ok(operations[test.family].has(step.op), `${test.id}: ${step.op} is not a ${test.family} operation`);
       if (step.node !== undefined) assert.ok(declarations.has(step.node), `${test.id}: unknown node ${step.node}`);
+      if (step.op === 'bridgeInvalid') {
+        // One segment that is not a Unicode scalar string, in both representations.
+        assert.ok(Array.isArray(step.utf16) && step.utf16.every(unit => /^[0-9a-f]{4}$/.test(unit)), `${test.id}: bridgeInvalid needs utf16 code units`);
+        assert.ok(!String.fromCharCode(...step.utf16.map(unit => parseInt(unit, 16))).isWellFormed(), `${test.id}: the utf16 segment is well formed`);
+        assert.match(step.utf8, /^(?:[0-9a-f]{2})+$/, `${test.id}: bridgeInvalid needs utf8 bytes`);
+        assert.throws(() => new TextDecoder('utf-8', { fatal: true }).decode(Buffer.from(step.utf8, 'hex')), `${test.id}: the utf8 segment is valid UTF-8`);
+      }
       if (test.family === 'carrier' && ['rebuild', 'replace'].includes(step.op)) {
         assert.ok(['near', 'far'].includes(step.side), `${test.id}: ${step.op} names its side`);
       }
@@ -95,8 +103,8 @@ export function wiretreeInputs(fixture) {
     declarations: fixture.declarations.map(({ id, own, children }) => ({
       id, own, children: (children ?? []).map(([key, child]) => [keyHex(key), child]),
     })),
-    cases: fixture.cases.map(({ id, family, root, fault, relay, mount, steps }) => ({
-      id, family, root, ...(fault ? { fault } : {}), ...(relay ? { relay } : {}), ...(mount ? { mount } : {}),
+    cases: fixture.cases.map(({ id, family, root, fault, foreign, relay, mount, steps }) => ({
+      id, family, root, ...(fault ? { fault } : {}), ...(foreign ? { foreign } : {}), ...(relay ? { relay } : {}), ...(mount ? { mount } : {}),
       steps: steps.map(stepInput),
     })),
   };

@@ -174,15 +174,17 @@ type step struct {
 	Mode       string     `json:"mode"`
 	Own        *string    `json:"own"`
 	Side       string     `json:"side"`
+	UTF8       string     `json:"utf8"`
 }
 type testCase struct {
-	ID     string `json:"id"`
-	Family string `json:"family"`
-	Root   string `json:"root"`
-	Fault  string `json:"fault"`
-	Relay  bool   `json:"relay"`
-	Mount  bool   `json:"mount"`
-	Steps  []step `json:"steps"`
+	ID      string `json:"id"`
+	Family  string `json:"family"`
+	Root    string `json:"root"`
+	Fault   string `json:"fault"`
+	Relay   bool   `json:"relay"`
+	Mount   bool   `json:"mount"`
+	Foreign bool   `json:"foreign"`
+	Steps   []step `json:"steps"`
 }
 type inputs struct {
 	ServedAt     []string      `json:"servedAt"`
@@ -225,9 +227,16 @@ type primitive struct {
 
 func (p *primitive) Send(message wire.Message) error { return p.h.handle(p, message) }
 
-type refuser struct{ _ byte }
+// refuser is a present node's refusing own; it records its invocation itself,
+// so a refusal is observed where it happens.
+type refuser struct{ h *harness }
 
-func (*refuser) Send(wire.Message) error { return errors.New("refused") }
+func (r *refuser) Send(wire.Message) error {
+	if r.h != nil {
+		r.h.push("refused")
+	}
+	return errors.New("refused")
+}
 
 type harness struct {
 	mu           sync.Mutex
@@ -310,9 +319,8 @@ func (h *harness) construct(own wire.Wire, children []child) (tree, error) {
 		}
 		input[i].Tree = nil
 	}
-	exact := func() bool {
-		gotOwn, got := t.Decompose()
-		if gotOwn != own || t.Own() != own || len(got) != len(want) || len(t.Children()) != len(want) {
+	same := func(got []child) bool {
+		if len(got) != len(want) {
 			return false
 		}
 		for _, w := range want {
@@ -322,13 +330,19 @@ func (h *harness) construct(own wire.Wire, children []child) (tree, error) {
 		}
 		return true
 	}
+	exact := func() bool {
+		gotOwn, got := t.Decompose()
+		return gotOwn == own && t.Own() == own && same(got) && same(t.Children())
+	}
 	ok := exact()
-	returned := t.Children()
-	for i := range returned {
-		for j := range returned[i].Key {
-			returned[i].Key[j] = 'z'
+	_, decomposed := t.Decompose()
+	for _, returned := range [][]child{t.Children(), decomposed} {
+		for i := range returned {
+			for j := range returned[i].Key {
+				returned[i].Key[j] = 'z'
+			}
+			returned[i].Tree = nil
 		}
-		returned[i].Tree = nil
 	}
 	ok = ok && exact()
 	h.mu.Lock()
@@ -348,7 +362,22 @@ func (l *loop) Children() []child               { return []child{{Key: []byte("a
 func (l *loop) At(wire.TreePath) (tree, bool)   { return nil, false }
 func (l *loop) Decompose() (wire.Wire, []child) { return l.own, l.Children() }
 
+// foreign is an acyclic DeixisNode implemented by the driver, not the realization.
+type foreign struct {
+	own      wire.Wire
+	children []child
+}
+
+func (f *foreign) Own() wire.Wire                     { return f.own }
+func (f *foreign) Children() []child                  { return copyChildren(f.children) }
+func (f *foreign) At(path wire.TreePath) (tree, bool) { return reference{}.Select(f, path) }
+func (f *foreign) Decompose() (wire.Wire, []child)    { return f.own, f.Children() }
+
 func (h *harness) build(id, fault, rootID string) (tree, error) {
+	return h.buildWith(id, fault, rootID, false)
+}
+
+func (h *harness) buildWith(id, fault, rootID string, withForeign bool) (tree, error) {
 	if t, ok := h.built[id]; ok {
 		return t, nil
 	}
@@ -370,8 +399,12 @@ func (h *harness) build(id, fault, rootID string) (tree, error) {
 		case "cycle":
 			children = append(children, child{Key: []byte("loop"), Tree: &loop{own: &refuser{}}})
 		}
+		if withForeign {
+			inner := &foreign{own: h.primitive("inner", false)}
+			children = append(children, child{Key: []byte("foreign"), Tree: &foreign{own: h.primitive("foreign", false), children: []child{{Key: []byte("inner"), Tree: inner}}}})
+		}
 	}
-	var own wire.Wire = &refuser{}
+	var own wire.Wire = &refuser{h: h}
 	if d.Own != nil {
 		own = h.primitive(*d.Own, false)
 	}
@@ -439,7 +472,7 @@ func (h *harness) fresh(own wire.Wire) wire.Wire {
 	if p, ok := own.(*primitive); ok {
 		return h.primitive(p.name, true)
 	}
-	return &refuser{}
+	return &refuser{h: h}
 }
 func (h *harness) copy(t tree) tree {
 	next := []child{}
@@ -456,7 +489,7 @@ func (h *harness) edit(t tree, s step, build func(id string) tree) tree {
 		return h.replaceAt(t, s.Path, func(tree) tree { return build(s.Node) })
 	case "own":
 		return h.replaceAt(t, s.Path, func(n tree) tree {
-			var own wire.Wire = &refuser{}
+			var own wire.Wire = &refuser{h: h}
 			if s.Own != nil {
 				own = h.fresh(n.Own())
 			}
@@ -500,31 +533,37 @@ func sameJSON(a, b json.RawMessage) bool {
 	return reflect.DeepEqual(x, y)
 }
 
-// chain applies each selection with the node's own At, and checks it against
-// selecting the concatenation.
-func (h *harness) chain(start tree, selections [][]string, fromRoot bool) (tree, bool) {
-	current := start
+// chain applies each selection with the node's own At. From the root, the chain
+// followed by path must select exactly what the concatenation selects,
+// including when a selection in the chain fails.
+func (h *harness) chain(start tree, selections [][]string, path []string, fromRoot bool) (tree, bool) {
+	current, ok := start, true
 	for _, selection := range selections {
-		next, ok := current.At(keys(selection))
-		if !ok {
-			return nil, false
+		if current, ok = current.At(keys(selection)); !ok {
+			break
 		}
-		current = next
 	}
 	if fromRoot {
 		all := []string{}
 		for _, selection := range selections {
 			all = append(all, selection...)
 		}
-		if direct, ok := h.t.Select(start, keys(all)); !ok || direct != current {
+		direct, directOK := h.t.Select(start, keys(append(all, path...)))
+		var chained tree
+		chainedOK := false
+		if ok {
+			chained, chainedOK = h.t.Select(current, keys(path))
+		}
+		if directOK != chainedOK || directOK && direct != chained {
 			h.push("selectionDiffers")
 		}
 	}
-	return current, true
+	return current, ok
 }
 
-// derived sends through the realization: missing selection invokes nothing;
-// a present node's refusal is its own.
+// derived sends through the realization. A present node's own primitive
+// records its admission or refusal itself. A missing path invokes no primitive
+// and the send is refused; anything else is recorded as the violation it is.
 func (h *harness) derived(base tree, ok bool, path []string, m wire.Message) {
 	if !ok {
 		h.push("missing")
@@ -533,19 +572,19 @@ func (h *harness) derived(base tree, ok bool, path []string, m wire.Message) {
 	_, present := h.t.Select(base, keys(path))
 	before := h.length()
 	h.setExpected(m)
-	if err := h.t.Send(base, keys(path), m); err != nil {
-		if h.length() != before {
-			h.push("fallback")
-		}
-		if present {
-			h.push("refused")
-		} else {
-			h.push("missing")
-		}
-		return
-	}
-	if !present {
-		h.push("fabricated")
+	refused := h.t.Send(base, keys(path), m) != nil
+	invoked := h.length() != before
+	switch {
+	case present && !invoked && refused:
+		h.push("refusedWithoutOwn")
+	case present && !invoked:
+		h.push("admittedWithoutOwn")
+	case !present && invoked:
+		h.push("fallback")
+	case !present && refused:
+		h.push("missing")
+	case !present:
+		h.push("missingAdmitted")
 	}
 }
 
@@ -553,12 +592,11 @@ type refuseWire struct{ _ byte }
 
 func (*refuseWire) Send([]string, wire.Message) error { return errors.New("not a reply target") }
 
-var replyless = &wire.ReturnAddress{Wire: &refuseWire{}}
-
+// event carries its own return capability, so identity preservation is per message.
 func event(data string) wire.Message {
 	encoded, err := json.Marshal(data)
 	check(err)
-	return wire.Message{Frame: wire.ProfileFrame{Version: 1, Kind: wire.ProfileEvent, Data: encoded}, Return: replyless}
+	return wire.Message{Frame: wire.ProfileFrame{Version: 1, Kind: wire.ProfileEvent, Data: encoded}, Return: &wire.ReturnAddress{Wire: &refuseWire{}}}
 }
 
 // ---- Local families: structure and the addressed bridge ----
@@ -572,7 +610,7 @@ func local(t trees, in inputs, test testCase) any {
 		h.push("delivered", p.name, count)
 		return nil
 	}
-	root, err := h.build(test.Root, test.Fault, test.Root)
+	root, err := h.buildWith(test.Root, test.Fault, test.Root, test.Foreign)
 	if err != nil {
 		return map[string]any{"construction": "refused"}
 	}
@@ -598,7 +636,7 @@ func local(t trees, in inputs, test testCase) any {
 			}
 			var base tree
 			if ok {
-				base, ok = h.chain(start, s.Selections, s.Via != "view")
+				base, ok = h.chain(start, s.Selections, s.Path, s.Via != "view")
 			}
 			h.derived(base, ok, s.Path, m)
 		case "same":
@@ -606,26 +644,35 @@ func local(t trees, in inputs, test testCase) any {
 			b, bok := t.Select(root, keys(s.Paths[1]))
 			h.push("same", aok && bok && a.Own() == b.Own())
 		case "view":
-			view, haveView = h.chain(root, s.Selections, true)
+			view, haveView = h.chain(root, s.Selections, nil, true)
 		case "bridge", "bridgeInvalid":
 			bridge := t.AsAddressed(root)
 			_, receives := bridge.(interface {
 				Receive(wire.Receiver) (func(), error)
 			})
 			_, closes := bridge.(interface{ Close(wire.Code, string) error })
-			_, structural := bridge.(interface{ Own() wire.Wire })
-			sendOnly = sendOnly && !receives && !closes && !structural
+			_, owns := bridge.(interface{ Own() wire.Wire })
+			_, enumerates := bridge.(interface{ Children() []child })
+			_, selects := bridge.(interface {
+				At(wire.TreePath) (tree, bool)
+			})
+			_, decomposes := bridge.(interface{ Decompose() (wire.Wire, []child) })
+			sendOnly = sendOnly && !receives && !closes && !owns && !enumerates && !selects && !decomposes
 			path := s.Path
 			if s.Op == "bridgeInvalid" {
-				path = []string{"\xff"}
+				// The ill-formed segment comes from the fixture: bytes, where Go strings are bytes.
+				path = []string{string(key(s.UTF8))}
 			}
 			before := h.length()
 			h.setExpected(m)
-			if err := bridge.Send(path, m); err != nil {
-				if h.length() != before {
-					h.push("fallback")
+			refused := bridge.Send(path, m) != nil
+			if h.length() == before {
+				// A refusal the bridge makes without reaching any primitive.
+				if refused {
+					h.push("unreached")
+				} else {
+					h.push("admittedWithoutOwn")
 				}
-				h.push("refused")
 			}
 		default:
 			root = h.edit(root, s, func(id string) tree { return h.must(h.build(id, "", "")) })
@@ -712,17 +759,20 @@ func runCarrier(t trees, in inputs, test testCase) (result any) {
 	cleanup := func(f func()) { cleanups = append(cleanups, f) }
 	near, first := carrier.Pair(cleanup)
 	far := first
+	carriers := [][2]wire.Endpoint{{near, first}}
+	var compositions []func()
 	if test.Relay {
 		outgoing, target := carrier.Pair(cleanup)
 		detach, err := core.Forward(first, outgoing)
 		check(err)
-		cleanup(detach)
+		compositions = append(compositions, detach)
+		carriers = append(carriers, [2]wire.Endpoint{outgoing, target})
 		far = target
 	}
 	var access wire.AddressedWire = near
 	if test.Mount {
 		mounted := core.Mount(map[string]wire.Endpoint{"mounted": near})
-		cleanup(func() { _ = mounted.Close(transports.CodeNormal, "done") })
+		compositions = append(compositions, func() { _ = mounted.Close(transports.CodeNormal, "done") })
 		access = core.At(mounted, []string{"mounted"})
 	}
 
@@ -815,7 +865,7 @@ func runCarrier(t trees, in inputs, test testCase) (result any) {
 		label := fmt.Sprintf("%s:%d", test.ID, index)
 		switch s.Op {
 		case "send", "hold", "cancel":
-			base, ok := h.chain(nearTree, s.Selections, true)
+			base, ok := h.chain(nearTree, s.Selections, s.Path, true)
 			if ok {
 				_, ok = t.Select(base, keys(s.Path))
 			}
@@ -888,24 +938,35 @@ func runCarrier(t trees, in inputs, test testCase) (result any) {
 		}
 	}
 
-	// The borrowed endpoint outlives every composition over it.
+	// Every borrowed endpoint outlives each composition over it: the dispatcher,
+	// the relay's forwarding and the addressed mount.
 	unserve()
 	_ = d.Close(transports.CodeNormal, "released")
-	borrowed := make(chan wire.Message, 1)
-	detach, err := far.Receive(wire.Receiver{Message: func(path []string, m wire.Message) {
-		if strings.Join(path, "/") == "borrowed" {
-			borrowed <- m
-		}
-	}})
-	usable := false
-	if err == nil {
-		cleanup(detach)
-		if near.Send([]string{"borrowed"}, event("borrowed")) == nil {
-			select {
-			case m := <-borrowed:
-				usable = m.Frame.Kind == wire.ProfileEvent
-			case <-time.After(5 * time.Second):
+	for _, release := range compositions {
+		release()
+	}
+	usable := true
+	for _, pair := range carriers {
+		borrowed := make(chan wire.Message, 1)
+		detach, err := pair[1].Receive(wire.Receiver{Message: func(path []string, m wire.Message) {
+			if strings.Join(path, "/") == "borrowed" {
+				borrowed <- m
 			}
+		}})
+		if err != nil {
+			usable = false
+			continue
+		}
+		cleanup(detach)
+		if pair[0].Send([]string{"borrowed"}, event("borrowed")) != nil {
+			usable = false
+			continue
+		}
+		select {
+		case m := <-borrowed:
+			usable = usable && m.Frame.Kind == wire.ProfileEvent
+		case <-time.After(5 * time.Second):
+			usable = false
 		}
 	}
 	h.mu.Lock()

@@ -102,6 +102,10 @@ const mutants: Record<string, Trees> = {
   'latin1-bridge': { ...reference, asAddressed: tree => ({ send(path: Path, message: Message) {
     reference.send(tree, path.map(segment => [...segment].every(c => c.charCodeAt(0) < 256) ? Uint8Array.from([...segment].map(c => c.charCodeAt(0))) : encoder.encode(segment)), message);
   } }) },
+  /** The bridge encodes segments without checking them, so a lone surrogate becomes U+FFFD. */
+  'lossy-bridge': { ...reference, asAddressed: tree => ({ send(path: Path, message: Message) {
+    reference.send(tree, path.map(segment => encoder.encode(segment)), message);
+  } }) },
   /** children() omits the empty key, so the child map is incomplete. */
   'incomplete-children': { ...reference, compose: (own, children) => {
     const node = new Node(own, children);
@@ -117,8 +121,9 @@ interface Declaration { id: string; own: string | null; children: [string, strin
 interface Step {
   op: string; path?: string[]; keep?: string[][]; selections?: string[][]; paths?: string[][];
   via?: string; key?: string; to?: string; node?: string; mode?: string; own?: string | null; side?: string;
+  utf16?: string[]; utf8?: string;
 }
-interface Case { id: string; family: string; root: string; fault?: string; relay?: boolean; mount?: boolean; steps: Step[] }
+interface Case { id: string; family: string; root: string; fault?: string; foreign?: boolean; relay?: boolean; mount?: boolean; steps: Step[] }
 interface Inputs { servedAt: string[]; declarations: Declaration[]; cases: Case[] }
 type Trace = unknown[][];
 
@@ -170,8 +175,9 @@ class Harness {
     if (!fresh) this.shared.set(name, self);
     return self;
   }
+  /** A present node's refusal is observed where it happens: the refusing primitive records it. */
   refuser(): Wire {
-    const self: Wire = { send() { throw new Error('refused'); } };
+    const self: Wire = { send: () => { this.trace.push(['refused']); throw new Error('refused'); } };
     this.refusing.add(self);
     return self;
   }
@@ -187,22 +193,33 @@ class Harness {
     const tree = this.T.compose(own, input);
     for (const [key] of input) key.fill(0x7a);
     input.length = 0;
+    const same = (got: readonly Child<Wire>[]): boolean => got.length === want.length
+      && want.every(([key, child]) => got.some(([k, c]) => hex(k) === key && c === child));
     const exact = (): boolean => {
       const parts = tree.decompose();
-      const got = parts.children.map(([key, child]) => [hex(key), child] as const);
-      return parts.own === own && tree.own() === own && got.length === want.length
-        && want.every(([key, child]) => got.some(([k, c]) => k === key && c === child))
-        && tree.children().every(([key, child]) => want.some(([k, c]) => k === hex(key) && c === child));
+      return parts.own === own && tree.own() === own && same(parts.children) && same(tree.children());
     };
     let ok = exact();
-    const returned = tree.children() as [Key, WireTree][];
-    for (const [key] of returned) key.fill(0x7a);
-    try { returned.length = 0; } catch { /* A frozen collection protects the tree too. */ }
+    for (const returned of [tree.children(), tree.decompose().children] as [Key, WireTree][][]) {
+      for (const [key] of returned) key.fill(0x7a);
+      try { returned.length = 0; } catch { /* A frozen collection protects the tree too. */ }
+    }
     ok &&= exact();
     this.partsExact &&= ok;
     return tree;
   }
-  build(id: string, fault = '', rootID = ''): WireTree {
+  /** An acyclic DeixisNode implemented by the driver rather than the realization. */
+  foreign(name: string, children: Child<Wire>[]): WireTree {
+    const own = this.primitive(name);
+    const node: WireTree = {
+      own: () => own,
+      children: () => children.map(([key, child]) => [Uint8Array.from(key), child] as const),
+      at: path => reference.select(node, path),
+      decompose: () => ({ own, children: node.children() }),
+    };
+    return node;
+  }
+  build(id: string, fault = '', rootID = '', foreign = false): WireTree {
     const found = this.built.get(id);
     if (found) return found;
     const d = this.declarations.get(id)!;
@@ -218,6 +235,7 @@ class Harness {
       };
       children.push([encoder.encode('loop'), loop]);
     }
+    if (id === rootID && foreign) children.push([encoder.encode('foreign'), this.foreign('foreign', [[encoder.encode('inner'), this.foreign('inner', [])]])]);
     const tree = this.construct(d.own === null ? this.refuser() : this.primitive(d.own), children);
     this.built.set(id, tree);
     return tree;
@@ -269,34 +287,43 @@ class Harness {
   }
 }
 
-/** Applies a selection chain with each node's own at, and checks it against selecting the concatenation. */
-function chain(h: Harness, start: WireTree, selections: string[][], fromRoot: boolean): WireTree | undefined {
+/**
+ * Applies a selection chain with each node's own at. From the root, the chain
+ * followed by path must select exactly what the concatenation selects, including
+ * when a selection in the chain fails.
+ */
+function chain(h: Harness, start: WireTree, selections: string[][], path: string[], fromRoot: boolean): WireTree | undefined {
   let node: WireTree | undefined = start;
   for (const selection of selections) {
     node = node?.at(selection.map(bytes));
-    if (!node) return undefined;
+    if (!node) break;
   }
-  if (fromRoot && h.T.select(start, selections.flat().map(bytes)) !== node) h.trace.push(['selectionDiffers']);
+  if (fromRoot && h.T.select(start, [...selections.flat(), ...path].map(bytes)) !== (node && h.T.select(node, path.map(bytes)))) {
+    h.trace.push(['selectionDiffers']);
+  }
   return node;
 }
 
-/** Derived sending: missing selection invokes nothing; a present node's refusal is its own. */
+/**
+ * Derived sending. A present node's own primitive records its admission or
+ * refusal itself. A missing path invokes no primitive and the send is refused;
+ * anything else is recorded as the violation it is.
+ */
 function derived(h: Harness, base: WireTree | undefined, path: string[], message: Message): void {
   if (!base) { h.trace.push(['missing']); return; }
   const present = h.T.select(base, path.map(bytes)) !== undefined;
   const before = h.trace.length;
   h.expected = message;
-  try {
-    h.T.send(base, path.map(bytes), message);
-    if (!present) h.trace.push(['fabricated']);
-  } catch {
-    if (h.trace.length !== before) h.trace.push(['fallback']);
-    h.trace.push([present ? 'refused' : 'missing']);
-  }
+  let refused = false;
+  try { h.T.send(base, path.map(bytes), message); } catch { refused = true; }
+  const invoked = h.trace.length !== before;
+  if (present && !invoked) h.trace.push([refused ? 'refusedWithoutOwn' : 'admittedWithoutOwn']);
+  if (!present && invoked) h.trace.push(['fallback']);
+  if (!present && !invoked) h.trace.push([refused ? 'missing' : 'missingAdmitted']);
 }
 
-const refuseWire: AddressedWire = { send() { throw new Error('not a reply target'); } };
-const event = (data: string): Message => ({ frame: { version: 1, kind: 'event', data }, return: { wire: refuseWire } });
+// Each event carries its own return capability, so identity preservation is per message.
+const event = (data: string): Message => ({ frame: { version: 1, kind: 'event', data }, return: { wire: { send() { throw new Error('not a reply target'); } } } });
 
 // ---- Local families: structure and the addressed bridge ----
 function local(T: Trees, inputs: Inputs, test: Case): unknown {
@@ -305,7 +332,7 @@ function local(T: Trees, inputs: Inputs, test: Case): unknown {
     h.trace.push(['delivered', name, h.count(self)]);
   });
   let root: WireTree;
-  try { root = h.build(test.root, test.fault, test.root); } catch { return { construction: 'refused' }; }
+  try { root = h.build(test.root, test.fault, test.root, test.foreign); } catch { return { construction: 'refused' }; }
   if (test.fault) return { construction: 'accepted' };
   let view: WireTree | undefined;
   let sendOnly = true;
@@ -319,7 +346,7 @@ function local(T: Trees, inputs: Inputs, test: Case): unknown {
       }
       case 'send': {
         const start = s.via === 'view' ? view : root;
-        derived(h, start && chain(h, start, s.selections ?? [], s.via !== 'view'), s.path!, message);
+        derived(h, start && chain(h, start, s.selections ?? [], s.path!, s.via !== 'view'), s.path!, message);
         break;
       }
       case 'same': {
@@ -327,17 +354,19 @@ function local(T: Trees, inputs: Inputs, test: Case): unknown {
         h.trace.push(['same', a !== undefined && a === b]);
         break;
       }
-      case 'view': view = chain(h, root, s.selections!, true); break;
+      case 'view': view = chain(h, root, s.selections!, [], true); break;
       case 'bridge': case 'bridgeInvalid': {
         const bridge = T.asAddressed(root);
         sendOnly &&= typeof bridge.send === 'function'
           && ['receive', 'close', 'own', 'children', 'at', 'decompose'].every(name => !(name in bridge));
+        // The ill-formed segment comes from the fixture: UTF-16 code units here.
+        const path = s.op === 'bridgeInvalid' ? [String.fromCharCode(...s.utf16!.map(unit => parseInt(unit, 16)))] : s.path!;
         const before = h.trace.length;
         h.expected = message;
-        try { bridge.send(s.op === 'bridgeInvalid' ? ['\ud800'] : s.path!, message); } catch {
-          if (h.trace.length !== before) h.trace.push(['fallback']);
-          h.trace.push(['refused']);
-        }
+        let refused = false;
+        try { bridge.send(path, message); } catch { refused = true; }
+        // A refusal the bridge makes without reaching any primitive.
+        if (h.trace.length === before) h.trace.push([refused ? 'unreached' : 'admittedWithoutOwn']);
         break;
       }
       default: root = h.edit(root, s, id => h.build(id));
@@ -379,15 +408,18 @@ async function carrier(T: Trees, inputs: Inputs, test: Case, retargeting = false
   try {
     const [near, first] = await connected(release => cleanups.push(release));
     let far = first;
+    const carriers: [Endpoint, Endpoint][] = [[near, first]];
+    const compositions: (() => void)[] = [];
     if (test.relay) {
       const [outgoing, target] = await connected(release => cleanups.push(release));
-      cleanups.push(forward(first, outgoing));
+      compositions.push(forward(first, outgoing));
+      carriers.push([outgoing, target]);
       far = target;
     }
     let access: AddressedWire = near;
     if (test.mount) {
       const mounted = mount(new Map<string, Endpoint>([['mounted', near]]));
-      cleanups.push(() => mounted.close(CODE_NORMAL, 'done'));
+      compositions.push(() => mounted.close(CODE_NORMAL, 'done'));
       access = at(mounted, ['mounted']);
     }
 
@@ -460,7 +492,7 @@ async function carrier(T: Trees, inputs: Inputs, test: Case, retargeting = false
       const label = `${test.id}:${index}`;
       switch (s.op) {
         case 'send': case 'hold': case 'cancel': {
-          const base = chain(h, nearTree, s.selections ?? [], true);
+          const base = chain(h, nearTree, s.selections ?? [], s.path!, true);
           const target = base && T.select(base, s.path!.map(bytes));
           if (!target) { h.trace.push(['missing']); break; }
           if (s.op === 'cancel') {
@@ -507,16 +539,20 @@ async function carrier(T: Trees, inputs: Inputs, test: Case, retargeting = false
       }
     }
 
-    // The borrowed endpoint outlives every composition over it.
+    // Every borrowed endpoint outlives each composition over it: the dispatcher,
+    // the relay's forwarding and the addressed mount.
     unserve();
     dispatcher?.close();
-    const borrowed = mailbox<Message>();
-    cleanups.push(far.receive({ message(path, message) { if (path.join('/') === 'borrowed') borrowed.put(message); } }));
-    let borrowedUsable = false;
-    try {
-      near.send(['borrowed'], event('borrowed'));
-      borrowedUsable = (await borrowed.take()).frame.kind === 'event';
-    } catch { /* not usable */ }
+    for (const release of compositions) release();
+    let borrowedUsable = true;
+    for (const [sender, receiver] of carriers) {
+      const borrowed = mailbox<Message>();
+      try {
+        cleanups.push(receiver.receive({ message(path, message) { if (path.join('/') === 'borrowed') borrowed.put(message); } }));
+        sender.send(['borrowed'], event('borrowed'));
+        borrowedUsable &&= (await borrowed.take()).frame.kind === 'event';
+      } catch { borrowedUsable = false; }
+    }
     return { trace: h.trace, unchanged: h.unchanged, borrowedUsable };
   } finally {
     for (const cleanup of cleanups.reverse()) cleanup();

@@ -65,29 +65,6 @@ profile-defined correlation, context and live-reference obligations.
 invocation-lifecycle paths. Replacing it with a primitive Wire would erase
 those operations and requires a separate explicit lifecycle design.
 
-## Full trees across carriers
-
-A tree crosses a carrier as two trees. The far side serves its nodes on an
-endpoint; the near side declares the same structure, and each of its own Wires
-sends at the corresponding far path. Structure stays local on both sides:
-the carrier carries paths and messages, never children or own capabilities.
-
-- `bitwire/1` refuses a request at a peer root's empty path, so a served tree
-  sits under a nonempty prefix.
-- A carrier path names a far position. Addressed access cannot show that two
-  positions share a node, so the near side binds each position.
-- Missing and refusing remain distinct: a near path that does not exist sends
-  nothing; a far path without a node answers `method_not_found`; a far node
-  whose own refuses answers `internal`.
-- A far side that serves through an invocation-aware dispatcher keeps each
-  admitted request's cancellation with the node that admitted it, even after
-  that node is replaced.
-
-The [full-tree cases](../conformance/wiretree/README.md) check these
-observations against released bitruntime. The adapters that bind a Wire to a
-carrier path and serve a tree on a dispatcher are test-only there; production
-facilities for them belong to bitruntime.
-
 ## Ownership and evidence
 
 Bitwire owns the declarations, laws, protocol and independent expectations.
@@ -98,6 +75,9 @@ payloads or make an access handle proof of authorization.
 
 The [tree reference cases](../conformance/trees/README.md) exercise the new
 structural contract using test-only interpreters. The
+[full-tree cases](../conformance/wiretree/README.md) run it against released
+bitruntime, including across its carriers through test-only adapters; the
+carrier model they describe is a test model, not part of this contract. The
 [declared composition evidence](../conformance/declared/README.md) and
 [runnable example catalogue](../examples/README.md) retain the older addressed
 interpretation and its versioned runtime observations. Historical green cases

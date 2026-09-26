@@ -60,10 +60,16 @@ const trees = read(files.trees);
 const gaps = read(files.gaps);
 const wiretree = read(files.wiretree);
 const disposition = validateDisposition(read(files.disposition), wiretree, bytes);
-// Deliberately unlawful TypeScript realizations; each must fail at least one case.
+// Deliberately unlawful TypeScript realizations: each must fail the case aimed at it.
 const mutants = [
-  ['fallback', 'local'], ['wrapping-own', 'local'], ['normalizing', 'local'], ['fabricating', 'local'],
-  ['latin1-bridge', 'local'], ['incomplete-children', 'local'], ['retargeting-serve', 'carrier'],
+  ['fallback', 'local', 'missing-never-falls-back'],
+  ['wrapping-own', 'local', 'root-cut-reconstruction'],
+  ['normalizing', 'local', 'own-and-descendants'],
+  ['fabricating', 'local', 'refusing-versus-missing'],
+  ['latin1-bridge', 'local', 'bridge-exact-utf8-image'],
+  ['lossy-bridge', 'local', 'bridge-exact-utf8-image'],
+  ['incomplete-children', 'local', 'own-and-descendants'],
+  ['retargeting-serve', 'carrier', 'carrier-cancel-across-replacement'],
 ];
 const carriers = [['local', '0'], ['peer', '0'], ['peer', '1']];
 const scratch = mkdtempSync(join(tmpdir(), 'bitwire-runtime-'));
@@ -255,11 +261,11 @@ try {
       }
     }
     if (language === 'ts') {
-      for (const [mutant, scope] of mutants) {
+      for (const [mutant, scope, target] of mutants) {
         const actual = JSON.parse(driver('wiretree', [`mutant:${mutant}`, scope, wiretreeInput], scope === 'carrier' ? carrierEnv('local', '0') : {}));
         const failed = wiretreeFailures(wiretree, actual, scope === 'carrier' ? ['carrier'] : ['structure', 'bridge']);
-        assert.ok(failed.length > 0, `the unlawful realization ${mutant} passes every case`);
-        pass(`ts/wiretree/mutant/${mutant}`, `rejected by ${failed.length} case${failed.length === 1 ? '' : 's'}, including ${failed[0]}`);
+        assert.ok(failed.includes(target), `the unlawful realization ${mutant} passes ${target}`);
+        pass(`ts/wiretree/mutant/${mutant}`, `rejected by ${target}${failed.length > 1 ? ` and ${failed.length - 1} other case${failed.length === 2 ? '' : 's'}` : ''}`);
       }
     }
   }

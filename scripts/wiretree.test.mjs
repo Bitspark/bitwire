@@ -33,7 +33,7 @@ test('drivers receive inputs, never the oracle', () => {
 
 test('missing, extra, duplicate and incorrect observations fail the gate', () => {
   const families = ['structure', 'bridge'];
-  assert.equal(compareWiretree(fixture, conforming(families).reverse(), families, 'valid'), 19);
+  assert.equal(compareWiretree(fixture, conforming(families).reverse(), families, 'valid'), 20);
   assert.throws(() => compareWiretree(fixture, conforming(families).slice(1), families, 'missing'));
   assert.throws(() => compareWiretree(fixture, [...conforming(families), conforming(families)[0]], families, 'duplicate'));
   assert.throws(() => compareWiretree(fixture, [...conforming(families), conforming(['carrier'])[0]], families, 'extra'));
