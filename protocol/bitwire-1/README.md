@@ -3,14 +3,14 @@
 This page is informative. It is the entry point to protocol revision
 `bitwire/1`. **[`SCOPE.md`](SCOPE.md) is authoritative**: it identifies the
 revision, lists its normative artifacts, and says which of their requirements
-bind. This page restates nothing and redefines nothing.
+bind. This page repeats the identity for convenience and redefines nothing.
 
 ## Identity
 
 `bitwire/1` is identified by the pair (`bitwire/1`, `normativeDigest`):
 
 ```text
-normativeDigest = c3b9a38b2e88691488742e140004b3180ed37e4c46844bdecdec97abf905bec0
+normativeDigest = 7797682b0f05f86c508eafbd3be23c2084acd2f5cfc766922f9372b652dc416e
 ```
 
 The digest covers seven files:
@@ -50,4 +50,6 @@ and tunnel**. The scopes are defined in `SCOPE.md`.
   are versioned as bitwire package releases, independently of this protocol
   revision. [Decision 0008](../../docs/decisions/0008-a-protocol-revision-has-its-own-identity.md)
   separates the two.
-- **Implementations.** bitruntime implements `bitwire/1` in Go and TypeScript.
+- **Implementations.** bitruntime's Go and TypeScript peers target `bitwire/1`. A
+  conformance claim names its scope, roles and transports, and is backed by an
+  evidence report ([#59](https://github.com/Bitspark/bitwire/issues/59)).

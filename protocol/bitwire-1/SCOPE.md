@@ -2,10 +2,11 @@
 
 This document is **normative**. It is part of revision 1's identity. It
 identifies the revision, selects which requirements of the adopted upstream
-text bind, and interprets the adopted tables. Nothing outside the files listed
-under [Identity](#identity) redefines `bitwire/1`. That includes this
-directory's `README.md`, its `FINDINGS.md`, the conformance scenarios,
-rendered pages and later guidance.
+text bind, supplies the few definitions that text leaves elsewhere, and
+interprets the adopted tables. Nothing outside the files listed under
+[Identity](#identity) redefines `bitwire/1`. That includes this directory's
+`README.md`, its `FINDINGS.md`, the conformance scenarios, rendered pages and
+later guidance.
 
 ## Identity
 
@@ -46,7 +47,7 @@ document says which of its requirements bind.
 fileHash(p)     = lowercase hexadecimal SHA-256 of the exact bytes of p
 entry(p)        = fileHash(p) + "  " + p + "\n"      (two ASCII spaces, one LF)
 normativeDigest = lowercase hexadecimal SHA-256 of the entries of the
-                  normative artifacts, concatenated in ascending order of p
+                  normative artifacts, concatenated in ascending byte order of p
 ```
 
 Paths:
@@ -72,15 +73,18 @@ Outside the digest, though listed in the manifest with their hashes:
 
 ## Authority
 
-1. **Scope.** Where this document selects, excludes or interprets a
+1. **Scope.** Where this document selects, excludes, interprets or supplies a
    requirement, it governs.
 2. **Everything else in the normative artifacts binds as written.** The
-   selected prose and the tables are one baseline and are not expected to
-   conflict. **No blanket precedence applies:** neither prose over tables, nor
-   tables over prose, nor any implementation's behavior over either.
-3. **Informative text** carries no obligation. Informative text includes
-   rationale, examples, runtime remarks and anything this document excludes.
-   It may explain a requirement but does not add one.
+   selected prose and the tables are one baseline. **No blanket precedence
+   applies:** neither prose over tables, nor tables over prose, nor any
+   implementation's behavior over either. A sentence that describes "the
+   runtime" or "the peer" doing something binds when that something is
+   observable on the connection. Two examples: the runtime answering
+   `method_not_found` on a handler's behalf, and a peer closing with 4011.
+3. **Informative text is exactly the text this document marks informative or
+   excluded.** It carries no obligation. It may explain a requirement but does
+   not add one.
 4. **Revision 1 is immutable.** A change to what a peer sends, accepts or
    refuses, to close codes or to default bounds is a new revision. A defect in
    revision 1 is recorded as a finding (see `FINDINGS.md`). A finding changes
@@ -105,104 +109,205 @@ names:
 
 ## profile.md
 
-Every section binds, with these exceptions. An *informative* passage is
-explanation; an *excluded* passage belongs to another layer or to one runtime.
+Every section binds, with the exceptions and readings below. An *informative*
+passage is explanation. An *excluded* passage belongs to another layer or to
+one runtime's API.
 
-- **Opening paragraph:** informative.
-- **The connection beneath:** binds. Informative: "every transport of a
-  language is held to the seam's own suite", and the sentence that cites the
-  shared binary-frame scenario. That scenario is evidence.
-- **The subprotocol:**
-  - The first paragraph binds: offer none, select none, refuse nothing on that
-    ground, read nothing into it.
-  - The second and third paragraphs are informative. They cover consumer and
-    deployment configuration, a gateway's inspection, a browser's ticket and
-    runtime exposure.
-  - Carrying authentication is excluded; it belongs to an authentication layer.
-- **The envelope:** binds. "the generated validators read them" and "is refused
-  by the validators" are informative about generated code. What binds is that
-  the profile itself does not refuse such a payload value.
-- **Relative paths on a Wire:**
-  - The first two paragraphs bind, as clarified under [Paths](#paths).
-  - The third paragraph is informative. It covers local return capabilities,
-    views, mounts, verified context and the consumer surface, which the bitwire
-    contract governs locally.
-- **Ids and correlation:** binds.
-- **Serials increase in publication order:** binds, except two informative
-  sentences: "The gate is what orders publication, so it is also what
-  `request.started` is told under …" and the Go observer remark that follows
-  it.
-- **Requests:** binds, with these readings:
-  - **`busy` binds in both of its clauses.**
-    - A receiver at its limit of requests being handled answers `busy` on the
-      wire.
-    - A caller at its limit of outstanding calls refuses the next call without
-      sending a frame. The caller-side clause binds for what it does to the
-      network: that call sends nothing.
-  - **The caller's deadline binds:** 30 seconds by default. When it passes, the
-    request is failed locally and a `cancel` is sent. `request_timeout` is the
-    local name of that outcome and never appears in a frame. The receiver's
-    handler deadline binds, and so does its `cancelled` answer.
-  - Informative: "An observer is told the outcome `timeout`", and "the family's
-    declared errors are these, by name, in the generated packages".
-- **Events:** binds.
-- **Limits and backpressure:**
-  - **The default bounds bind:**
-    - 128 outgoing frames;
-    - 128 events waiting for their handlers;
-    - 128 calls outstanding;
-    - 64 requests being handled;
-    - frames of at most 1 MiB;
-    - a 30-second call deadline;
-    - a 10-second write deadline;
-    - a 30-second dial handshake.
-  - These bind too:
-    - pacing for one write deadline, and disconnecting a consumer that has not
-      drained;
-    - a full queue ending its carrier;
-    - reserved admission for cancellation;
-    - the order of accepted data and control frames;
-    - inbound pacing, and the busy and caller-limit distinction.
-  - Informative:
-    - "Each bound is one option under one name in both languages … the peer
-      tables them";
-    - that structured `Wire.Send` "does not execute application handlers in the
-      caller", which is a local API property;
-    - the means a browser runtime uses to hold events. Its outcome binds.
-- **Trace context:** binds. Informative: the paragraph that begins "The default
-  propagator mints". What binds from it is that a request or event sent from a
-  context carries a child, and one sent from no context begins a trace.
-- **Request metadata:** binds. Informative: the observer clause "an observer is
-  told a frame's name, id, size and trace and never a `meta` key or value", and
-  the closing sentence naming the peer's operations. What binds of the sender
-  rule is that a reserved key given to a sender is not sent.
-- **Declaration identity at interpretation:** **excluded.** The `identity.`
-  exchange, its preparation lifecycle and the digest over a canonical
-  declaration belong to Bitlink (decision 0010). The `identity.` prefix remains
-  reserved (see [Vocabulary](#vocabularymd)). A revision-1 peer without that
-  layer answers an `identity.check` request as it answers any request without a
-  handler.
-- **What the profile does not do:** binds.
-- **A frame, on the wire:** an informative example.
-- **Observing it:** excluded. It covers the observer, one runtime's
-  instrumentation.
+### Opening paragraph
+
+Informative.
+
+### The connection beneath
+
+Binds.
+- A frame larger than the receiver's limit is refused before delivery. The
+  receiver ends the connection with **1009** ("too large" in the close codes
+  this section lists).
+- What the sending side observes when that close is lost to the transport's
+  teardown is the transport's (finding I3).
+
+Informative:
+- "every transport of a language is held to the seam's own suite";
+- the sentence citing the shared binary-frame scenario, which is evidence.
+
+### The subprotocol
+
+The first paragraph binds. A peer offers nothing *by default*, selects nothing
+*by default*, refuses nothing on that ground, and reads nothing into what was
+selected.
+
+The second and third paragraphs are informative. Naming a subprotocol is a
+consumer's or deployment's configuration outside those defaults. They also
+cover a gateway's inspection, a browser's ticket, and how a runtime exposes the
+choice. Carrying authentication is excluded; it belongs to an authentication
+layer.
+
+### The envelope
+
+Binds.
+- **A request's `method` and an event's `event` are nonempty strings.** An
+  empty one makes the frame malformed, and the connection ends with 4011, as
+  for any malformed frame. Nightseam v0.6.0's peers enforce this in both
+  languages. The upstream text states it only as the nonempty peer-root path,
+  and this document states it here.
+- "the generated validators read them" and "is refused by the validators"
+  describe generated code and are informative. What binds is that the profile
+  itself does not refuse such a payload value.
+
+### Relative paths on a Wire
+
+- The first two paragraphs bind, as clarified under [Paths](#paths).
+- The third paragraph is informative. It covers local return capabilities,
+  views, mounts, verified context and the consumer surface, which the bitwire
+  contract governs locally.
+
+### Ids and correlation
+
+Binds.
+
+A well-formed response names a request the receiver itself sent, so its `id`
+carries the receiver's own role prefix. If it names no request the receiver
+has outstanding, it is ignored, and the connection stays open, just as with a
+cancel for an id that is not open. The `frames.json` rows "response" and
+"response with error" pin this, and so does the `serials.json` row whose
+`before` is a response. A response carrying the sender's own prefix is
+malformed (the row "response to nobody").
+
+### Serials increase in publication order
+
+Binds, except one informative sentence: "The gate is what orders publication,
+so it is also what `request.started` is told under, and no frame a request
+draws can be observed ahead of the request itself; the one thing a Go observer
+must not do from that callback is publish a request of its own on the peer it
+is observing." It concerns the observer.
+
+The order in which a request and the frames it draws are published binds
+through the queue-order rule under [Limits and
+backpressure](#limits-and-backpressure).
+
+### Requests
+
+Binds, with these readings:
+- **`busy` binds in both of its clauses.**
+  - A receiver at its limit of requests being handled answers `busy` on the
+    wire.
+  - A caller at its limit of outstanding calls refuses the next call without
+    sending a frame. The caller-side clause binds for what it does to the
+    network: that call sends nothing.
+- **The caller's deadline binds:** 30 seconds by default. When it passes, the
+  request is failed locally and a `cancel` is sent.
+  - `request_timeout` is the caller's own error, "never a frame it received".
+    Its name is local.
+  - The receiver's handler deadline binds, and so does its `cancelled` answer.
+- Informative: "An observer is told the outcome `timeout`", and "the family's
+  declared errors are these, by name, in the generated packages".
+
+### Events
+
+Binds. An event whose name nothing handles is dropped.
+
+### Limits and backpressure
+
+**The default bounds bind:**
+- 128 outgoing frames;
+- 128 events waiting for their handlers;
+- 128 calls outstanding;
+- 64 requests being handled;
+- frames of at most 1 MiB;
+- a 30-second call deadline;
+- a 10-second write deadline;
+- a 30-second dial handshake.
+
+These also bind:
+- pacing for one write deadline, and disconnecting a consumer that has not
+  drained;
+- a full queue ending its carrier;
+- reserved admission for cancellation;
+- the queue order of accepted data and control frames;
+- the busy and caller-limit distinction.
+
+**Inbound pacing binds in one of two forms.** A peer that can pause its
+transport stops reading: while the event queue is full, responses and
+cancellations on that connection wait with the events. A peer that cannot pause
+its transport holds the events instead. Both are within revision 1. The write
+deadline, and what happens when it passes, bind in both.
+
+Informative:
+- "Each bound is one option under one name in both languages … the peer tables
+  them";
+- the sentence on structured `Wire.Send`, a local API;
+- in the busy paragraph, "so no observer is told of one".
+
+### Trace context
+
+Binds, including the bullet list: a handler runs with an incoming trace; a
+request or event sent from a context carries a child; one sent from no context
+begins a trace; a response and a cancel carry their request's members.
+
+Informative: the paragraph that begins "The default propagator mints". It
+covers identifier generation, tracing-library adapters and imports.
+
+### Request metadata
+
+Binds, including:
+- that a handler's own calls carry none of what arrived unless the handler says
+  so;
+- that a reserved key given to a sender is not sent.
+
+Informative:
+- the observer clause "an observer is told a frame's name, id, size and trace
+  and never a `meta` key or value";
+- the closing sentence naming the peer's operations.
+
+"A relay forwards the member verbatim, as it forwards a member it does not
+know" concerns an intermediary that carries a frame without being its receiving
+peer. The peer that receives a frame applies the envelope's rule that an
+unknown member makes it malformed.
+
+### Declaration identity at interpretation
+
+**Excluded.** The `identity.` exchange and its preparation lifecycle belong to
+Bitlink. The canonical declaration identity the digest is computed over belongs
+to bittype (decision 0010). The `identity.` prefix remains reserved (see
+[vocabulary.md](#vocabularymd)). A revision-1 peer without that layer answers
+an `identity.check` request as it answers any request without a handler.
+
+### What the profile does not do
+
+Binds.
+
+### A frame, on the wire
+
+An informative example.
+
+### Observing it
+
+Excluded. It covers the observer, one runtime's instrumentation.
 
 ## Paths
 
 The canonical path encoding is how *addressed* traffic, sent at a path through
 a Wire, is carried in the `method` of a request or the `event` of an event:
-- each segment is written as its UTF-8 byte length, a colon and the segment;
-- `[]` encodes as `""`;
-- decoding is canonical, and refuses malformed lengths and invalid Unicode.
+- each segment is written as its UTF-8 byte length in decimal, a colon and the
+  segment;
+- `[]` encodes as `""`.
 
-A peer-root request or event carries a nonempty path.
+A name is **canonical** when it decodes completely under that rule, and every
+one of these holds:
+- each length consists of decimal digits with no leading zero, except a single
+  `0`;
+- the length does not exceed the remaining bytes;
+- every segment is valid UTF-8 of Unicode scalar values.
 
-**The envelope does not require the canonical form.** Any `method` or `event`
-string the envelope admits is valid, and the tables' plain names such as
-`read` are valid envelopes. A receiver's addressed surface interprets only
-canonically encoded names as paths. Any other name is dispatched by that name,
-or answered `method_not_found` when nothing handles it. Revision 1 does not
-reject plain names.
+Because a `method` or `event` is never empty (see [The
+envelope](#the-envelope)), the empty path cannot be sent at a peer root.
+
+**The envelope does not require the canonical form.** Any nonempty `method` or
+`event` string the envelope admits is valid, and the tables' plain names such
+as `read` are valid envelopes. A receiver's addressed surface interprets only
+canonical names as paths. Any other name is dispatched by that name. A request
+that nothing handles is answered `method_not_found`, and an event that nothing
+handles is dropped. Revision 1 does not reject plain names.
 
 ## vocabulary.md
 
@@ -231,41 +336,74 @@ reject plain names.
 
 This section binds for the **core and tunnel** scope.
 
-- **Opening paragraphs:**
-  - The first is informative, except that a tunnel multiplexes channels over one
-    peer, says the family each channel speaks, and carries a raw frame
-    connection. The consumer surfaces `Channel`, `Connection` and `Wire` are
-    informative. So is the handle representation `{"channel": 12}` inside a
-    family's own messages, which is a matter for a family's binding.
-  - The second binds: an inner path is encoded as on a socket, and no path or
-    local return capability is added to `channel.open` or `channel.frame`.
-- **The operations:** bind.
-  - **The `digest` member of `channel.open` binds as carriage and admission:**
-    - its shape: when present, exactly 64 lowercase hexadecimal characters;
-      otherwise `channel_invalid`;
-    - its presence rules;
-    - the comparison with a locally known digest for the same family, made
-      before admitting the channel or interpreting an inner frame;
-    - `contract_mismatch` for two differing nonempty digests;
-    - no refusal when either side has none.
-  - What a digest identifies, and how it is computed, belongs to Bitlink
-    (decision 0010). A digest is not authentication, and it is not this
-    revision's `normativeDigest`.
-- **Ids:** bind.
-- **Credit:** binds. Informative: "how each runtime makes a sender wait is its
-  own".
-- **Limits and closes:** bind, including the 1 MiB inner-frame limit refused
-  with 1009, 1002 for a frame beyond the window or of neither kind, 1001 when
-  the outer connection closes, the hold one window deep, and the accept
-  capacity of 64. On **abort**, revision 1 keeps v0.6.0's network behavior:
-  - An aborting side sends `channel.close` with code **1006** and an empty
-    reason, and ends the channel at once.
-  - A receiver treats a `channel.close` carrying 1006 as an abnormal end of the
-    channel.
-  - Decision 0007's rule that a carrier never transmits 1006 governs the
-    carrier contract and later revisions, not revision 1. It is recorded as
-    finding F2.
-- **Observing it:** excluded. It covers the observer.
+### Opening paragraphs
+
+- **The first** binds that:
+  - a tunnel multiplexes channels over one peer;
+  - either side opens a channel, saying the family it speaks;
+  - a channel carries a raw frame connection;
+  - the outer peer sees only the four operations.
+
+  Informative: the consumer surfaces `Channel`, `Connection` and `Wire`, and the
+  handle representation `{"channel": 12}` inside a family's own messages, which
+  is a matter for a family's binding.
+- **The second** binds: an inner path is encoded as on a socket, and no path or
+  local return capability is added to `channel.open` or `channel.frame`.
+
+### The operations
+
+Bind.
+
+**The `digest` member of `channel.open` binds as carriage and admission:**
+- its shape: when present, exactly 64 lowercase hexadecimal characters;
+  otherwise `channel_invalid`;
+- its presence rules;
+- the comparison with a locally known digest for the same family, made before
+  admitting the channel or interpreting an inner frame;
+- `contract_mismatch` for two differing nonempty digests;
+- no refusal when either side has none.
+
+What a digest identifies, and how it is computed, is canonical declaration
+identity, which belongs to bittype (decision 0010). A digest is not
+authentication, and it is not this revision's `normativeDigest`.
+
+### Ids
+
+Bind.
+
+### Credit
+
+Binds.
+
+**Default window.** Unless a peer is configured otherwise, the `window` it
+declares in `channel.open` and in the open's result is **32** frames. Nightseam
+v0.6.0 uses 32 in both languages. The upstream text shows it in its examples,
+and this document states it as the default.
+
+Informative: "how each runtime makes a sender wait is its own".
+
+### Limits and closes
+
+Bind:
+- the 1 MiB inner-frame limit, refused with 1009;
+- 1002 for a frame beyond the window or of neither kind;
+- 1001 when the outer connection closes;
+- the hold one window deep;
+- the accept capacity of 64.
+
+On **abort**, revision 1 keeps v0.6.0's network behavior:
+- An aborting side sends `channel.close` with code **1006** and an empty
+  reason, and ends the channel at once.
+- A receiver treats a `channel.close` carrying 1006 as an abnormal end of the
+  channel.
+
+Under decision 0008 revision 1 is v0.6.0's behavior. Decision 0007's rule that
+a carrier never transmits 1006 therefore applies from the carrier contract
+(#54) and later revisions, as recorded in finding F2.
+
+### Observing it
+
+Excluded. It covers the observer.
 
 ## Tables
 
@@ -275,22 +413,30 @@ definition of valid traffic. In every table:
 - an issue number is never the explanation of a requirement;
 - new examples are added as evidence, never to these files.
 
-- **`frames.json`:** each row gives the receiving role (`to`: `server`, or
-  `either` for a frame valid or invalid at both roles) and an exact raw frame.
-  - `valid: true` means the receiver's envelope validation admits the frame.
-    That does not mean its method exists or that a request succeeds.
-  - `valid: false` means the receiver refuses the frame and ends the connection
-    with 4011.
-  - The raw text is sent as is, never parsed and re-serialized first.
-- **`serials.json`:** each row gives a receiving role, a frame `before`, and a
-  `frame` sent after it on the same connection and direction. `valid` says
-  whether the receiver admits the second request. `false` means it ends the
-  connection with 4011. This is sequence admission, not envelope validity:
-  every frame in the table is well formed on its own.
-- **`unicode.json`:** each row gives `raw` JSON text and whether the string
-  domain of the envelope admits it. The text is a JSON value or fragment, not
-  necessarily a whole envelope. A test embeds it in an otherwise valid envelope
-  without normalizing it. `valid` concerns the admitted string domain only.
+### frames.json
+
+Each row gives the receiving role (`to`: `server`, or `either` for a frame
+that is valid or invalid at both roles) and an exact raw frame. The raw text is
+sent as is, never parsed and re-serialized first.
+- `valid: true` means the receiver admits the frame and the connection stays
+  open. That does not mean its method exists or that a request succeeds.
+- `valid: false` means the receiver refuses the frame and ends the connection
+  with 4011.
+
+### serials.json
+
+Each row gives a receiving role, a frame `before`, and a `frame` sent after it
+on the same connection and direction. `valid` says whether the receiver admits
+the second request and keeps the connection open. `false` means it ends the
+connection with 4011. This is sequence admission, not envelope validity: every
+frame in the table is well formed on its own.
+
+### unicode.json
+
+Each row gives `raw` JSON text and whether the string domain of the envelope
+admits it. The text is a JSON value or fragment, not necessarily a whole
+envelope. A test embeds it in an otherwise valid envelope without normalizing
+it. `valid` concerns the admitted string domain only.
 
 ## Links in the adopted documents
 
@@ -303,13 +449,14 @@ document's content. Every relative link is disposed here:
 | `conformance/DRIVER.md` | Resolved locally: runner (conformance contract material), not a protocol requirement |
 | `conformance/scenarios/peer/binary-frame-ends-the-connection.json` | Resolved locally: archived evidence |
 | `docs/decisions/a-deadline-is-not-a-cancel.md`, `busy-is-a-refusal-not-a-failure.md`, `close-codes-are-the-websocket-registrys.md`, `credit-is-per-channel.md`, `envelope-members-are-what-the-peer-acts-on.md`, `meta-is-a-header-not-a-member.md`, `no-subprotocol-by-default.md`, `queues-are-paced-for-one-deadline.md`, `request-serials-increase-in-publication-order.md`, `strings-are-unicode-scalars.md` | Resolved locally: informative rationale |
-| `docs/runtime/peer.md`, `docs/runtime/wire.md`, `docs/runtime/tunnel.md`, `docs/runtime/observer.md` | Not included; informative. They describe one runtime's API, option names and observer. The default bounds they name are stated in `profile.md`. |
+| `docs/runtime/peer.md`, `docs/runtime/wire.md`, `docs/runtime/observer.md` | Not included; informative. They describe one runtime's API, option names and observer. The default bounds are stated in `profile.md`. |
+| `docs/runtime/tunnel.md` | Not included; informative. Its one default this revision needs, the window of 32, is stated under [tunnel.md](#tunnelmd). |
 | `docs/declaration/builtins/identity/README.md`, `docs/declaration/declaration-identity.md`, `docs/declaration/families.md` | Not included; excluded (declaration language and identity, owned by bittype and Bitlink) |
 | `docs/auth/connection.md` | Not included; excluded (authentication layer) |
 | `docs/admission.md`, `docs/decisions/a-tier-is-a-built-in-family.md`, `docs/decisions/an-invocation-is-a-wire-and-routing-is-composed-above-it.md`, `COLLABORATION.md` | Not included; informative (Nightseam's method, declaration language and local invocation vocabulary) |
 | `https://github.com/Bitspark/nightseam/issues/339` | External; informative history of the excluded identity exchange |
 
-No linked document supplies a requirement that revision 1 needs.
+No other linked document supplies a requirement that revision 1 needs.
 
 ## Evidence and conformance tooling
 
@@ -331,12 +478,14 @@ The upstream scenarios are archived unmodified under `source/conformance/`.
 They cannot name a revision themselves, because the upstream schema does not
 allow it. Of them:
 - the `seam` and `peer` sets exercise the core;
-- the `tunnel` set exercises the tunnel;
+- the `tunnel` set exercises the tunnel, including `tunnel/declaration-digest`.
+  That scenario uses a locally configured digest map and exercises the tunnel's
+  admission.
 - the scenarios that need the observer exercise one runtime's instrumentation
   and support no core claim;
-- `peer/declaration-identity.json`, `peer/recorded-wire-head-and-order.json`
-  and `tunnel/declaration-digest.json` (which also relies on identity) are out
-  of scope.
+- `peer/declaration-identity.json` (the identity layer) and
+  `peer/recorded-wire-head-and-order.json` (a test-only recorder) are out of
+  scope.
 
 A conformance report records:
 - the identity pair and the scope;
@@ -364,22 +513,25 @@ proven one.** It rests on:
   equal Nightseam v0.6.0's, and it interoperates with Nightseam v0.6.0 peers in
   both roles.
 
-Matching hashes do not show that a scoping choice preserved every behavior.
-Matching transcripts cover only the executions they record.
+The definitions this document supplies were checked against Nightseam v0.6.0's
+Go and TypeScript sources: nonempty names, unsolicited responses, the 1009
+over-limit close, the default window, canonical path decoding and the tunnel
+abort. Matching hashes do not show that a scoping choice preserved every
+behavior. Matching transcripts cover only the executions they record.
 
 ## Traceability
 
 | Requirement area | Adopted text | Tables | Archived evidence |
 | --- | --- | --- | --- |
-| Connection, close codes, binary and malformed refusal | `profile.md`, The connection beneath | `frames.json` | `seam/*`, `peer/binary-frame-ends-the-connection`, `peer/malformed-frame-ends-the-connection`, `peer/close-is-clean-when-chosen` |
+| Connection, close codes, binary, malformed and over-limit refusal | `profile.md`, The connection beneath | `frames.json` | `seam/*`, `peer/binary-frame-ends-the-connection`, `peer/malformed-frame-ends-the-connection`, `peer/close-is-clean-when-chosen` |
 | Subprotocol | `profile.md`, The subprotocol (first paragraph) | — | `peer/subprotocol-negotiated-at-the-handshake` |
-| Envelope and string domain | `profile.md`, The envelope | `frames.json`, `unicode.json` | `peer/well-formed-frame-is-served`, `peer/malformed-frame-ends-the-connection` |
+| Envelope, nonempty names and string domain | `profile.md`, The envelope; [The envelope](#the-envelope) | `frames.json`, `unicode.json` | `peer/well-formed-frame-is-served`, `peer/malformed-frame-ends-the-connection` |
 | Paths | `profile.md`, Relative paths on a Wire; [Paths](#paths) | — | none yet (finding F3) |
-| Ids, serials, correlation | `profile.md`, Ids and correlation | `frames.json`, `serials.json` | `peer/request-serials-*`, `peer/call-and-reverse-call` |
+| Ids, serials, correlation, unsolicited responses | `profile.md`, Ids and correlation | `frames.json`, `serials.json` | `peer/request-serials-*`, `peer/call-and-reverse-call` |
 | Requests, errors, cancel, deadlines | `profile.md`, Requests | `frames.json` | `peer/public-error`, `peer/cancellation-reaches-the-handler`, `peer/request-timeout`, `peer/outstanding-call-limit` |
 | Events | `profile.md`, Events | `frames.json` | `peer/events-both-ways` |
 | Bounds and backpressure | `profile.md`, Limits and backpressure | — | `seam/over-limit-refused`, `seam/send-past-the-bound-waits`, `peer/outstanding-call-limit`; observer-based pacing scenarios are diagnostics |
 | Trace context | `profile.md`, Trace context | `frames.json` | `peer/trace-members-verbatim`; `peer/trace-propagation` needs the observer |
 | Request metadata | `profile.md`, Request metadata | `frames.json` | `peer/meta-travels-with-a-call-and-an-event` |
 | Layering and reserved names | `vocabulary.md`, A layer's own vocabulary | — | none |
-| Tunnel | `tunnel.md` | — | `tunnel/*` except `declaration-digest` and `observer-sees-the-channels` |
+| Tunnel, including digest admission and the default window | `tunnel.md`; [tunnel.md](#tunnelmd) | — | `tunnel/*` except `observer-sees-the-channels` |

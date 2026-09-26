@@ -8,28 +8,28 @@
     "commit": "5cc9723a24646c40ed1861f892b2b23eb6d785d7",
     "license": "Apache-2.0"
   },
-  "normativeDigest": "c3b9a38b2e88691488742e140004b3180ed37e4c46844bdecdec97abf905bec0",
+  "normativeDigest": "7797682b0f05f86c508eafbd3be23c2084acd2f5cfc766922f9372b652dc416e",
   "files": [
     {
       "path": "SCOPE.md",
       "category": "normative",
       "origin": "bitwire",
-      "bytes": 20772,
-      "sha256": "a5e49488182fc4151f35aaef53da4a430b1893f170467c75a380e8ee41ad1932"
+      "bytes": 24652,
+      "sha256": "ccb41f3c8fd36574a388e6edfe446afb075793e4538a2be420550ef29e60c422"
     },
     {
       "path": "README.md",
       "category": "informative",
       "origin": "bitwire",
-      "bytes": 2424,
-      "sha256": "fdcdfca3589abed9e46720d25a13ee97e6040dbda5cfc9c97e1691d5805f87ea"
+      "bytes": 2600,
+      "sha256": "937a4796c4bb6788479d51d6cb1708c76d2b535e1f607858edaa8e13f7775bbf"
     },
     {
       "path": "FINDINGS.md",
       "category": "informative",
       "origin": "bitwire",
-      "bytes": 5427,
-      "sha256": "3f68ea203a45f8631cd276012aa145c8144107223e93cb03d7548d3dd09cd930"
+      "bytes": 6373,
+      "sha256": "a973eb29b49172dda117f4795bd70bbfe2afdcaece801fea2ba1350dc66b816f"
     },
     {
       "path": "source/NOTICE",

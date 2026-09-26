@@ -8,6 +8,11 @@ Under [decision 0010](../decisions/0010-bitwire-holds-the-contract-and-bitruntim
 Bitwire specifies carriers and bitruntime implements them. Nothing here is
 implemented yet; the work is tracked in [#39](https://github.com/Bitspark/bitwire/issues/39).
 
+This draft governs carriers from its adoption ([#54](https://github.com/Bitspark/bitwire/issues/54)).
+It does not change revision 1: [`bitwire/1`](../../protocol/bitwire-1/SCOPE.md) keeps
+Nightseam v0.6.0 behavior, including a tunnel abort sent as `channel.close` with 1006
+(finding F2).
+
 Under [decision 0012](../decisions/0012-explicit-data-and-wire-trees.md), carriers
 retain `AddressedWire`/`Endpoint` semantics. The new addressless `Wire` and full
 byte-keyed `WireTree` are separate contracts; this draft does not make an opaque

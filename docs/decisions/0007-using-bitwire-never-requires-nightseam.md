@@ -248,3 +248,15 @@ its TypeScript drivers into the Nightseam checkout; that stops.
 The carrier contract also gains two rules the research found missing: one
 classification of closed errors, and a split between close codes that may be
 sent and those that may only be observed.
+
+## Clarification (26 September 2026): 1006 and revision 1
+
+Publishing `bitwire/1` ([research 0003](../../research-docs/0003-publishing-an-immutable-protocol-revision.md),
+[#53](https://github.com/Bitspark/bitwire/issues/53)) found that Nightseam
+v0.6.0's Go tunnel aborts a channel by *sending* `channel.close` with code
+1006. Decision 0008 makes revision 1 exactly v0.6.0's behavior, so
+[`bitwire/1`'s scope](../../protocol/bitwire-1/SCOPE.md#limits-and-closes)
+keeps it. The rule above that 1006 is never transmitted therefore applies from
+the carrier contract ([#54](https://github.com/Bitspark/bitwire/issues/54)) and
+later protocol revisions, not retroactively to revision 1. The protocol's
+[findings register](../../protocol/bitwire-1/FINDINGS.md) records it as F2.
