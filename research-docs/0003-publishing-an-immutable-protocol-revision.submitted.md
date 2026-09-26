@@ -2,9 +2,7 @@
 
 **ID:** 0003
 **Date:** 26 September 2026
-**Status:** submitted
-**Run-ID:** run_23f4568a-b763-403e-813e-3f71a76c47c3
-**Document-ID:** doc_5d2c3b30-5276-4722-acb5-6eea3de6079d
+**Status:** reviewed
 **Reviewed:** https://github.com/Bitspark/bitwire/pull/58
 **Author:** Julian Matschinske <julian@matschinske.com>
 **Issue:** [bitwire#53](https://github.com/Bitspark/bitwire/issues/53)
