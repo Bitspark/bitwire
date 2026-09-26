@@ -7,7 +7,7 @@
   <artifactId>bitwire</artifactId>
   <version>0.3.0</version>
   <name>Bitwire</name>
-  <description>The shared relative-path Wire contract for Java.</description>
+  <description>Addressless Wire primitives, full WireTree structure and addressed carrier contracts for Java.</description>
   <url>https://github.com/Bitspark/bitwire</url>
   <licenses>
     <license>
