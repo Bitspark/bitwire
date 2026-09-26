@@ -20,7 +20,9 @@ if (!/^[0-9]+\.[0-9]+\.[0-9]+$/.test(version) || !/^(?:v[0-9]+\.[0-9]+\.[0-9]+|[
 }
 const directory = scratch('haskell-git');
 try {
-  cpSync(join(source, version === '0.1.0' ? 'test/consumer-010' : 'test/consumer'), join(directory, 'consumer'), { recursive: true });
+  const fixture = version === '0.1.0' ? 'test/consumer-010'
+    : version === '0.2.0' ? 'test/consumer-020' : 'test/consumer';
+  cpSync(join(source, fixture), join(directory, 'consumer'), { recursive: true });
   const consumerManifest = join(directory, 'consumer/bitwire-consumer.cabal');
   writeFileSync(consumerManifest, readFileSync(consumerManifest, 'utf8').replace(/bitspark-bitwire == [0-9.]+/, `bitspark-bitwire == ${version}`));
   writeFileSync(join(directory, 'cabal.project'), readFileSync(join(source, 'test/git-consumer.project'), 'utf8').replace(/  tag: .*/, `  tag: ${revision}`));

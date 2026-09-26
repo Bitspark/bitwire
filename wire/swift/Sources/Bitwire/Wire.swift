@@ -70,9 +70,9 @@ public struct ProfileFrame: Sendable {
 /// opaque received context with its identity; forwarding must retain that
 /// association. Caller-supplied frame fields do not establish verified context.
 public final class ReturnAddress: Sendable {
-    public let wire: any Wire
+    public let wire: any AddressedWire
 
-    public init(wire: any Wire) {
+    public init(wire: any AddressedWire) {
         self.wire = wire
     }
 }
@@ -105,24 +105,77 @@ public struct Receiver: Sendable {
 /// An idempotent receive detachment. It does not close the endpoint.
 public typealias Detach = @Sendable () -> Void
 
-/// Access to an origin. Paths are sequences of opaque Unicode-scalar strings.
+/// Addressless interaction: admission or refusal, not application completion.
+/// Receiver attachment, closure and path selection are separate capabilities.
+public protocol Wire: Sendable {
+    /// Must not invoke destination application code on the sender's stack.
+    func send(message: Message) throws
+}
+
+/// Exact arbitrary byte keys, including non-UTF-8 bytes and the empty key.
+public typealias Key = [UInt8]
+public typealias TreePath = [Key]
+
+/// One complete child entry. A child key occurs at most once in a node.
+public struct TreeChild<Value: Sendable>: Sendable {
+    public let key: Key
+    public let node: any DeixisNode<Value>
+
+    public init(key: Key, node: any DeixisNode<Value>) {
+        self.key = key
+        self.node = node
+    }
+}
+
+/// Complete reconstruction parts, preserving payload and child identities.
+public struct TreeParts<Value: Sendable>: Sendable {
+    public let own: Value
+    public let children: [TreeChild<Value>]
+
+    public init(own: Value, children: [TreeChild<Value>]) {
+        self.own = own
+        self.children = children
+    }
+}
+
+/// The complete finite, acyclic structure, independent of its payload type.
+/// Structure is stable; shared children are allowed, cycles are not. Each node
+/// has an own value and complete children keyed by exact bytes. Runtime-owned
+/// constructors validate these obligations; this package supplies no runtime.
+public protocol DeixisNode<Value>: Sendable {
+    associatedtype Value: Sendable
+    func own() -> Value
+    func children() -> [TreeChild<Value>]
+
+    /// Empty path selects self; an absent edge returns nil. One empty key selects
+    /// the empty-key child, distinct from the root or a missing child.
+    func at(path: TreePath) -> (any DeixisNode<Value>)?
+
+    /// Includes every child, even a leaf whose Wire refuses every message.
+    func decompose() -> TreeParts<Value>
+}
+
+public typealias WireTree = any DeixisNode<any Wire>
+
+/// Compatibility access using opaque Unicode-scalar string paths.
 ///
 /// Path segment identity must preserve scalar spelling; Swift String equality
 /// normalizes canonically equivalent spellings and must not be used as a route
 /// identity test. Compare UTF-8/scalar sequences instead. Empty segments and
 /// slashes within a segment have no special meaning.
 ///
-/// Wire grants send access only. Implementations own admission and dispatch;
+/// This is not a WireTree: addressed sending does not expose a complete tree.
+/// Implementations own admission and dispatch;
 /// the profile retains correlation, identity and live-reference obligations.
-public protocol Wire: Sendable {
+public protocol AddressedWire: Sendable {
     /// Complete on admission or throw on refusal, without invoking destination
     /// application code on the sender's stack or awaiting a response.
     func send(path: [String], message: Message) throws
 
 }
 
-/// Endpoint control is separate from send-only Wire access.
-public protocol Endpoint: Wire {
+/// Endpoint control is separate from send-only AddressedWire access.
+public protocol Endpoint: AddressedWire {
     /// Attach one receiver; refuse another while the attachment is active.
     /// Detachment prevents new dispatch; admitted work retains its return path.
     func receive(receiver: Receiver) throws -> Detach

@@ -1,7 +1,7 @@
 //! A consumer of only the public contract: no Nightseam or async runtime.
 use bitwire::{
-    Message, Payload, ProfileFrame, ProfileKind, PublicError, Receiver, ReturnAddress, SharedWire,
-    Wire,
+    AddressedWire, Message, Payload, ProfileFrame, ProfileKind, PublicError, Receiver,
+    ReturnAddress, SharedAddressedWire, SharedWire, Wire,
 };
 use std::sync::Arc;
 
@@ -9,9 +9,18 @@ use std::sync::Arc;
 /// provides no dispatch or routing implementation.
 struct Unavailable;
 
-impl Wire for Unavailable {
+impl AddressedWire for Unavailable {
     fn send(&self, _path: &[String], _message: Message) -> Result<(), PublicError> {
         Err(PublicError::new("disconnected", "endpoint unavailable").unpublished())
+    }
+}
+
+/// The primitive grants addressless sending, independently of legacy carriers.
+struct UnavailableOrigin;
+
+impl Wire for UnavailableOrigin {
+    fn send(&self, _message: Message) -> Result<(), PublicError> {
+        Err(PublicError::new("disconnected", "origin unavailable").unpublished())
     }
 }
 
@@ -20,9 +29,17 @@ fn accepts_thread_safe<T: Send + Sync>() {}
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     accepts_thread_safe::<Message>();
     accepts_thread_safe::<Receiver>();
+    accepts_thread_safe::<SharedAddressedWire>();
     accepts_thread_safe::<SharedWire>();
 
-    let endpoint: SharedWire = Arc::new(Unavailable);
+    let origin: SharedWire = Arc::new(UnavailableOrigin);
+    assert!(
+        origin
+            .send(Message::new(ProfileFrame::new(ProfileKind::Event)))
+            .is_err()
+    );
+
+    let endpoint: SharedAddressedWire = Arc::new(Unavailable);
     let returning = Arc::new(ReturnAddress {
         wire: endpoint.clone(),
     });

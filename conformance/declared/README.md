@@ -1,5 +1,11 @@
 # Declared-composite evidence
 
+**Historical evidence:** the observations and names below refer to the stated
+0.1/0.2 addressed contract. In 0.3 that surface is `AddressedWire`; `Wire` is
+addressless and `WireTree` is complete byte-keyed structure. These results do
+not establish the new structural contract. See
+[decision 0012](https://github.com/Bitspark/bitwire/blob/main/docs/decisions/0012-explicit-data-and-wire-trees.md).
+
 [Decision 0006](../../docs/decisions/0006-declared-composites-realize-deixis-nodes.md)
 defines the realization: an origin at every node, complete named children, and
 construction parts retained by their owner. Run `node scripts/conformance-current.mjs`

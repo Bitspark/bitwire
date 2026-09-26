@@ -1,5 +1,10 @@
 # 0001: The shared Wire contract has an independent home
 
+**Native names and structural claim superseded:** [decision 0012](0012-explicit-data-and-wire-trees.md)
+reclaims `Wire` for addressless sending and names the full structure `WireTree`.
+The addressed interface below is now `AddressedWire`; its carrier and lifecycle
+obligations remain. This record preserves the historical names.
+
 **Partly superseded** by [decision 0007](0007-using-bitwire-never-requires-nightseam.md)
 on 2026-09-25. Using Bitwire must never require Nightseam, so the operators,
 carriers and network profile left in Nightseam below move to Bitwire. The record

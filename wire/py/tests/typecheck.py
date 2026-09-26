@@ -15,14 +15,16 @@ from bitwire import (
     RequestFrame,
     ResultFrame,
     ReturnAddress,
+    AddressedWire,
     Wire,
+    WireTree,
 )
 
 
-def consume(wire: Wire, endpoint: Endpoint, frame: ProfileFrame) -> None:
+def consume(wire: AddressedWire, endpoint: Endpoint, frame: ProfileFrame) -> None:
     address = ReturnAddress(wire)
     wire.send(["scope", ""], Message(frame, address))
-    assert_type(address.wire, Wire)
+    assert_type(address.wire, AddressedWire)
     kind: ProfileKind = frame["kind"]
     assert_type(kind, ProfileKind)
     if frame["kind"] == "request":
@@ -35,6 +37,22 @@ def consume(wire: Wire, endpoint: Endpoint, frame: ProfileFrame) -> None:
     wire.receive(Receiver())  # type: ignore[attr-defined]
     wire.close()  # type: ignore[attr-defined]
     wire.send([42], Message(frame))  # type: ignore[list-item]
+
+
+def consume_tree(tree: WireTree, primitive: Wire, message: Message) -> None:
+    primitive.send(message)
+    assert_type(tree.own(), Wire)
+    selected = tree.at([b"", b"\xff\x00"])
+    if selected is not None:
+        selected.own().send(message)
+    own, children = tree.decompose()
+    assert_type(own, Wire)
+    for key, child in children:
+        assert_type(key, bytes)
+        assert_type(child, WireTree)
+    primitive.send([], message)  # type: ignore[call-arg,arg-type]
+    tree.at(["text"])  # type: ignore[list-item]
+    ReturnAddress(primitive)  # type: ignore[arg-type]
 
 
 request: RequestFrame = {"version": 1, "kind": "request", "id": "1", "params": {}}

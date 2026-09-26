@@ -1,4 +1,4 @@
-"""The shared relative-path Wire contract, without a runtime dependency.
+"""Addressless Wire, complete WireTree structure, and addressed compatibility.
 
 Adapted from Nightseam's duplex/py/nightseam/duplex/wire.py at
 1c63f1c4d7e4b5987d4bd32e294177645c92ed8f under Apache-2.0.
@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Literal, NotRequired, Protocol, TypedDict, runtime_checkable
+from typing import Literal, NotRequired, Protocol, TypeAlias, TypeVar, TypedDict, runtime_checkable
 
 __all__ = [
     "Path",
@@ -24,12 +24,21 @@ __all__ = [
     "ReturnAddress",
     "Message",
     "Receiver",
+    "AddressedWire",
     "Wire",
+    "Key",
+    "TreePath",
+    "DeixisNode",
+    "WireTree",
     "Endpoint",
 ]
 
 # Opaque Unicode-scalar segments: [] != [""] != ["a/b"] != ["a", "b"].
 Path = Sequence[str]
+# Structural keys admit every byte string, without Unicode conversion.
+Key = bytes
+TreePath = Sequence[Key]
+T_co = TypeVar("T_co", covariant=True)
 ProfileKind = Literal["request", "response", "event", "cancel"]
 
 
@@ -88,14 +97,14 @@ ProfileFrame = RequestFrame | ResultFrame | ErrorFrame | EventFrame | CancelFram
 class ReturnAddress:
     """Local capability with identity equality, never a network-envelope member.
 
-    Different addresses stay distinct even when they hold the same Wire. The
+    Different addresses stay distinct even when they hold the same AddressedWire. The
     wrapped implementation need not support equality or hashing. Routing must
     preserve this address object, rather than construct an equivalent wrapper.
     Runtime-owned received context associated with this identity must survive
     routing; application payloads are not evidence of verified context.
     """
 
-    wire: Wire
+    wire: AddressedWire
 
 
 @dataclass(frozen=True)
@@ -123,7 +132,40 @@ class Receiver:
 
 @runtime_checkable
 class Wire(Protocol):
-    """Send-only access with synchronous admission and asynchronous dispatch.
+    """Addressless send access: admission or refusal, never handler completion.
+
+    No path, receive attachment or closure authority belongs to this primitive.
+    Tree selection followed by own().send(message) supplies structured interaction.
+    """
+
+    def send(self, message: Message) -> None: ...
+
+
+class DeixisNode(Protocol[T_co]):
+    """A complete finite acyclic structure with an own value at every node.
+
+    Children contain every unique exact byte key, including empty keys. An empty
+    path selects this node; a missing child returns None, never the parent's own
+    value. Decomposition retains the same own value and complete children.
+    Implementations preserve structure and payload identity. Constructors and
+    derived operations belong to runtimes, not this declaration package.
+    """
+
+    def own(self) -> T_co: ...
+
+    def children(self) -> Sequence[tuple[Key, DeixisNode[T_co]]]: ...
+
+    def at(self, path: TreePath) -> DeixisNode[T_co] | None: ...
+
+    def decompose(self) -> tuple[T_co, Sequence[tuple[Key, DeixisNode[T_co]]]]: ...
+
+
+WireTree: TypeAlias = DeixisNode[Wire]
+
+
+@runtime_checkable
+class AddressedWire(Protocol):
+    """Compatibility access for the unchanged addressed bitwire/1 profile.
 
     send returns on acceptance or raises on refusal, without running destination
     application code on the sender's stack. It grants no receiving or closure
@@ -134,7 +176,7 @@ class Wire(Protocol):
 
 
 @runtime_checkable
-class Endpoint(Wire, Protocol):
+class Endpoint(AddressedWire, Protocol):
     """Owning endpoint access with one receive attachment and endpoint closure.
 
     receive refuses a second active attachment or a closed endpoint and returns

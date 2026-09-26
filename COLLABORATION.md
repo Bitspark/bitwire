@@ -1,5 +1,9 @@
 # Collaborating on Bitwire
 
+The active naming decision is [0012](docs/decisions/0012-explicit-data-and-wire-trees.md):
+`Wire` is addressless, `WireTree` is the complete Deixis structure, and
+`AddressedWire` is the existing carrier access. Preserve this distinction.
+
 ## The boundary
 
 Bitwire owns the shared Wire contract, language presentations and independent

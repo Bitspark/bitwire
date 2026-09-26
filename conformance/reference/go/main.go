@@ -85,13 +85,13 @@ func (e *endpoint) Close(code wire.Code, reason string) error {
 type sender func([]string, wire.Message) error
 
 func (s sender) Send(path []string, message wire.Message) error { return s(path, message) }
-func at(w wire.Wire, prefix []string) wire.Wire {
+func at(w wire.AddressedWire, prefix []string) wire.AddressedWire {
 	origin := append([]string{}, prefix...)
 	return sender(func(path []string, message wire.Message) error {
 		return w.Send(append(append([]string{}, origin...), path...), message)
 	})
 }
-func mount(children map[string]wire.Wire) wire.Wire {
+func mount(children map[string]wire.AddressedWire) wire.AddressedWire {
 	return sender(func(path []string, message wire.Message) error {
 		if len(path) == 0 || children[path[0]] == nil {
 			return errors.New("no mounted destination")
@@ -116,7 +116,7 @@ type route struct {
 	receiver wire.Receiver
 }
 
-// Explicit optional policy, not a Wire requirement: unique prefixes, longest
+// Explicit optional policy, not a AddressedWire requirement: unique prefixes, longest
 // prefix wins, suffix-relative callback paths. One router owns Receive.
 type router struct {
 	routes     map[string]*route
@@ -192,7 +192,7 @@ type selectedAttachment struct {
 type selectedEndpoint struct {
 	router     *router
 	prefix     []string
-	access     wire.Wire
+	access     wire.AddressedWire
 	attachment *selectedAttachment
 	ended      bool
 }
@@ -325,7 +325,7 @@ func main() {
 	must(err)
 	detachForwarder, err := forwardServer.Receive(wire.Receiver{Message: func(path []string, message wire.Message) { must(destinationClient.Send(path, message)) }})
 	must(err)
-	composed := at(mount(map[string]wire.Wire{"": at(at(forwardClient, []string{"a"}), []string{"b"})}), []string{""})
+	composed := at(mount(map[string]wire.AddressedWire{"": at(at(forwardClient, []string{"a"}), []string{"b"})}), []string{""})
 	if _, grantsOwnership := composed.(wire.Endpoint); grantsOwnership {
 		panic("selected access grants endpoint ownership")
 	}

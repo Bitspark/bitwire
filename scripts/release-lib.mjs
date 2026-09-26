@@ -103,15 +103,18 @@ export function checkNpmConsumer(directory, dependency) {
   const actual = JSON.parse(readFileSync(join(installed, 'package.json'), 'utf8'));
   if (actual.version !== version) throw new Error(`Consumer installed ${actual.version}, expected ${version}.`);
   writeJSON(join(directory, 'tsconfig.json'), { compilerOptions: { target: 'ES2022', module: 'NodeNext', strict: true, skipLibCheck: false, outDir: 'dist' }, include: ['index.ts'] });
-  writeFileSync(join(directory, 'index.ts'), `import type { Wire, Endpoint, Path, Message, Receiver, ProfileFrame, ProfileKind, ProfileError, ReturnAddress } from '@bitspark/bitwire';
+  writeFileSync(join(directory, 'index.ts'), `import type { Wire, WireTree, AddressedWire, Endpoint, Path, Message, Receiver, ProfileFrame, ProfileKind, ProfileError, ReturnAddress } from '@bitspark/bitwire';
 const frame: ProfileFrame = { version: 1, kind: 'event', data: null };
 const path: Path = ['example', ''];
 const message: Message = { frame };
 const receiver: Receiver = { message: (_path, _message) => {} };
 const kind: ProfileKind = frame.kind;
 const error: ProfileError = { code: 'example', message: 'example' };
-const access: Wire = { send: (_path, _message) => {} };
-function consume(wire: Wire): ReturnAddress { wire.send(path, message); return { wire }; }
+const access: AddressedWire = { send: (_path, _message) => {} };
+const primitive: Wire = { send: (_message) => {} };
+function sendTree(tree: WireTree): void { tree.at([])?.own().send(message); }
+void [primitive, sendTree];
+function consume(wire: AddressedWire): ReturnAddress { wire.send(path, message); return { wire }; }
 function attach(endpoint: Endpoint): void { const detach = endpoint.receive(receiver); detach(); endpoint.close(); }
 void [kind, error, consume(access), attach];
 await import('@bitspark/bitwire');
@@ -139,10 +142,15 @@ func main() {
   _ = wire.ProfileError{Code: "example", Message: "example"}
   _ = wire.Code(0)
   access := sendOnly{}
-  var _ wire.Wire = access
+  var _ wire.AddressedWire = access
+  var _ wire.Wire = primitive{}
+  var tree wire.WireTree
+  _ = tree
   _ = access.Send([]string{"example"}, message)
   fmt.Println("Installed Bitwire Go declarations loaded.", message.Frame.Version, receiver.Message != nil)
 }
+type primitive struct{}
+func (primitive) Send(message wire.Message) error { return nil }
 type sendOnly struct{}
 func (sendOnly) Send(path []string, message wire.Message) error { return nil }
 `);

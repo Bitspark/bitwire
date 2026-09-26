@@ -18,6 +18,8 @@ own location. It runs identically on Windows and Linux:
 4. Check and build the TypeScript declarations using the pinned compiler.
 5. Run `scripts/composition.mjs`, comparing Go and TypeScript reference composition
    observations to a shared independent oracle for the 0.2 contract.
+6. Run `scripts/trees.mjs`, comparing Go and TypeScript test-only tree interpreters
+   against the independent 0.3 full-structure observations.
 
 The link check checks local destinations and heading fragments, not remote URLs.
 The experiment is test-only evidence, not production runtime conformance; see the

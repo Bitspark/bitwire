@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Accept decision 0012 and prepare breaking 0.3.0 declarations in all eight
+  languages: `Wire.send(message)` is addressless; `WireTree = DeixisNode<Wire>`
+  provides complete byte-keyed structure; the former addressed interface becomes
+  `AddressedWire`. Align the model with Bitstore Data/DataTree, preserve Endpoint
+  and return-capability semantics under unchanged bitwire/1, add migration
+  guidance and independent structural reference cases. Runtime adoption and
+  registry publication are separate delivery steps.
+
 - Document the family component-first layout with two-letter language directories,
   command paths and explicit adoption notes for existing source.
 

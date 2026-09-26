@@ -1,12 +1,14 @@
 # Documentation
 
-Bitwire is the shared contract for access through relative paths. These pages
+Bitwire specifies addressless Wire primitives, complete byte-keyed WireTree
+structures and explicitly named AddressedWire carrier access. These pages
 separate the shared boundary, executable checks and consumer adoption.
 
 | Read this | To understand |
 | --- | --- |
+| [0.3 migration](migration-0.3.md) | Primitive, tree and addressed-carrier renames and preserved lifecycle obligations. |
 | [Goals](goals/README.md) | What the contract is meant to make possible. |
-| [Composition](composition.md) | How access composes within Wire and what consumers must agree on. |
+| [Composition](composition.md) | Full tree composition, addressed access and their separate guarantees. |
 | [Runnable examples](../examples/README.md) | Service trees, remounting, retained cart state and guards, cancellation and cross-language calls. |
 | [Wire contract](wire/contract.md) | The surface, paths, receiver and composition laws. |
 | [Message profile](wire/profile.md) | The existing Nightseam profile and the limits of interface compatibility. |

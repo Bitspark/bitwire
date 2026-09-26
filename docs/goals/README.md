@@ -9,9 +9,16 @@ meaning at that boundary.
 
 ## Composition preserves access
 
-Selecting an origin, mounting origins and forwarding access retain the same Wire
-interface. Their laws hold independently of the physical carrier. Introducing a
-wire boundary preserves the behavior of the model presented through it.
+`Wire` is addressless sending; `WireTree = DeixisNode<Wire>` gives it complete
+structure. The same `own`, `children`, partial `at` and `decompose` contract
+applies to Bitstore's `DataTree = DeixisNode<Data>`. Exact byte keys and primitive
+identity survive decomposition and reconstruction. Selecting a subtree keeps
+that same structural interface.
+
+`AddressedWire` is the separate carrier/access interface. Prefix selection and
+forwarding preserve its addressed behavior, but an opaque router is not a full
+tree. [Decision 0012](../decisions/0012-explicit-data-and-wire-trees.md) requires
+this distinction throughout the family.
 
 Wire composition and type composition are distinct obligations. A generic
 adapter's construction must also preserve substitution, including arguments and

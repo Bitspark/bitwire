@@ -8,11 +8,16 @@ Under [decision 0010](../decisions/0010-bitwire-holds-the-contract-and-bitruntim
 Bitwire specifies carriers and bitruntime implements them. Nothing here is
 implemented yet; the work is tracked in [#39](https://github.com/Bitspark/bitwire/issues/39).
 
+Under [decision 0012](../decisions/0012-explicit-data-and-wire-trees.md), carriers
+retain `AddressedWire`/`Endpoint` semantics. The new addressless `Wire` and full
+byte-keyed `WireTree` are separate contracts; this draft does not make an opaque
+carrier a complete tree or change its path encoding.
+
 ## Transport and carrier
 
 - A **transport** moves frames between two places. It knows nothing of requests,
   ids or return capabilities.
-- A **carrier** provides Wire endpoints. It mints request ids, correlates
+- A **carrier** provides AddressedWire endpoints. It mints request ids, correlates
   responses and cancels, gives each received request a return capability, and
   creates each accepted request's invocation.
 
@@ -68,8 +73,8 @@ Notes on the groups:
 - **Native multiplexing.** QUIC, HTTP/2 and SSH carry many streams natively. A
   tunnel over them can map its channels onto those streams instead of
   reimplementing flow control.
-- **Relays splice frames below the Wire.** bitwire-svc passes opaque frames
-  between two outbound connections. It is part of a transport path, not a Wire
+- **Relays splice frames below the AddressedWire.** bitwire-svc passes opaque frames
+  between two outbound connections. It is part of a transport path, not a AddressedWire
   forwarder, and it preserves no end-to-end authentication.
 - **Brokers fit return capabilities well**, because NATS reply inboxes and MQTT 5
   response topics are return addresses. What they lack is a connection:
@@ -80,7 +85,7 @@ Notes on the groups:
 
   They need a contract of their own before Bitwire supports any.
 - **A durable log is not a carrier.** Return capabilities and live scopes cannot
-  be replayed from stored envelopes. Recording and following a Wire is a
+  be replayed from stored envelopes. Recording and following a AddressedWire is a
   composition over one, not a way to carry it.
 
 ## The carrier contract (draft)

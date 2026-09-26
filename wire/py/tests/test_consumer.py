@@ -7,7 +7,7 @@ import inspect
 import unittest
 from collections.abc import Callable
 
-from bitwire import Endpoint, Message, Path, Receiver, ReturnAddress, Wire
+from bitwire import Endpoint, Message, Path, Receiver, ReturnAddress, AddressedWire
 
 
 class RecordingEndpoint:
@@ -20,7 +20,7 @@ class RecordingEndpoint:
         self.ending: tuple[int, str] | None = None
 
     def __eq__(self, other: object) -> bool:
-        raise AssertionError("ReturnAddress must not compare the wrapped Wire")
+        raise AssertionError("ReturnAddress must not compare the wrapped AddressedWire")
 
     def send(self, path: Path, message: Message) -> None:
         self.sent.append((tuple(path), message))
@@ -55,13 +55,13 @@ class RecordingEndpoint:
 class ConsumerTests(unittest.TestCase):
     def test_structural_consumer_keeps_path_frame_and_return_object(self) -> None:
         endpoint = RecordingEndpoint()
-        wire: Wire = endpoint
+        wire: AddressedWire = endpoint
         replies = ReturnAddress(RecordingEndpoint())
         request = Message(
             {"version": 1, "kind": "request", "id": "r1", "params": {"count": 2**80}},
             replies,
         )
-        self.assertIsInstance(endpoint, Wire)
+        self.assertIsInstance(endpoint, AddressedWire)
         for path in ([], [""], ["a/b"], ["a", "b"], ["\u03bb", "\U0001f30d"]):
             wire.send(path, request)
 
@@ -138,8 +138,8 @@ class ConsumerTests(unittest.TestCase):
             def send(self, path: Path, message: Message) -> None:
                 pass
 
-        access: Wire = Access()
-        self.assertIsInstance(access, Wire)
+        access: AddressedWire = Access()
+        self.assertIsInstance(access, AddressedWire)
         self.assertNotIsInstance(access, Endpoint)
         self.assertIs(ReturnAddress(access).wire, access)
 

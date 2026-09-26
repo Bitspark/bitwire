@@ -1,5 +1,10 @@
 # 0003: Invocation-aware composition has a public lifecycle contract
 
+**Native names and structural claim superseded:** [decision 0012](0012-explicit-data-and-wire-trees.md)
+reclaims `Wire` for addressless sending and names the full structure `WireTree`.
+The addressed interface below is now `AddressedWire`; its carrier and lifecycle
+obligations remain. This record preserves the historical names.
+
 **Status:** accepted design requirements, 2026-09-21. Exact profile APIs and
 implementation evidence remain required in
 [Nightseam #439](https://github.com/Bitspark/nightseam/issues/439) and

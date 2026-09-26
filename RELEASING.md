@@ -1,6 +1,9 @@
 # Releases
 
-The current release is `0.2.0`; `0.1.0` remains immutable. A release identifies the shared contract revision,
+The last published release is `0.2.0`; source declarations target `0.3.0` under
+[decision 0012](docs/decisions/0012-explicit-data-and-wire-trees.md). Publication
+is pending until the release process and clean registry checks succeed.
+`0.1.0` and `0.2.0` remain immutable. A release identifies the shared contract revision,
 native bindings and independent cases. The [language matrix](docs/languages.md)
 records implementation, package validation, registry publication and consumer
 adoption separately. A source tag does not claim an upload to every registry.
@@ -26,16 +29,16 @@ a `v*` tag push. Publication requires a successful public provenance rehearsal
 of that exact commit and version.
 
 1. Run `pnpm install --frozen-lockfile`, `node scripts/check.mjs`,
-   `node scripts/conformance.mjs`, `node scripts/release-prepare.mjs v0.2.0`,
+   `node scripts/conformance.mjs`, `node scripts/release-prepare.mjs v0.3.0`,
    `node scripts/smoke-packed.mjs` and `node wire/rs/check-package.mjs`.
 2. Optionally rehearse the merged commit privately:
-   `gh workflow run release.yml --ref main -f tag=v0.2.0 -f provenance=false`.
+   `gh workflow run release.yml --ref main -f tag=v0.3.0 -f provenance=false`.
 3. For the public launch, make the repository public and enable immutable
    GitHub releases. The organization's release-tag rule already protects `v*`.
-   Run `gh workflow run release.yml --ref main -f tag=v0.2.0 -f provenance=true`.
+   Run `gh workflow run release.yml --ref main -f tag=v0.3.0 -f provenance=true`.
    Verify the successful run's SHA and stored rehearsal receipt. A source change
    requires a new rehearsal; an earlier run does not validate a later commit.
-4. Tag that exact merged commit as `v0.2.0` and push the tag once. The workflow
+4. Tag that exact merged commit as `v0.3.0` and push the tag once. The workflow
    repeats checks, publishes `@bitspark/bitwire` with provenance and the Rust
    crate when present, verifies public npm/Go/Rust installation and creates the
    GitHub release. Go's module `github.com/Bitspark/bitwire` is distributed by
@@ -55,13 +58,13 @@ Swift consumes the root SwiftPM package through the public Git URL and tag.
 C++ consumes tagged source and the installed CMake package. Haskell consumes the
 public Git release using Cabal's `source-repository-package`; see the
 [installation instructions](wire/hs/README.md#install-from-git). Run
-`node wire/hs/check-git.mjs --tag v0.2.0 --version 0.2.0` after publication to
+`node wire/hs/check-git.mjs --tag v0.3.0 --version 0.3.0` after publication to
 verify this release independently of the local library (prefer its full immutable
 commit SHA in place of the tag). Without arguments the command intentionally
 checks historical 0.1.0, which is not acceptance evidence for a new release.
 Hackage publication is deferred until uploader approval.
 After the immutable release exists, run
-`gh workflow run verify-source.yml --ref main -f tag=v0.2.0` to verify SwiftPM,
+`gh workflow run verify-source.yml --ref main -f tag=v0.3.0` to verify SwiftPM,
 C++ installed-package and Haskell Git consumers against the exact public release
 SHA. This workflow verifies only; it neither uploads nor changes a release.
 Additional registry

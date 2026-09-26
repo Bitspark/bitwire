@@ -1,5 +1,5 @@
 /**
- * Bitwire 0.2 access contract. Implementations provide
+ * Bitwire 0.3 primitive, tree and addressed carrier contracts. Implementations provide
  * dispatch, codecs and carriers; this module declares only the shared boundary.
  */
 
@@ -27,7 +27,7 @@ export interface ProfileError {
 }
 
 /**
- * The Send path supplies the method/event name; the frame has no second name.
+ * The AddressedWire path supplies the method/event name; the frame has no second name.
  * Payloads follow the JSON profile: unknown does not imply arbitrary JavaScript
  * values are serializable, or that number preserves arbitrary JSON precision.
  * Required payloads must be present JSON values: null is distinct from absence,
@@ -57,7 +57,7 @@ export type ProfileKind = ProfileFrame['kind'];
  * context with it without providing a callable reply or a response waiter.
  */
 export interface ReturnAddress {
-  readonly wire: Wire;
+  readonly wire: AddressedWire;
 }
 
 /**
@@ -86,7 +86,7 @@ export interface Receiver {
  * their results. The implementing endpoint owns asynchronous dispatch.
  * Successful send means admission, not completion of an application effect.
  */
-export interface Wire {
+export interface AddressedWire {
   send(path: Path, message: Message): void;
 }
 
@@ -97,7 +97,39 @@ export interface Wire {
  * close the endpoint. Sharing among selected views requires an explicit
  * composition that defines dispatch policy.
  */
-export interface Endpoint extends Wire {
+export interface Endpoint extends AddressedWire {
   receive(receiver: Receiver): () => void;
   close(code?: number, reason?: string): void;
 }
+
+/** Addressless sending access; completion means admission or refusal, not an application result. */
+export interface Wire {
+  send(message: Message): void;
+}
+
+/** Exact byte key; empty keys and arbitrary binary bytes are valid. */
+export type Key = Uint8Array;
+/** Structural path, distinct from the bitwire/1 carrier's Unicode string Path. */
+export type TreePath = readonly Key[];
+export type Child<T> = readonly [Key, DeixisNode<T>];
+export interface Parts<T> {
+  readonly own: T;
+  readonly children: ReadonlyArray<Child<T>>;
+}
+
+/**
+ * Full finite, acyclic structure with stable own-value associations and a complete
+ * byte-keyed child map. Implementations protect mutable keys with copies.
+ * The empty path selects self; a missing path returns undefined, never a proxy.
+ * Reconstruction from decompose() preserves structure and payload capability
+ * identity. Constructors and derived operations belong to the runtime.
+ */
+export interface DeixisNode<T> {
+  own(): T;
+  children(): ReadonlyArray<Child<T>>;
+  at(path: TreePath): DeixisNode<T> | undefined;
+  decompose(): Parts<T>;
+}
+
+/** Structured interaction. An arbitrary AddressedWire is not a WireTree. */
+export type WireTree = DeixisNode<Wire>;

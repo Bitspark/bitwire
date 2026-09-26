@@ -4,6 +4,7 @@ import dev.bitspark.bitwire.JsonValue;
 import dev.bitspark.bitwire.Message;
 import dev.bitspark.bitwire.ProfileFrame;
 import dev.bitspark.bitwire.ReturnAddress;
+import dev.bitspark.bitwire.AddressedWire;
 import dev.bitspark.bitwire.Wire;
 import java.util.List;
 
@@ -12,11 +13,17 @@ public final class Consumer {
     private Consumer() {}
 
     public static void main(String[] args) {
-        RecordingWire suppliedByApplication = new RecordingWire();
-        Wire wire = suppliedByApplication;
+        RecordingAddressedWire suppliedByApplication = new RecordingAddressedWire();
+        AddressedWire wire = suppliedByApplication;
         ReturnAddress returnAddress = new ReturnAddress(wire);
         ProfileFrame.Request frame = new ProfileFrame.Request("example-1", new JsonValue("9007199254740993"));
         Message message = new Message(frame, returnAddress);
+        Message[] primitiveDelivery = new Message[1];
+        Wire primitive = delivered -> primitiveDelivery[0] = delivered;
+        primitive.send(message);
+        if (primitiveDelivery[0] != message) {
+            throw new AssertionError("addressless Wire did not preserve the message");
+        }
         wire.send(List.of("", "cell/value"), message);
         if (!suppliedByApplication.path.equals(List.of("", "cell/value"))
                 || suppliedByApplication.message.frame() != frame
@@ -28,7 +35,7 @@ public final class Consumer {
     }
 
     /** Admission recording only; a real endpoint supplies asynchronous dispatch. */
-    private static final class RecordingWire implements Wire {
+    private static final class RecordingAddressedWire implements AddressedWire {
         private List<String> path;
         private Message message;
 

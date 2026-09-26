@@ -3,32 +3,63 @@
 [![ci](https://github.com/Bitspark/bitwire/actions/workflows/ci.yml/badge.svg)](https://github.com/Bitspark/bitwire/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-One contract for access through relative paths.
+Addressless interaction and complete, byte-keyed interaction trees.
 
-Bitwire defines the interface between a model's generated adapters and the
-runtime that carries its interactions. A wire gives access to an origin;
-selecting a path or mounting several origins must preserve that same interface.
-The contract is shared across languages, generators and runtime implementations.
+Bitwire defines `Wire`, the primitive that sends one message, and
+`WireTree = DeixisNode<Wire>`, the full structure that gives primitives
+addresses. Bitstore uses the same construction: `Data.read(): Promise<Bytes>`
+and `DataTree = DeixisNode<Data>`. [Decision 0012](docs/decisions/0012-explicit-data-and-wire-trees.md)
+records the shared contract and the intentional breaking rename.
 
-**Status: [0.2.0 released](https://github.com/Bitspark/bitwire/releases/tag/v0.2.0).**
-All eight bindings separate send access from receive attachment and closure.
-Nightseam v0.6.0 has adopted the Go/TypeScript contract. The
-[current baseline](conformance/current/README.md) checks production composition
-locally and over WebSockets, plus scoped lifecycle observations. The test-only
-reference and ten historical 0.1.0 cases remain distinct. The
-[language matrix](docs/languages.md) records publication and adoption separately;
-full lifecycle acceptance review remains open in
-[#20](https://github.com/Bitspark/bitwire/issues/20).
-No production endpoint runtime is included; implementations live in bitruntime ([decision 0010](docs/decisions/0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md)).
+**Source status: 0.3.0 declarations; publication pending.** The last published
+release is [0.2.0](https://github.com/Bitspark/bitwire/releases/tag/v0.2.0).
+All eight source bindings distinguish the primitive, full tree and addressed
+carrier. Historical evidence remains versioned separately; compiling these
+interfaces does not prove runtime structural conformance. The
+[language matrix](docs/languages.md) records each delivery boundary.
+Production implementations belong to bitruntime under
+[decision 0010](docs/decisions/0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md).
 
 ## The interface
 
 ```typescript
 interface Wire {
+  send(message: Message): void;
+}
+
+interface DeixisNode<T> {
+  own(): T;
+  children(): ReadonlyArray<readonly [Uint8Array, DeixisNode<T>]>;
+  at(path: readonly Uint8Array[]): DeixisNode<T> | undefined;
+  decompose(): Readonly<{
+    own: T;
+    children: ReadonlyArray<readonly [Uint8Array, DeixisNode<T>]>;
+  }>;
+}
+
+type WireTree = DeixisNode<Wire>;
+```
+
+Trees are finite and acyclic, with an own value and a complete child map at
+every node. Keys are exact arbitrary bytes. Empty path selects self; missing
+selection differs from a Wire that refuses. Decomposition and reconstruction
+preserve the complete structure and primitive identities.
+
+For an existing path, the two lanes differ only in their own operation:
+
+```text
+send(tree, path, message) = select(tree, path).own().send(message)
+read(tree, path)          = select(tree, path).own().read()
+```
+
+The old addressed surface has an explicit separate name:
+
+```typescript
+interface AddressedWire {
   send(path: Path, message: Message): void;
 }
 
-interface Endpoint extends Wire {
+interface Endpoint extends AddressedWire {
   receive(receiver: Receiver): () => void;
   close(code?: number, reason?: string): void;
 }
@@ -39,37 +70,18 @@ interface Receiver {
 }
 ```
 
-Paths are sequences of opaque strings, relative to the wire's origin. `Message`
-carries a request, response, event or cancellation and may hold a local return
-capability. An Endpoint accepts one active receiver and returns its detach
-function. Path registration and matching belong to a composed dispatcher;
-selected receiving views share that owner. The [design decision](docs/decisions/0002-delivery-dispatch-and-ownership.md)
-explains why access and ownership are separate capabilities.
-The [contract](docs/wire/contract.md) gives these names their shared meaning.
-
-Selection and mounting are governed by laws, not by the choice of carrier:
-
-```text
-at(at(w, a), b) ≃ at(w, a ++ b)
-at(w, [])      ≃ w
-```
-
-These are contract laws. Runtime implementations supply `at` and `mount`;
-Bitwire's independent cases check their observable behavior. A declared
-composite adds an origin, its own behavior at `[]`, beside complete named
-children; [decision 0006](docs/decisions/0006-declared-composites-realize-deixis-nodes.md)
-relates this to Deixis's node model.
-The [composition guide](docs/composition.md) explains what this enables across
-consumers and which additional agreements make their integration meaningful.
-The [runnable use-case catalogue](examples/README.md) shows it in working Go and
-TypeScript programs: a shopping cart retains state and guards when its parent
-is rebuilt, and a pending request still reaches its original invocation.
+`Endpoint` and `ReturnAddress.wire` retain addressed delivery and existing
+string paths. The `bitwire/1` envelope, invocation paths, admission, attachment
+and closure semantics are unchanged. An opaque addressed router cannot supply
+the complete structure required of a `WireTree`. See the
+[contract](docs/wire/contract.md), [migration guide](docs/migration-0.3.md)
+and [composition guide](docs/composition.md).
 
 ## Who owns what
 
 | Project | Responsibility |
 | --- | --- |
-| **Bitwire** | Shared access contract, language declarations, protocol and carrier specifications, and independent conformance criteria. |
+| **Bitwire** | Primitive and full tree contracts, language declarations, protocol and carrier specifications, and independent conformance criteria. |
 | [**bitruntime**](https://github.com/Bitspark/bitruntime) | The Go and TypeScript implementations: operators, carriers, protocol engine, dispatch, live references, tunnels ([decision 0010](docs/decisions/0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md)). Until it delivers, Nightseam v0.6.0, now frozen, is the implementation in use. |
 | **Bitlink** | Its planned protocol projections and generated adapters. |
 | **Bitsystem** | Typed spaces and the kernel/system operations exposed through them. |

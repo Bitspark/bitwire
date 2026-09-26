@@ -1,6 +1,8 @@
-# Wire contract
+# Wire and WireTree contract
 
-This page specifies the shared access contract for Bitwire 0.2. The
+This page specifies the shared contract for Bitwire 0.3.0, currently unreleased.
+[Decision 0012](../decisions/0012-explicit-data-and-wire-trees.md) separates
+addressless interaction, its full structure and addressed carriers. The
 [conformance work](../../conformance/README.md) records executable evidence
 separately; declarations compiling does not establish behavioral conformance.
 The 0.1 baseline was reviewed against Nightseam at
@@ -8,17 +10,46 @@ The 0.1 baseline was reviewed against Nightseam at
 
 ## Surface and scope
 
+```typescript
+type Key = Uint8Array;
+type TreePath = readonly Key[];
+type Children<T> = ReadonlyArray<readonly [Key, DeixisNode<T>]>;
+
+interface DeixisNode<T> {
+  own(): T;
+  children(): Children<T>;
+  at(path: TreePath): DeixisNode<T> | undefined;
+  decompose(): Readonly<{ own: T; children: Children<T> }>;
+}
+
+interface Wire {
+  send(message: Message): void;
+}
+
+type WireTree = DeixisNode<Wire>;
+```
+
+`Wire` is addressless sending. It grants neither receive attachment nor closure.
+`WireTree` is the complete Deixis structure over those capabilities. It has the
+same structural operations as Bitstore's `DataTree = DeixisNode<Data>`, whose
+own primitive has `read(): Promise<Bytes>`. Both families answer to the same
+model without imposing a dependency on a private Deixis checkout.
+
+The following table describes the retained addressed carrier surface. Its
+explicit name is `AddressedWire`; it is not a full tree:
+
 | Operation | Go | TypeScript |
 | --- | --- | --- |
 | Send at a relative path | `Send(path []string, message Message) error` | `send(path: Path, message: Message): void` |
 | Attach an Endpoint receiver | `Receive(receiver Receiver) (detach func(), err error)` | `receive(receiver: Receiver): () => void` |
 | End an Endpoint | `Close(code Code, reason string) error` | `close(code?: number, reason?: string): void` |
 
-`Wire` contains only Send. `Endpoint` extends Wire with Receive and Close.
-Passing Wire access does not require receiver or closure authority. A runtime
+`AddressedWire` contains only addressed Send. `Endpoint` extends AddressedWire
+with Receive and Close. Passing AddressedWire access does not require receiver
+or closure authority. A runtime
 requiring enforced attenuation exposes a send-only facade; a static type alone
 does not hide extra operations on an underlying object. A return address holds
-Wire access. The [decision](../decisions/0002-delivery-dispatch-and-ownership.md)
+AddressedWire access. The [decision](../decisions/0002-delivery-dispatch-and-ownership.md)
 explains this separation and the breaking migration from 0.1.
 
 The supporting declarations are in [Go](../../wire/go/wire.go) and
@@ -26,14 +57,52 @@ The supporting declarations are in [Go](../../wire/go/wire.go) and
 the same observable behavior; native spelling, ownership and error mechanisms
 need not be identical.
 
-A Wire is access to an origin, not a serialized address. `Wire[A]` in a model
-description means this access interpreted through contract `A`; the base
-interface itself is type-erased. Bitwire 0.2 carries the four structured frame
+An AddressedWire provides access at an origin, not a serialized address. The
+base message interface is type-erased. Bitwire 0.3 carries the four structured frame
 kinds defined in the [profile boundary](profile.md). It is independent of the
 carrier, runtime and generator, but is not an arbitrary-payload or
 profile-polymorphic interface.
 
+## Full tree structure
+
+Every node has an own capability and a complete finite map of child trees.
+Keys are arbitrary exact bytes, including empty and non-UTF-8 keys. `[]`
+selects self; one empty key selects the empty-key child. Missing selection
+returns no tree, distinctly from a present node whose Wire refuses every send.
+
+The represented structure is immutable, finite and acyclic. Construction
+rejects duplicate byte keys and prevents mutation of caller-owned keys or
+child lists from changing the tree. Sharing a child under multiple names is
+valid and preserves identity. Structural cycles are invalid.
+
+`children()` returns the complete immediate child map. `decompose()` returns
+both own and children. Runtime construction and derived operations obey:
+
+```text
+decompose(compose(own, children)) ≅ { own, children }
+compose(decompose(tree))         ≅ tree
+tree.at([])                      ≅ tree
+tree.at(a).at(b)                 ≅ tree.at(a ++ b)   when selection succeeds
+
+send(tree, path, message) = tree.at(path).own().send(message)
+read(tree, path)          = tree.at(path).own().read()
+```
+
+The final equations require an existing path; read is the sibling DataTree
+operation. Missing selection invokes no primitive. Equivalence preserves exact
+keys, complete structure, own/child capability identities and shared instances;
+it does not copy primitive state. Constructors and derived sending belong to
+bitruntime, not this declarations package.
+
+Full structural access exposes the capabilities in its parts. Restricted
+addressed access may omit structure, but must not be advertised as a WireTree.
+
 ## Paths
+
+These `Path` rules apply to `AddressedWire`, `Endpoint` and the unchanged
+`bitwire/1` carrier. They do not restrict WireTree's byte keys. A bridge must
+reject keys outside the exact UTF-8 image or specify an additional encoding
+and profile; arbitrary bytes must never be converted lossily.
 
 A path is a sequence of opaque Unicode scalar strings. There is no separator
 parsing, normalization or permission inheritance. `[]`, `[""]`, `["a/b"]` and
@@ -58,7 +127,8 @@ into a nonempty root path.
 
 ## Sending and receiving
 
-Send completes on admission or refusal; it does not await a response or execute
+Both Wire and AddressedWire sending complete on admission or refusal; neither
+awaits a response or executes
 destination application code on the sender's stack. The endpoint implementation
 owns asynchronous dispatch. Successful admission says nothing about completion
 of an application effect. Bounds, request correlation and termination policy are
@@ -78,10 +148,10 @@ receiver receives no later closure notification from that attachment.
 
 A dispatcher may own that attachment and provide many routed receiving views or
 handler registrations. Exact/prefix matching, precedence and duplicate-path rules
-belong to its explicit policy, not to Wire or Endpoint. Sibling selected views
+belong to its explicit policy, not to AddressedWire or Endpoint. Sibling selected views
 share that dispatcher; they cannot each attach an independent root receiver.
 Overlapping views require a stated selection policy. The dispatcher can expose
-Wire access and Endpoint views without exposing its routing table to callers.
+AddressedWire access and Endpoint views without exposing its routing table to callers.
 
 The returned detach action is idempotent. It prevents new dispatch through that
 attachment; a later attachment may be installed. Already admitted requests retain
@@ -99,7 +169,7 @@ or rebind must not retarget that invocation to a new receiver. A pure router
 cannot infer this lifetime from callback return or observe it by wrapping the
 return capability; the latter would violate identity preservation. Bounds and
 retirement belong to that explicit runtime integration, not an unbounded table
-silently introduced by Wire selection. The reference composition experiment
+silently introduced by AddressedWire selection. The reference composition experiment
 checks retained replies; full cancellation/retirement acceptance remains with
 the implementing profile.
 
@@ -125,7 +195,7 @@ profile lifecycle integration to be public and testable by independent endpoint
 implementations. It separates already admitted stale controls from newly arriving
 ambiguous controls, specifies per-traversal capture obligations, and requires
 bounded accounting beyond the request count. The exact lifecycle facility is a
-profile API, not another method silently added to Wire.
+profile API, not another method silently added to AddressedWire.
 
 ## Preservation laws
 
@@ -157,54 +227,31 @@ hidden in payloads. Detaching a forwarder leaves its borrowed endpoints usable.
 
 ## Declared composites
 
-A declared composite realizes a Deixis node `Node[T] = T × FinMap[Bytes, Node[T]]`
-with Wire access, as specified in [decision 0006](../decisions/0006-declared-composites-realize-deixis-nodes.md).
-Its own value is its **origin**: the behavior for a message sent at `[]`, which
-never sees a path. A refusing origin is a value. Each named child is complete
-Wire access, retained and delegated unchanged:
+Full declared composition returns `WireTree` and exposes its own Wire and
+complete children under the laws above. This supersedes decision 0006's
+construction-owner-only parts model as the full structural contract.
 
-```text
-send(compose(o, m), [],    x) = o(x)
-send(compose(o, m), k : p, x) = send(m[k], p, x)     when k ∈ dom m, else refused
+A runtime can derive `AddressedWire` access from a tree with an explicit key
+mapping. The reverse is not generally possible: sending alone cannot enumerate
+a router's complete structure or distinguish a missing child from a refusing
+one. Prefix binding of an opaque router remains addressed access, not structural
+selection.
 
-at(compose(o, m), [k])         ≃ m[k]
-compose(parts(c))              ≃ c
-parts(compose(o, m))           ≅ (o, m)
-mount(m)                       ≃ compose(refuse, m)
-```
-
-A segment maps to a Deixis key by exact UTF-8 encoding; the empty segment is the
-empty key and `[]` is the empty path. Construction refuses a missing origin or
-child, a segment outside that image and duplicate segments. It copies its
-inputs. The origin is never a fallback for a missing child. Rebuilding from the
-retained parts at any complete cut preserves origin behavior, child state and
-aliases, exact keys, empty branches, replies, return identity, context,
-captured invocations and borrowed ownership.
-
-`parts` belongs to the construction owner, not to the Wire it hands out. A
-send-only Wire gains no enumeration, unwrapping or new method, and an arbitrary
-Wire is not decomposable. Missing children and childless refusing children
-refuse alike; only retained parts distinguish them. Behavior can still reveal
-which routes respond, and parts carry the capabilities they hold, so delegate
-bound access rather than parts. Interception is explicit access composed around
-a node, not part of its value. It attenuates routes; it is not a membrane over
-capabilities in payloads, callbacks or replies. A composite of `at(w, [k])` views
-restricts by first segment; origin-only leaves give an exact operation set. See
-the decision's [clarifications](../decisions/0006-declared-composites-realize-deixis-nodes.md#clarifications-24-september-2026). These laws are
-obligations on compositions, not a claim that a runtime already offers such a
-constructor. The [declared evidence](../../conformance/declared/README.md)
-separates the test-only interpreter, released Nightseam behavior and recorded gaps.
+The historical [declared evidence](../../conformance/declared/README.md) tests
+decision 0006's addressed interpretation and retained owner parts. It does not
+establish the new byte-keyed structural contract. An opaque child in that older
+composition cannot become a complete child tree merely by renaming its type.
 
 ## Local capabilities and context
 
 A local Message comprises a structured frame and optional local delivery
 capability/context. A request's return capability supports its response;
 correlation uses both that capability's identity and the request identifier.
-The Wire in a callable return capability has its own origin and relative path
+The AddressedWire in a callable return capability has its own origin and relative path
 space. The profile defines its supported paths, frame kinds and lifetime, and
 may reserve that origin's paths for invocation operations. This reserves no
 application or peer-root namespace and grants no receive or closure authority.
-It does not make every Wire a lifecycle participant. Unsupported invocation-aware
+It does not make every AddressedWire a lifecycle participant. Unsupported invocation-aware
 use is explicitly refused by the implementing profile. See
 [decision 0004](../decisions/0004-return-origins-and-profile-revisions.md).
 Composition must retain capability identity, not construct a new wrapper merely
@@ -238,14 +285,14 @@ live-reference and publication obligations.
 
 ## Lifetime
 
-A root Endpoint owns its closure. Wire access does not imply that ownership.
+A root Endpoint owns its closure. AddressedWire access does not imply that ownership.
 A dispatcher owns its root attachment and routes, not a borrowed root's closure.
 A mount owns its attachments and routing, not its borrowed children. Closing a
 mount detaches its attachments and notifies its receivers without closing those children.
 Closing or detaching twice has no additional effect on ownership.
 
 Closing an Endpoint is not release of a live binding. Scope nonces, checked reference
-import, owner ledgers and release barriers belong to the live profile. A Wire
+import, owner ledgers and release barriers belong to the live profile. A AddressedWire
 implementation claiming that profile must preserve them when presenting access
 through this contract. Moving a type declaration does not transfer those runtime
 responsibilities or establish consumer adoption.

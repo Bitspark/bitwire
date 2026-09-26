@@ -1,7 +1,7 @@
 {
   "name": "@bitspark/bitwire",
-  "version": "0.2.0",
-  "description": "The shared contract for access through relative paths.",
+  "version": "0.3.0",
+  "description": "Addressless interaction, full byte-keyed trees and addressed carrier contracts.",
   "license": "Apache-2.0",
   "type": "module",
   "repository": {

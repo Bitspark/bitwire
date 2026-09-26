@@ -1,10 +1,10 @@
 cabal-version:      3.0
 name:               bitspark-bitwire
-version:            0.2.0
-synopsis:           Shared relative-path Wire contract
+version:            0.3.0
+synopsis:           Addressless Wire and structural WireTree contracts
 description:
-    Native Haskell types for Bitwire's relative-path Wire boundary and its
-    logical message profile. Implementations supply dispatch, codecs and
+    Native Haskell types for Bitwire's addressless Wire, complete Deixis trees,
+    addressed compatibility boundary and logical message profile. Implementations supply dispatch, codecs and
     carriers; this package supplies no endpoint runtime.
 category:           Network
 license:            Apache-2.0

@@ -1,5 +1,11 @@
 # Runnable use cases
 
+**Historical evidence:** the observations and names below refer to the stated
+0.1/0.2 addressed contract. In 0.3 that surface is `AddressedWire`; `Wire` is
+addressless and `WireTree` is complete byte-keyed structure. These results do
+not establish the new structural contract. See
+[decision 0012](https://github.com/Bitspark/bitwire/blob/main/docs/decisions/0012-explicit-data-and-wire-trees.md).
+
 Bitwire defines the access contract. Runnable programs live with the runtime
 or domain interface they exercise. This catalogue connects a use case to its
 implementation, model, command and observable result.

@@ -3,12 +3,94 @@ package dev.bitspark.bitwire;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 /** Checks the public Java data model; this is not a runtime conformance driver. */
 final class ContractTest {
+    @Test void primitiveWireHasNoPathOrOwningEndpointAuthority() {
+        List<Message> admitted = new ArrayList<>();
+        Wire wire = admitted::add;
+        Message message = new Message(new ProfileFrame.Event(new JsonValue("null")));
+        wire.send(message);
+        assertSame(message, admitted.getFirst());
+        assertFalse(AddressedWire.class.isInstance(wire));
+        assertFalse(Endpoint.class.isInstance(wire));
+    }
+
+    @Test void structuralSelectionDistinguishesBinaryEmptyMissingAndRefusingChildren() {
+        List<Message> admitted = new ArrayList<>();
+        Wire rejecting = message -> { throw new IllegalStateException("refused"); };
+        WireTree refusingLeaf = new TreeFixture(rejecting, List.of());
+        WireTree binaryLeaf = new TreeFixture(admitted::add, List.of());
+        byte[] binaryKey = {(byte) 0xff, 0, (byte) 0x80};
+        WireTree tree = new TreeFixture(rejecting, List.of(
+            new DeixisNode.Child<>(new byte[0], refusingLeaf),
+            new DeixisNode.Child<>(binaryKey, binaryLeaf)));
+
+        assertSame(tree, tree.at(List.of()).orElseThrow());
+        assertSame(refusingLeaf, tree.at(List.of(new byte[0])).orElseThrow());
+        assertTrue(tree.at(List.of(new byte[] {0})).isEmpty());
+        assertEquals(2, tree.children().size());
+        assertTrue(refusingLeaf.children().isEmpty());
+        Message message = new Message(new ProfileFrame.Event(new JsonValue("null")));
+        assertThrows(IllegalStateException.class,
+            () -> tree.at(List.of(new byte[0])).orElseThrow().own().send(message));
+        tree.at(List.of(binaryKey.clone())).orElseThrow().own().send(message);
+        assertEquals(1, admitted.size());
+        assertSame(message, admitted.getFirst());
+    }
+
+    @Test void decompositionPreservesOwnAndCompleteStructureAtEveryCut() {
+        Wire own = message -> {};
+        WireTree leaf = new TreeFixture(own, List.of());
+        byte[] suppliedKey = {1, 2};
+        var child = new DeixisNode.Child<Wire>(suppliedKey, leaf);
+        suppliedKey[0] = 9;
+        byte[] returnedKey = child.key();
+        returnedKey[0] = 8;
+        assertArrayEquals(new byte[] {1, 2}, child.key());
+
+        WireTree middle = new TreeFixture(own, List.of(child));
+        WireTree root = new TreeFixture(own, List.of(
+            new DeixisNode.Child<>(new byte[0], middle)));
+        var parts = root.decompose();
+        WireTree rebuilt = new TreeFixture(parts.own(), parts.children());
+        assertSame(root.own(), rebuilt.own());
+        assertSame(middle, rebuilt.children().getFirst().node());
+        assertSame(leaf, root.at(List.of(new byte[0])).orElseThrow()
+            .at(List.of(new byte[] {1, 2})).orElseThrow());
+        assertSame(leaf, rebuilt.at(List.of(new byte[0], new byte[] {1, 2})).orElseThrow());
+        assertThrows(UnsupportedOperationException.class, () -> parts.children().clear());
+    }
+
+    /** Test-owned structural fixture; the public package supplies no constructor. */
+    private record TreeFixture(Wire own, List<DeixisNode.Child<Wire>> children)
+            implements WireTree {
+        private TreeFixture {
+            children = List.copyOf(children);
+        }
+
+        @Override public Optional<DeixisNode<Wire>> at(List<byte[]> path) {
+            DeixisNode<Wire> selected = this;
+            for (byte[] key : path) {
+                Optional<DeixisNode<Wire>> child = selected.children().stream()
+                    .filter(entry -> Arrays.equals(key, entry.key()))
+                    .map(DeixisNode.Child::node).findFirst();
+                if (child.isEmpty()) return Optional.empty();
+                selected = child.orElseThrow();
+            }
+            return Optional.of(selected);
+        }
+
+        @Override public DeixisNode.Parts<Wire> decompose() {
+            return new DeixisNode.Parts<>(own, children);
+        }
+    }
+
     @Test void payloadsPreservePrecisionAndExplicitNull() {
         String encoded = "{\"big\":9007199254740993,\"precise\":1.0000000000000001,\"empty\":null}";
         ProfileFrame.Request request = new ProfileFrame.Request("r", new JsonValue(encoded));
@@ -56,7 +138,7 @@ final class ContractTest {
     }
 
     @Test void localReturnCapabilityHasIdentityIndependentOfItsWire() {
-        EqualWire endpoint = new EqualWire();
+        EqualAddressedWire endpoint = new EqualAddressedWire();
         ReturnAddress first = new ReturnAddress(endpoint);
         ReturnAddress second = new ReturnAddress(endpoint);
         assertNotEquals(first, second);
@@ -67,7 +149,7 @@ final class ContractTest {
     }
 
     @Test void consumerCanImplementTheInterfaceWithoutANightseamDependency() {
-        RecordingWire endpoint = new RecordingWire();
+        RecordingAddressedWire endpoint = new RecordingAddressedWire();
         List<List<String>> paths = List.of(List.of(), List.of(""), List.of("a/b"), List.of("a", "b"), List.of("\ud83c\udf0c"));
         Message message = new Message(new ProfileFrame.Event(new JsonValue("null")));
         paths.forEach(path -> endpoint.send(path, message));
@@ -88,7 +170,7 @@ final class ContractTest {
         Runnable detach = endpoint.receive(receiver);
         assertThrows(IllegalStateException.class, () -> endpoint.receive(receiver));
         Message message = new Message(new ProfileFrame.Event(new JsonValue("null")),
-            new ReturnAddress(new RecordingWire()));
+            new ReturnAddress(new RecordingAddressedWire()));
         endpoint.receiver.message().accept(List.of("a", ""), message);
         assertEquals(List.of(List.of("a", "")), paths);
         assertSame(message, messages.getFirst());
@@ -143,7 +225,7 @@ final class ContractTest {
     }
 
     /** This recording fixture deliberately provides no dispatch implementation. */
-    private static final class RecordingWire implements Wire {
+    private static final class RecordingAddressedWire implements AddressedWire {
         final List<List<String>> paths = new ArrayList<>();
         final List<Message> messages = new ArrayList<>();
         @Override public void send(List<String> path, Message message) {
@@ -153,9 +235,9 @@ final class ContractTest {
 
     }
 
-    private static final class EqualWire implements Wire {
+    private static final class EqualAddressedWire implements AddressedWire {
         @Override public void send(List<String> path, Message message) {}
-        @Override public boolean equals(Object other) { return other instanceof EqualWire; }
+        @Override public boolean equals(Object other) { return other instanceof EqualAddressedWire; }
         @Override public int hashCode() { return 1; }
     }
 }

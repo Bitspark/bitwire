@@ -22,7 +22,29 @@ a repository-root manifest so a Git dependency can resolve the public package.
 C++ initially uses tagged source and an installable CMake package; registry
 recipes can be added without changing the access contract.
 
-## Current delivery
+## Source revision 0.3.0
+
+[Decision 0012](decisions/0012-explicit-data-and-wire-trees.md) is accepted.
+All eight source bindings distinguish `Wire.send(message)`, the complete
+`WireTree = DeixisNode<Wire>`, and `AddressedWire.send(path, message)`.
+Each tree supplies own, complete byte-keyed children, partial selection and
+decomposition, matching Bitstore's DataTree. Endpoint and return-address
+surfaces remain addressed. See the [migration guide](migration-0.3.md).
+
+| Delivery boundary | Status |
+| --- | --- |
+| Shared contract and eight native source declarations | Updated for 0.3.0. |
+| Source/package checks | Run by core and native CI jobs; compilation is not runtime conformance. |
+| Independent full-tree observations | Go/TypeScript test-only interpreters; see [tree cases](../conformance/trees/README.md). |
+| Production full-tree construction and derived operators | Owned and delivered separately by bitruntime. |
+| 0.3.0 registry publication and clean installed consumers | Pending; changing version fields is not publication. |
+| Downstream adoption | Verify separately against migrated runtime and dependency versions. |
+
+## Published 0.2.0 delivery (historical names)
+
+This evidence preserves 0.2.0's names: its addressed type was `Wire`. In 0.3
+that surface is `AddressedWire`. No 0.2 artifact exports the new primitive or
+full tree interface.
 
 **0.2.0 is released**, a breaking minor revision. Wire provides Send; Endpoint
 adds a single Receive attachment and Close. All eight native bindings and package
@@ -65,15 +87,14 @@ The immutable [0.1.0 release](https://github.com/Bitspark/bitwire/releases/tag/v
 and its API remain available. Hackage publication is deferred by operator decision;
 Git is the supported Haskell delivery route.
 
-## Declared composites
+## Historical declared composites
 
 [Decision 0006](decisions/0006-declared-composites-realize-deixis-nodes.md)
 makes declared composites a realization of Deixis nodes. Each node's value is
 an origin, and named children stay complete Wire access. It supersedes the
-unreleased decision 0005. All eight binding documents carry the same
-obligations and state which native strings are in the key image; no native
-declaration changes. This is recorded under Unreleased and ships with the next
-contract release.
+unreleased decision 0005. Decision 0012 supersedes this structural interpretation:
+the historical UTF-8 key image and owner-retained parts are addressed behavior,
+not the complete byte-keyed tree interface now required in all source bindings.
 
 | Language | Contract | Reference evidence | Released runtime evidence | Production construction with origins |
 | --- | --- | --- | --- | --- |
@@ -96,7 +117,8 @@ both languages. Adoption by a released runtime package is still pending.
 that using Bitwire never requires Nightseam. `node scripts/check.mjs` fails if any
 published package below depends on or imports Nightseam or bitruntime.
 [Decision 0010](decisions/0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md) places the
-implementations in [bitruntime](https://github.com/Bitspark/bitruntime), which has no code yet:
+implementations in [bitruntime](https://github.com/Bitspark/bitruntime). Its
+production rollout must be verified separately; the original delivery split was:
 
 | Language | Contract (Bitwire) | Operators (bitruntime) | In-process pair and transports (bitruntime) | Protocol engine (bitruntime) |
 | --- | --- | --- | --- | --- |
@@ -111,7 +133,8 @@ from frozen Nightseam v0.6.0.
 ## Native representations
 
 The [contract](wire/contract.md) is normative. Representations must preserve exact
-scalar-string paths, frame values and absence versus JSON null, local return
+arbitrary byte tree keys, complete own/child structure, structural absence,
+scalar-string carrier paths, frame values and absence versus JSON null, local return
 identity, received context and lifetime observations. Callback and error shapes
 follow each language, with their mapping documented. Local context and return
 capabilities are not serialized into profile envelopes.

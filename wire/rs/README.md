@@ -1,31 +1,37 @@
 # Bitwire for Rust
 
-Declared composites keep an origin, the behavior for a message sent at `[]`,
-beside complete named children. Selecting a child gives exactly that child's
-access; the origin is never a fallback, and a mount is the case with a refusing
-origin. Segments map to Deixis keys by exact UTF-8 encoding. Every `String`
-segment is valid UTF-8 and therefore a key. Rebuilding uses parts retained by
-the construction owner; a send-only Wire cannot enumerate or unwrap them, though
-its behavior may reveal which routes respond. The [shared
-decision](https://github.com/Bitspark/bitwire/blob/main/docs/decisions/0006-declared-composites-realize-deixis-nodes.md)
-adds no native Wire methods. Its Go/TypeScript conformance evidence does not
-establish a production construction API in this language.
+**Source contract: 0.3.0; publication pending.** `Wire` is the addressless
+primitive `send(message)`. `WireTree = DeixisNode<Wire>` provides the complete
+finite, acyclic structure: own value, complete byte-keyed children, partial
+selection and decomposition. Keys are exact arbitrary bytes, including empty
+and non-UTF-8 keys. Empty path selects self; a missing edge is distinct from a
+present refusing primitive. Recomposition preserves own and child identities.
 
-A callable return capability holds Wire access to its own relative-path origin.
-The selected profile defines supported paths, frame kinds and lifetime, and may
-reserve that origin's paths for invocation operations. This grants no endpoint
-receive or closure authority. Pure routing preserves the original return
-capability and associated context; generic Wire alone does not imply lifecycle
-support. Consumers must agree on a profile revision as well as its name; see
-[the shared decision](https://github.com/Bitspark/bitwire/blob/main/docs/decisions/0004-return-origins-and-profile-revisions.md).
+This is symmetric with Bitstore's `Data.read()` primitive and
+`DataTree = DeixisNode<Data>`. Derived sending selects the node and invokes its
+own Wire. Construction and derived operators belong in bitruntime; these
+packages publish declarations and criteria, not a production tree runtime.
+See [decision 0012](https://github.com/Bitspark/bitwire/blob/main/docs/decisions/0012-explicit-data-and-wire-trees.md)
+and the [migration guide](https://github.com/Bitspark/bitwire/blob/main/docs/migration-0.3.md).
 
-The relative-path `Wire` contract shared by runtimes, generated adapters and
+`AddressedWire` explicitly names the former `Wire.send(path, message)` surface.
+It is not a full WireTree. `Endpoint` extends AddressedWire, and return
+capabilities retain AddressedWire so the existing response/lifecycle path
+space, local identity, received context and closure rules remain intact.
+Carrier paths remain exact Unicode-scalar strings under unchanged `bitwire/1`;
+they do not imply support for arbitrary tree byte keys on that carrier.
+
+The following addressed-carrier examples use the **0.3 source names**. Older
+0.2.0 artifacts used `Wire` for the addressed interface; their release evidence
+does not validate the renamed declarations or full structural trees.
+
+The relative-path `AddressedWire` contract shared by runtimes, generated adapters and
 applications. This crate owns the interface and supporting profile data; it
 contains no executor, routing implementation, queue, codec or transport.
 
 ```toml
 [dependencies]
-bitwire = { package = "bitspark-bitwire", version = "0.2.0" }
+bitwire = { package = "bitspark-bitwire", version = "0.3.0" }
 ```
 
 The crate is named `bitspark-bitwire` on crates.io; the Rust library is `bitwire`.
@@ -34,18 +40,18 @@ Nightseam or an async runtime. The `serde` and `serde_json` dependencies provide
 public profile values and precision-preserving JSON payloads.
 
 ```rust
-use bitwire::{Message, Payload, ProfileFrame, ProfileKind, PublicError, Wire};
+use bitwire::{Message, Payload, ProfileFrame, ProfileKind, PublicError, AddressedWire};
 
-fn notify(wire: &dyn Wire) -> Result<(), PublicError> {
+fn notify(wire: &dyn AddressedWire) -> Result<(), PublicError> {
     let mut frame = ProfileFrame::new(ProfileKind::Event);
     frame.data = Payload::from_json(r#"{"ready":true}"#).unwrap();
     wire.send(&["status".into()], Message::new(frame))
 }
 ```
 
-`Wire: Send + Sync` is object-safe, and `SharedWire` is `Arc<dyn Wire>`.
-`Wire` exposes only `send`, returning admission errors synchronously without
-awaiting replies or executing destination application code. `Endpoint: Wire`
+`AddressedWire: Send + Sync` is object-safe, and `SharedAddressedWire` is `Arc<dyn AddressedWire>`.
+`AddressedWire` exposes only `send`, returning admission errors synchronously without
+awaiting replies or executing destination application code. `Endpoint: AddressedWire`
 adds `receive(receiver)` and `close(code, reason)` as endpoint-owner operations.
 Only one receiver may be attached; duplicates are refused. `Receiver` supplies
 thread-safe callbacks for every delivered relative path and complete message.
@@ -71,7 +77,7 @@ application-controlled markers do not establish non-publication. Serialization
 omits it; handler, response and already-admitted forwarding boundaries must clear
 it. Bitwire does not supply that runtime admission machinery.
 
-See the [Wire contract](https://github.com/Bitspark/bitwire/blob/main/docs/wire/contract.md)
+See the [AddressedWire contract](https://github.com/Bitspark/bitwire/blob/main/docs/wire/contract.md)
 and [profile boundary](https://github.com/Bitspark/bitwire/blob/main/docs/wire/profile.md).
 This binding is adapted from Nightseam's
 [Rust contract](https://github.com/Bitspark/nightseam/blob/1c63f1c4d7e4b5987d4bd32e294177645c92ed8f/duplex/rs/src/access.rs)

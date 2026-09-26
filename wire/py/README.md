@@ -1,34 +1,40 @@
 # Bitwire for Python
 
-Declared composites keep an origin, the behavior for a message sent at `[]`,
-beside complete named children. Selecting a child gives exactly that child's
-access; the origin is never a fallback, and a mount is the case with a refusing
-origin. Segments map to Deixis keys by exact UTF-8 encoding. A `str` segment
-containing a surrogate code point has no key and is refused. Rebuilding uses
-parts retained by the construction owner; a send-only Wire cannot enumerate or
-unwrap them, though its behavior may reveal which routes respond. The [shared
-decision](https://github.com/Bitspark/bitwire/blob/main/docs/decisions/0006-declared-composites-realize-deixis-nodes.md)
-adds no native Wire methods. Its Go/TypeScript conformance evidence does not
-establish a production construction API in this language.
+**Source contract: 0.3.0; publication pending.** `Wire` is the addressless
+primitive `send(message)`. `WireTree = DeixisNode<Wire>` provides the complete
+finite, acyclic structure: own value, complete byte-keyed children, partial
+selection and decomposition. Keys are exact arbitrary bytes, including empty
+and non-UTF-8 keys. Empty path selects self; a missing edge is distinct from a
+present refusing primitive. Recomposition preserves own and child identities.
 
-A callable return capability holds Wire access to its own relative-path origin.
-The selected profile defines supported paths, frame kinds and lifetime, and may
-reserve that origin's paths for invocation operations. This grants no endpoint
-receive or closure authority. Pure routing preserves the original return
-capability and associated context; generic Wire alone does not imply lifecycle
-support. Consumers must agree on a profile revision as well as its name; see
-[the shared decision](https://github.com/Bitspark/bitwire/blob/main/docs/decisions/0004-return-origins-and-profile-revisions.md).
+This is symmetric with Bitstore's `Data.read()` primitive and
+`DataTree = DeixisNode<Data>`. Derived sending selects the node and invokes its
+own Wire. Construction and derived operators belong in bitruntime; these
+packages publish declarations and criteria, not a production tree runtime.
+See [decision 0012](https://github.com/Bitspark/bitwire/blob/main/docs/decisions/0012-explicit-data-and-wire-trees.md)
+and the [migration guide](https://github.com/Bitspark/bitwire/blob/main/docs/migration-0.3.md).
 
-`bitspark-bitwire` provides the shared relative-path Wire contract as the Python
+`AddressedWire` explicitly names the former `Wire.send(path, message)` surface.
+It is not a full WireTree. `Endpoint` extends AddressedWire, and return
+capabilities retain AddressedWire so the existing response/lifecycle path
+space, local identity, received context and closure rules remain intact.
+Carrier paths remain exact Unicode-scalar strings under unchanged `bitwire/1`;
+they do not imply support for arbitrary tree byte keys on that carrier.
+
+The following addressed-carrier examples use the **0.3 source names**. Older
+0.2.0 artifacts used `Wire` for the addressed interface; their release evidence
+does not validate the renamed declarations or full structural trees.
+
+`bitspark-bitwire` provides the shared relative-path AddressedWire contract as the Python
 module `bitwire`. It requires Python 3.11 or newer and has no runtime dependencies.
 The package contains typed declarations and supporting values; endpoint runtimes,
 carriers, codecs and routing helpers belong to implementations.
 
 ```python
-from bitwire import Endpoint, Message, Receiver, ReturnAddress, Wire
+from bitwire import Endpoint, Message, Receiver, ReturnAddress, AddressedWire
 
 
-def call(endpoint: Wire, replies: Wire) -> None:
+def call(endpoint: AddressedWire, replies: AddressedWire) -> None:
     endpoint.send(
         ["cells", "get"],
         Message(
@@ -45,7 +51,7 @@ def listen(endpoint: Endpoint):
     return endpoint.receive(Receiver(message=receive))
 ```
 
-`Wire` is a send-only structural `Protocol`; implementations do not need to inherit
+`AddressedWire` is a send-only structural `Protocol`; implementations do not need to inherit
 from it. `send` accepts or refuses synchronously; the implementation schedules
 delivery. `Endpoint` extends it with `receive(receiver)` and `close`, keeping
 attachment and closure authority separate from send access. One receive attachment
@@ -55,7 +61,7 @@ Path matching belongs to routing compositions, not to these interfaces.
 Paths are sequences of opaque Unicode-scalar strings and retain empty segments.
 Receiver paths are relative to the attached endpoint.
 
-`ReturnAddress` uses object identity, including when its Wire cannot be compared
+`ReturnAddress` uses object identity, including when its AddressedWire cannot be compared
 or hashed. Preserve this object during routing. The return address is local
 capability data and must never be serialized into the profile envelope. Profile
 payloads must follow the JSON profile despite their Python `object` annotation.
@@ -63,7 +69,7 @@ Runtime-owned received context associated with the return identity must survive
 routing. Application-supplied context or metadata does not establish verified
 invocation context; that verification remains the runtime's responsibility.
 
-The [Wire contract](https://github.com/Bitspark/bitwire/blob/main/docs/wire/contract.md)
+The [AddressedWire contract](https://github.com/Bitspark/bitwire/blob/main/docs/wire/contract.md)
 and [profile boundary](https://github.com/Bitspark/bitwire/blob/main/docs/wire/profile.md)
 define the behavior. Runtime protocol checks verify only the presence of methods;
 they cannot establish conformance.
@@ -110,6 +116,6 @@ the workflow from `main`. Tokens are passed only to publication steps. Revoke th
 bootstrap token after trusted publishing is configured. The workflow verifies the
 packaged artifact before upload and installs the published PyPI package afterward.
 
-The binding is adapted from Nightseam's Python Wire declarations at commit
+The binding is adapted from Nightseam's Python AddressedWire declarations at commit
 [`1c63f1c4`](https://github.com/Bitspark/nightseam/blob/1c63f1c4d7e4b5987d4bd32e294177645c92ed8f/duplex/py/nightseam/duplex/wire.py)
 under Apache-2.0. See the included `LICENSE` and `NOTICE` files.
