@@ -2,7 +2,7 @@
 
 **ID:** 0003
 **Date:** 26 September 2026
-**Status:** delivering
+**Status:** applied
 **Run-ID:** run_23f4568a-b763-403e-813e-3f71a76c47c3
 **Document-ID:** doc_5d2c3b30-5276-4722-acb5-6eea3de6079d
 **Reviewed:** https://github.com/Bitspark/bitwire/pull/58
@@ -501,6 +501,7 @@ a digest of `973503e7…6375a549`.
 
 **Evaluated against:** `0003-publishing-an-immutable-protocol-revision.submitted.md` (sha256 `8444feca…3db92e`), attempt 1, run `run_23f4568a-b763-403e-813e-3f71a76c47c3`; advice sha256 `aac1d7b8…4709998`, verified by `nightfall consult verify --output` (exit 0). Code at `ed6d1ed` (bitwire) and `5cc9723` (nightseam v0.6.0).
 **Graded:** by the owner. This repository has no architecture seat; decisions 0007, 0008 and 0010 bound every row.
+**Delivered:** in [#58](https://github.com/Bitspark/bitwire/pull/58). An independent review of `SCOPE.md` found nine defects, resolved before merge; each supplied definition was checked in v0.6.0's Go and TypeScript sources. Identity: (`bitwire/1`, `7797682b…652dc416e`). Deferred rows 20–22 keep their triggers: [#59](https://github.com/Bitspark/bitwire/issues/59), and the first bitwire release that carries the bundle.
 
 Two facts were checked in the released source before ruling:
 - **Tunnel abort.** Go's `Connection.Abort` (`tunnel/go/tunnel.go:638`) *transmits* `channel.close` with code 1006. The TypeScript tunnel has no channel abort, and both implementations accept any code in `channel.close`.
