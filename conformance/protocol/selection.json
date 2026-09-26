@@ -1,0 +1,16 @@
+{
+  "edition": 1,
+  "description": "Which archived upstream scenarios become bitwire/1 evidence, and with which scope. Applied by scripts/protocol-scenarios.mjs; the derivatives under scenarios/ record the result.",
+  "scopeByLayer": { "seam": "core", "peer": "core", "tunnel": "tunnel" },
+  "optionalWhenNeeds": { "observer": "observer" },
+  "excluded": [
+    {
+      "path": "protocol/bitwire-1/source/conformance/scenarios/peer/declaration-identity.json",
+      "reason": "Exercises the identity.check exchange, which bitwire/1's scope excludes (Bitlink)."
+    },
+    {
+      "path": "protocol/bitwire-1/source/conformance/scenarios/peer/recorded-wire-head-and-order.json",
+      "reason": "Exercises a test-only frame recorder, one runtime's instrumentation."
+    }
+  ]
+}

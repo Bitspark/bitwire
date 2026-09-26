@@ -1,0 +1,67 @@
+{
+  "name": "a traced frame from a raw connection is served and answered under its own trace, tracestate verbatim",
+  "layer": "peer",
+  "protocol": {
+    "revision": "bitwire/1",
+    "normativeDigest": "7797682b0f05f86c508eafbd3be23c2084acd2f5cfc766922f9372b652dc416e"
+  },
+  "scope": "core",
+  "source": {
+    "path": "protocol/bitwire-1/source/conformance/scenarios/peer/trace-members-verbatim.json",
+    "sha256": "6b0ca52c7bc0d47fefc5b0d253c78d45a99e8da4c5d12070b3f6b1d8bbe1ad15"
+  },
+  "needs": [
+    "peer",
+    "propagator",
+    "seam"
+  ],
+  "steps": [
+    {
+      "on": "runner",
+      "op": "pair.peer_and_conn",
+      "args": {
+        "peer": "b",
+        "role": "server",
+        "options": {
+          "propagate": true
+        }
+      },
+      "bind": {
+        "peer": "pb",
+        "conn": "ca"
+      }
+    },
+    {
+      "on": "b",
+      "op": "peer.handle",
+      "args": {
+        "on": "$pb",
+        "method": "echo",
+        "behavior": {
+          "kind": "echo"
+        }
+      }
+    },
+    {
+      "on": "a",
+      "op": "conn.send",
+      "args": {
+        "on": "$ca",
+        "kind": "text",
+        "text": "{\"version\":1,\"kind\":\"request\",\"id\":\"c:1\",\"method\":\"echo\",\"params\":{},\"traceparent\":\"00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\",\"tracestate\":\"congo=t61rcWkgMzE,rojo=00f067aa0ba902b7\"}"
+      }
+    },
+    {
+      "on": "a",
+      "op": "conn.receive",
+      "args": {
+        "on": "$ca"
+      },
+      "expect": {
+        "kind": "text",
+        "text": "$regex:^\\{.*\"id\":\"c:1\".*\"traceparent\":\"00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\".*\"tracestate\":\"congo=t61rcWkgMzE,rojo=00f067aa0ba902b7\""
+      },
+      "note": "the response carries the request's traceparent and its tracestate byte for byte"
+    }
+  ]
+}
