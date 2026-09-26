@@ -1,6 +1,6 @@
-//! The shared relative-path Wire contract, independent of any runtime.
+//! Addressless [`Wire`], full [`WireTree`] structure, and compatibility access.
 //!
-//! A [`Wire`] admits a message at an opaque relative path. [`Endpoint`] adds
+//! An [`AddressedWire`] admits a message at an opaque relative path. [`Endpoint`] adds
 //! one owning receive attachment and endpoint closure. Runtimes own queues, asynchronous dispatch, routing,
 //! codecs and carriers; this crate provides none of those implementations.
 //!
@@ -17,6 +17,32 @@ mod profile;
 pub use profile::{Payload, PublicError, Trace, check_unicode};
 
 use std::{any::Any, collections::BTreeMap, sync::Arc};
+
+/// Exact arbitrary bytes; empty keys are valid and no UTF-8 conversion applies.
+pub type Key = Vec<u8>;
+/// Structural paths preserve every byte in every segment.
+pub type TreePath = Vec<Key>;
+/// The complete, unique-key child collection; enumeration order is not semantic.
+pub type Children<T> = Vec<(Key, Arc<dyn DeixisNode<T>>)>;
+
+/// A complete finite acyclic tree with one own value at every node.
+///
+/// `at(&[])` selects this node. Missing children return `None`, never the parent
+/// value. `children` and `decompose` expose every exact byte key and retain the
+/// payload and child identities. They must not conceal an opaque addressed
+/// facade as a complete tree. Constructors and derived operators belong to
+/// runtimes; these declarations do not implement routing or tree storage.
+pub trait DeixisNode<T>: Send + Sync {
+    fn own(&self) -> &T;
+    fn children(&self) -> Children<T>;
+    fn at(&self, path: &[Key]) -> Option<Arc<dyn DeixisNode<T>>>;
+    fn decompose(&self) -> (&T, Children<T>);
+}
+
+/// Addressless interaction access stored as the own value of a tree node.
+pub type SharedWire = Arc<dyn Wire>;
+/// Structured interaction uses precisely the generic structural contract.
+pub type WireTree = dyn DeixisNode<SharedWire>;
 
 /// Fixed version of the logical frame grammar retained by this binding.
 ///
@@ -70,7 +96,7 @@ impl ProfileFrame {
 /// Identity is tested with [`Arc::ptr_eq`], independently of the implementation's
 /// type or equality. This value is deliberately not serializable.
 pub struct ReturnAddress {
-    pub wire: SharedWire,
+    pub wire: SharedAddressedWire,
 }
 
 /// A profile frame with optional local return access and opaque received context.
@@ -97,8 +123,8 @@ impl Message {
 
 /// An idempotent action that detaches one registration, leaving its endpoint open.
 pub type Detach = Arc<dyn Fn() + Send + Sync>;
-/// Shared access to an endpoint; no executor or carrier is required by this type.
-pub type SharedWire = Arc<dyn Wire>;
+/// Compatibility access for an addressed endpoint in the unchanged bitwire/1 profile.
+pub type SharedAddressedWire = Arc<dyn AddressedWire>;
 /// A delivery relative to the origin of the attached endpoint.
 pub type Delivery = Arc<dyn Fn(Vec<String>, Message) + Send + Sync>;
 /// Notification that access has ended with a profile termination code and reason.
@@ -120,13 +146,22 @@ impl Receiver {
     }
 }
 
-/// Send-only access to an origin through an opaque relative path.
+/// Addressless send access, without receiver attachment or closure authority.
+///
+/// Sending completes on admission or refusal, not application completion. It
+/// does not invoke destination application code on the sender's stack. A tree
+/// sends by selecting a node, obtaining its own Wire, then sending this message.
+pub trait Wire: Send + Sync {
+    fn send(&self, message: Message) -> Result<(), PublicError>;
+}
+
+/// Compatibility send access through the bitwire/1 profile's relative paths.
 ///
 /// Send completes on admission or refusal, without running destination application
 /// code on the sender's stack or awaiting a response. The implementation must
 /// preserve message content and local identities. Access grants no receiving or
 /// closure authority. Routing policies belong to compositions above this boundary.
-pub trait Wire: Send + Sync {
+pub trait AddressedWire: Send + Sync {
     fn send(&self, path: &[String], message: Message) -> Result<(), PublicError>;
 }
 
@@ -139,7 +174,7 @@ pub trait Wire: Send + Sync {
 /// retain their captured return and cancellation access. Closure notifies only
 /// the active receiver once; detached receivers are not notified. Closing twice
 /// has no additional effect; closure is distinct from releasing a live binding.
-pub trait Endpoint: Wire {
+pub trait Endpoint: AddressedWire {
     fn receive(&self, receiver: Receiver) -> Result<Detach, PublicError>;
     fn close(&self, code: u16, reason: &str) -> Result<(), PublicError>;
 }

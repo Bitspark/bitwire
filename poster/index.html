@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
-<title>Bitwire</title>
+<title>Bitwire 0.2 historical overview</title>
 <meta name="description" content="Bitwire: one interface for sending a message to a path, shared by eight languages. Composed access is the same access again.">
 <style>
 :root {
@@ -338,6 +338,15 @@ footer .wrap { padding-top: 22px; padding-bottom: 36px; font-size: .88rem; color
 </header>
 
 <main id="main">
+  <aside style="padding:1.25rem;border:2px solid currentColor;margin:1rem" aria-label="Historical contract notice">
+    <strong>Historical overview: Bitwire 0.2.</strong>
+    The addressed <code>Wire</code> described below is named <code>AddressedWire</code>
+    in 0.3. The new <code>Wire.send(message)</code> primitive and complete,
+    byte-keyed <code>WireTree = DeixisNode&lt;Wire&gt;</code> follow the same structural
+    contract as Bitstore's Data/DataTree. This poster preserves the old examples
+    and evidence, not the current API.
+    <a href="https://github.com/Bitspark/bitwire/blob/main/docs/migration-0.3.md">Read the migration guide.</a>
+  </aside>
 
 <section class="hero" id="seam" aria-labelledby="title">
   <div class="wrap">

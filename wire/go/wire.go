@@ -1,7 +1,7 @@
-// Package wire declares the Bitwire 0.2 access contract.
+// Package wire declares the Bitwire 0.3 primitive, tree and addressed carrier contracts.
 // It defines the shared boundary; dispatch, codecs and carriers belong to
-// implementations. Paths are relative sequences of Unicode-scalar strings,
-// without normalization or interpretation of dots, slashes or empty segments.
+// implementations. TreePath uses exact byte keys. The separate bitwire/1
+// AddressedWire carrier retains Unicode-scalar string paths without normalization.
 package wire
 
 import "encoding/json"
@@ -29,7 +29,7 @@ type ProfileError struct {
 	Data    json.RawMessage `json:"data,omitempty"`
 }
 
-// ProfileFrame carries a profile frame. The Send path is the request method or
+// ProfileFrame carries a profile frame. An AddressedWire path is the request method or
 // event name; keeping it outside this value prevents contradictory names.
 // Payloads retain their JSON representation, including numeric precision.
 // A nil RawMessage means absent; the bytes "null" mean present JSON null.
@@ -49,11 +49,11 @@ type ProfileFrame struct {
 }
 
 // ReturnAddress is a local capability with stable pointer identity, even when
-// its Wire implementation is not comparable. Routing must preserve the pointer
+// its AddressedWire implementation is not comparable. Routing must preserve the pointer
 // and any runtime-owned context associated with it. It is never an envelope
 // member. A runtime may use it to retain an event's received context without
 // providing a callable reply or creating a response waiter.
-type ReturnAddress struct{ Wire Wire }
+type ReturnAddress struct{ Wire AddressedWire }
 
 // Message preserves a frame, its local capability and associated received
 // context through routing. Context is established and recognized by the runtime,
@@ -72,12 +72,12 @@ type Receiver struct {
 	Closed  func(code Code, reason string)
 }
 
-// Wire is send access to an origin. It grants neither receive attachment nor
+// AddressedWire is send access to an origin. It grants neither receive attachment nor
 // endpoint lifecycle control.
 // Send returns when accepted or refused, without running a destination handler
 // on the sender's stack or waiting for its result. Success means admission,
 // not completion of an application effect.
-type Wire interface {
+type AddressedWire interface {
 	Send(path []string, message Message) error
 }
 
@@ -87,7 +87,46 @@ type Wire interface {
 // does not close the endpoint. Path dispatch and sharing among selected views
 // belong to an explicit composition, not this primitive.
 type Endpoint interface {
-	Wire
+	AddressedWire
 	Receive(receiver Receiver) (detach func(), err error)
 	Close(code Code, reason string) error
 }
+
+// Wire is addressless sending access. Send completes on admission or refusal,
+// not application completion, and grants no receiver or endpoint ownership.
+// Message/frame semantics are unchanged from the selected profile.
+type Wire interface {
+	Send(message Message) error
+}
+
+// Key is an exact byte string. Empty keys and arbitrary binary bytes are valid.
+// Implementations copy mutable key inputs/outputs to preserve tree structure.
+type Key = []byte
+
+// TreePath selects a descendant through exact byte keys; the empty path is self.
+// This is distinct from the bitwire/1 carrier's Unicode string paths.
+type TreePath = [][]byte
+
+// Child is one complete named subtree. Children form a finite map by key bytes.
+type Child[T any] struct {
+	Key  Key
+	Tree DeixisNode[T]
+}
+
+// DeixisNode is the full finite, acyclic structural contract, not an opaque
+// routing handle. Its topology and own-value associations remain stable.
+// Children and Decompose return the complete child map with exact keys.
+// At returns (nil,false) for a missing path, never a fabricated proxy.
+// Decomposition followed by reconstruction preserves structure and payload
+// capability identity. Construction and derived operations belong to runtimes.
+type DeixisNode[T any] interface {
+	Own() T
+	Children() []Child[T]
+	At(path TreePath) (DeixisNode[T], bool)
+	Decompose() (T, []Child[T])
+}
+
+// WireTree is a full Deixis tree with one addressless Wire at every node.
+// Derived sending selects a node and calls its own Wire.Send(message).
+// An arbitrary AddressedWire cannot be reconstructed into a WireTree.
+type WireTree = DeixisNode[Wire]

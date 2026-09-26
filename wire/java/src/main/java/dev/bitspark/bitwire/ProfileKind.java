@@ -2,11 +2,11 @@ package dev.bitspark.bitwire;
 
 /** The four logical frame kinds in the initial profile. */
 public enum ProfileKind {
-    /** A request whose method is the Wire path. */
+    /** A request whose method is the AddressedWire path. */
     REQUEST("request"),
     /** A successful or failed response. */
     RESPONSE("response"),
-    /** An event whose name is the Wire path. */
+    /** An event whose name is the AddressedWire path. */
     EVENT("event"),
     /** Cancellation of a correlated request. */
     CANCEL("cancel");

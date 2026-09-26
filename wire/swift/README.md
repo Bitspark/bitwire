@@ -1,26 +1,31 @@
 # Bitwire for Swift
 
-Declared composites keep an origin, the behavior for a message sent at `[]`,
-beside complete named children. Selecting a child gives exactly that child's
-access; the origin is never a fallback, and a mount is the case with a refusing
-origin. Segments map to Deixis keys by exact UTF-8 encoding. Keys compare by
-UTF-8 bytes or Unicode scalars, never by `String` equality, which identifies
-canonically equivalent spellings. Rebuilding uses parts retained by the
-construction owner; a send-only Wire cannot enumerate or unwrap them, though its
-behavior may reveal which routes respond. The [shared
-decision](https://github.com/Bitspark/bitwire/blob/main/docs/decisions/0006-declared-composites-realize-deixis-nodes.md)
-adds no native Wire methods. Its Go/TypeScript conformance evidence does not
-establish a production construction API in this language.
+**Source contract: 0.3.0; publication pending.** `Wire` is the addressless
+primitive `send(message)`. `WireTree = DeixisNode<Wire>` provides the complete
+finite, acyclic structure: own value, complete byte-keyed children, partial
+selection and decomposition. Keys are exact arbitrary bytes, including empty
+and non-UTF-8 keys. Empty path selects self; a missing edge is distinct from a
+present refusing primitive. Recomposition preserves own and child identities.
 
-A callable return capability holds Wire access to its own relative-path origin.
-The selected profile defines supported paths, frame kinds and lifetime, and may
-reserve that origin's paths for invocation operations. This grants no endpoint
-receive or closure authority. Pure routing preserves the original return
-capability and associated context; generic Wire alone does not imply lifecycle
-support. Consumers must agree on a profile revision as well as its name; see
-[the shared decision](https://github.com/Bitspark/bitwire/blob/main/docs/decisions/0004-return-origins-and-profile-revisions.md).
+This is symmetric with Bitstore's `Data.read()` primitive and
+`DataTree = DeixisNode<Data>`. Derived sending selects the node and invokes its
+own Wire. Construction and derived operators belong in bitruntime; these
+packages publish declarations and criteria, not a production tree runtime.
+See [decision 0012](https://github.com/Bitspark/bitwire/blob/main/docs/decisions/0012-explicit-data-and-wire-trees.md)
+and the [migration guide](https://github.com/Bitspark/bitwire/blob/main/docs/migration-0.3.md).
 
-The Swift 6 product and module `Bitwire` declare the shared Wire protocol and its
+`AddressedWire` explicitly names the former `Wire.send(path, message)` surface.
+It is not a full WireTree. `Endpoint` extends AddressedWire, and return
+capabilities retain AddressedWire so the existing response/lifecycle path
+space, local identity, received context and closure rules remain intact.
+Carrier paths remain exact Unicode-scalar strings under unchanged `bitwire/1`;
+they do not imply support for arbitrary tree byte keys on that carrier.
+
+The following addressed-carrier examples use the **0.3 source names**. Older
+0.2.0 artifacts used `Wire` for the addressed interface; their release evidence
+does not validate the renamed declarations or full structural trees.
+
+The Swift 6 product and module `Bitwire` declare the shared AddressedWire protocol and its
 supporting values. The SwiftPM manifest is at the repository root, so consumers
 can resolve the same source release as the other bindings using the Git URL.
 There is no runtime dependency on Nightseam or another Bitspark package.
@@ -34,7 +39,7 @@ Once a release tag is published, add its exact version to a SwiftPM manifest:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Bitspark/bitwire.git", exact: "0.2.0")
+    .package(url: "https://github.com/Bitspark/bitwire.git", exact: "0.3.0")
 ],
 targets: [
     .target(name: "YourAdapter", dependencies: [
@@ -44,9 +49,9 @@ targets: [
 ```
 
 The version above illustrates the syntax; it does not assert that the release
-exists. Consumer source imports `Bitwire` and implements `Wire`. Implementations
-provide admission and asynchronous dispatch. `Wire` exposes only `send`;
-`Endpoint: Wire` adds `receive(receiver:)` and `close(code:reason:)`. One receiver
+exists. Consumer source imports `Bitwire` and implements `AddressedWire`. Implementations
+provide admission and asynchronous dispatch. `AddressedWire` exposes only `send`;
+`Endpoint: AddressedWire` adds `receive(receiver:)` and `close(code:reason:)`. One receiver
 may be attached at a time; a second active attachment is refused. The receiver
 sees the relative path and complete message. Dispatch and matching policy live
 outside this primitive.
@@ -55,7 +60,7 @@ outside this primitive.
 import Bitwire
 import Foundation
 
-func sendRead(over wire: any Wire, returnTo address: ReturnAddress) throws {
+func sendRead(over wire: any AddressedWire, returnTo address: ReturnAddress) throws {
     let frame = ProfileFrame(kind: .request, id: "request-1", params: Data("null".utf8))
     try wire.send(path: ["cell", "get"], message: Message(frame: frame, returnAddress: address))
 }
@@ -63,11 +68,11 @@ func sendRead(over wire: any Wire, returnTo address: ReturnAddress) throws {
 
 ## Representation
 
-- `Wire`, `Endpoint`, callbacks and supporting values are `Sendable`; Swift 6 concurrency
+- `AddressedWire`, `Endpoint`, callbacks and supporting values are `Sendable`; Swift 6 concurrency
   checking remains enabled. Admission refusal is reported by `throws`.
 - Paths use `[String]`. Implementations must compare segment UTF-8 or Unicode
   scalar sequences. Swift's native string equality considers canonically
-  equivalent spellings equal; the Wire contract keeps those spellings distinct.
+  equivalent spellings equal; the AddressedWire contract keeps those spellings distinct.
 - `Metadata` stores keys by their bytes. Its entry and dictionary-literal
   initializers preserve distinct scalar spellings. An existing `[String: String]`
   may already have merged those keys before it reaches Bitwire.

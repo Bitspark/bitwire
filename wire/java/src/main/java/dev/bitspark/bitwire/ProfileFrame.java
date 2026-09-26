@@ -5,7 +5,7 @@ import java.util.Objects;
 
 /**
  * Logical profile data. Request methods and event names come solely from the
- * Wire path. Correlation, physical encoding and trace validation belong to the
+ * AddressedWire path. Correlation, physical encoding and trace validation belong to the
  * profile implementation.
  */
 public sealed interface ProfileFrame {
@@ -34,7 +34,7 @@ public sealed interface ProfileFrame {
     String tracestate();
 
     /**
-     * A request at the Wire path.
+     * A request at the AddressedWire path.
      *
      * @param id correlation identifier
      * @param params present JSON parameters, including JSON null when appropriate
@@ -99,7 +99,7 @@ public sealed interface ProfileFrame {
     }
 
     /**
-     * An event at the Wire path.
+     * An event at the AddressedWire path.
      *
      * @param data present JSON event payload
      * @param meta optional string metadata, or {@code null} when absent

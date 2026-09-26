@@ -1,5 +1,9 @@
 # Working here as an agent
 
+The active naming decision is [0012](docs/decisions/0012-explicit-data-and-wire-trees.md):
+`Wire` is addressless, `WireTree` is the complete Deixis structure, and
+`AddressedWire` is the existing carrier access. Preserve this distinction.
+
 Read [COLLABORATION.md](COLLABORATION.md), the ownership decisions
 ([0001](docs/decisions/0001-shared-wire-contract.md),
 [0007](docs/decisions/0007-using-bitwire-never-requires-nightseam.md) and

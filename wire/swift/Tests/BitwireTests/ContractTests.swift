@@ -3,30 +3,30 @@ import Foundation
 import XCTest
 
 /// A type-checking fixture, not an endpoint or a conformance implementation.
-private struct RefusingWire: Wire {
+private struct RefusingAddressedWire: AddressedWire {
     enum Refusal: Error { case unavailable }
 
     func send(path: [String], message: Message) throws { throw Refusal.unavailable }
 }
 
 private struct RefusingEndpoint: Endpoint {
-    func send(path: [String], message: Message) throws { throw RefusingWire.Refusal.unavailable }
-    func receive(receiver: Receiver) throws -> Detach { throw RefusingWire.Refusal.unavailable }
+    func send(path: [String], message: Message) throws { throw RefusingAddressedWire.Refusal.unavailable }
+    func receive(receiver: Receiver) throws -> Detach { throw RefusingAddressedWire.Refusal.unavailable }
     func close(code: Int, reason: String) throws {}
 }
 
 final class ContractTests: XCTestCase {
     func testEndpointControlIsSeparateFromSendAccess() {
         let endpoint: any Endpoint = RefusingEndpoint()
-        let access: any Wire = endpoint
-        XCTAssertFalse(RefusingWire() is any Endpoint)
+        let access: any AddressedWire = endpoint
+        XCTAssertFalse(RefusingAddressedWire() is any Endpoint)
         XCTAssertThrowsError(try endpoint.receive(receiver: Receiver(message: { _, _ in })))
         XCTAssertThrowsError(try access.send(path: [], message: Message(frame: ProfileFrame(kind: .event)) ))
     }
 
     func testReturnCapabilityKeepsReferenceIdentityAcrossMessageCopies() {
-        let first = ReturnAddress(wire: RefusingWire())
-        let second = ReturnAddress(wire: RefusingWire())
+        let first = ReturnAddress(wire: RefusingAddressedWire())
+        let second = ReturnAddress(wire: RefusingAddressedWire())
         let message = Message(frame: ProfileFrame(kind: .request, id: "1"), returnAddress: first)
         let copy = message
 
@@ -63,11 +63,11 @@ final class ContractTests: XCTestCase {
         let receiver = Receiver(message: { _, _ in })
         let detach: Detach = {}
 
-        accept(RefusingWire())
+        accept(RefusingAddressedWire())
         accept(ProfileError(code: "refused", message: "closed"))
         accept(ProfileFrame(kind: .cancel, id: "1"))
         accept(Message(frame: ProfileFrame(kind: .event, data: Data("null".utf8))))
-        accept(ReturnAddress(wire: RefusingWire()))
+        accept(ReturnAddress(wire: RefusingAddressedWire()))
         accept(receiver)
         accept(detach)
     }

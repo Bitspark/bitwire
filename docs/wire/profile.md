@@ -1,9 +1,13 @@
 # Message profile and interoperability
 
-Bitwire 0.2 defines shared relative-path access and its structured message
+Bitwire 0.3 retains the addressed carrier and its structured message
 vocabulary. The network profile is **`nightseam.duplex/1`**, which [decision 0007](../decisions/0007-using-bitwire-never-requires-nightseam.md)
 moves here as `bitwire/1`, unchanged on the wire. Bitwire specifies it; bitruntime
 implements it ([decision 0010](../decisions/0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md)), so importing Bitwire alone never does.
+
+The addressless `Wire` and full `WireTree` are defined in the [contract](contract.md).
+The existing carrier/profile keeps string paths and addressed return capabilities;
+this API rename introduces no binary path encoding or network revision.
 
 ## Structured messages
 
@@ -17,7 +21,7 @@ The shared frame vocabulary is:
 | Cancel | request identifier | trace fields |
 
 A public error contains its code, message and optional JSON data. Requests and
-events take their operation name from the Wire path, so a structured frame has
+events take their operation name from the AddressedWire path, so a structured frame has
 no competing method or event name. All frames belong to version 1. A native
 presentation can represent that fixed version implicitly; an encoder must emit
 1 and a decoder must reject unsupported versions.
@@ -52,7 +56,7 @@ preservation and explains how native presentations can carry them.
 | Structured frame vocabulary and preservation of represented data | Complete envelope validation, id minting/correlation, cancellation and configured bounds; specified by Bitwire under decision 0007, implemented by bitruntime under 0010 |
 | Stable local capability identity and received-context preservation | Creation, validation and recognition of invocation context, tracing and observation |
 | Selection/mount/forwarding observations and borrowed endpoint lifetime | Declaration identity checks, preparation, live-value conversion, scopes and release barriers |
-| Declared-composite realization, segment-to-key mapping and reconstruction laws ([0006](../decisions/0006-declared-composites-realize-deixis-nodes.md)) | Any production construction facility with origins, its retained parts and their runtime integration |
+| Complete byte-keyed WireTree structure and reconstruction laws ([0012](../decisions/0012-explicit-data-and-wire-trees.md)) | Production tree construction, primitive sending and explicit mapping into addressed carriers |
 | Native binding types and independent conformance expectations | Concrete runtimes, generators and any optional authority profile |
 
 The current profile baseline is Nightseam **v0.6.0**, at immutable revision
@@ -89,7 +93,7 @@ less restrictive revision is not assumed compatible.
 A callable return capability has an origin distinct from the destination of the
 request. Nightseam uses `[]` for its outcome and `invocation.*` paths for local
 lifecycle participation, refusing unsupported operations. Those reservations
-belong to this profile's return origin, not to every Wire or a peer root.
+belong to this profile's return origin, not to every AddressedWire or a peer root.
 Physical bridges establish their own correlation/lifecycle mapping; they do not
 serialize local return objects or blindly export the local control vocabulary.
 
@@ -113,7 +117,7 @@ The marker is absent from serialized profile errors.
 
 ## What two adapters must agree on
 
-| Agreement | Why the Wire signature alone is insufficient |
+| Agreement | Why the AddressedWire signature alone is insufficient |
 | --- | --- |
 | Operation paths and frame grammar | A receiver must understand the operation and its arguments. |
 | Profile revision | A shared profile name does not establish compatibility between pre-1.0 releases. |

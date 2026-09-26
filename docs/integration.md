@@ -1,6 +1,21 @@
 # Integration and current status
 
-## Current state
+## Current source contract
+
+Decision 0012 names the primitive `Wire`, its complete structure
+`WireTree = DeixisNode<Wire>`, and existing addressed access `AddressedWire`.
+Bitstore follows the same structure with `Data.read()` and `DataTree`.
+All eight source bindings target 0.3.0; publication and runtime adoption are
+separate. Follow the [migration guide](migration-0.3.md) and
+[language matrix](languages.md) rather than inferring adoption from old tests.
+
+## Released baseline (0.2 names)
+
+`Wire` below is the historical addressed interface, now named `AddressedWire`.
+Its return/lifecycle path space remains intact. Earlier declared composition
+observations do not establish the complete byte-keyed WireTree interface;
+[decision 0012](decisions/0012-explicit-data-and-wire-trees.md) supersedes that
+incomplete structural interpretation.
 
 Bitwire **0.2.0** is released in all eight native presentations. Wire provides
 send access; Endpoint adds one receive attachment and closure. Dispatchers own
@@ -76,6 +91,10 @@ cryptography and authentication are outside this access contract; access alone
 is not proof of authority.
 
 ## Next steps
+
+Adopt the explicit primitive/tree/carrier distinction in bitruntime, validate
+structural laws and preserve return/lifecycle semantics, then migrate consumers
+against verified dependency revisions. No network encoding change is implicit.
 
 1. Review and link the remaining exact-release runtime/generated acceptance
    against #20; do not infer completion from a passing subset.

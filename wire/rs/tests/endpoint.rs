@@ -1,7 +1,7 @@
 //! Consumer fixture observations; this is not a routing runtime.
 use bitwire::{
-    Detach, Endpoint, Message, ProfileFrame, ProfileKind, PublicError, Receiver, ReturnAddress,
-    Wire,
+    AddressedWire, Detach, Endpoint, Message, ProfileFrame, ProfileKind, PublicError, Receiver,
+    ReturnAddress,
 };
 use std::sync::{Arc, Mutex};
 
@@ -16,7 +16,7 @@ struct RecordingEndpoint {
     attachment: Arc<Mutex<Attachment>>,
 }
 
-impl Wire for RecordingEndpoint {
+impl AddressedWire for RecordingEndpoint {
     fn send(&self, _path: &[String], _message: Message) -> Result<(), PublicError> {
         Ok(())
     }
@@ -110,7 +110,7 @@ fn endpoint_attachment_ownership_and_complete_delivery() {
 
 // A send-only capability has no dummy receiver or closure implementation.
 struct SendAccess;
-impl Wire for SendAccess {
+impl AddressedWire for SendAccess {
     fn send(&self, _path: &[String], _message: Message) -> Result<(), PublicError> {
         Ok(())
     }

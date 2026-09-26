@@ -1,7 +1,7 @@
 package dev.bitspark.bitwire;
 
 /** Owning endpoint access with one active receive attachment and closure. */
-public interface Endpoint extends Wire {
+public interface Endpoint extends AddressedWire {
     /**
      * Attaches callbacks for every delivered relative path and complete message.
      * A second active attachment or a closed endpoint is refused. No path

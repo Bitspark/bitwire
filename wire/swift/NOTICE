@@ -9,5 +9,7 @@ Source files:
 duplex/swift/NightseamDuplex/Sources/NightseamDuplex/Wire.swift
 duplex/swift/NightseamDuplex/Sources/NightseamDuplex/Metadata.swift
 
-Bitwire retains only the Wire protocol and supporting values. Endpoint dispatch,
+The initial extraction retained the addressed Wire protocol and supporting values;
+0.3 names that interface AddressedWire and adds addressless Wire and full WireTree
+contract declarations. Endpoint dispatch,
 routing, selection, mounting, codecs and carriers remain with implementations.

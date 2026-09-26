@@ -1,6 +1,6 @@
 [package]
 name = "bitspark-bitwire"
-description = "The shared relative-path Wire contract, independent of runtimes and generators."
+description = "Addressless Wire primitives, full byte-keyed WireTree structure and addressed carrier contracts."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

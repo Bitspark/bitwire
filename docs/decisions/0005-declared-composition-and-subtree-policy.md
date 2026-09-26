@@ -1,5 +1,10 @@
 # 0005: Declared composition retains own behavior and subtree policy
 
+**Native names and structural claim superseded:** [decision 0012](0012-explicit-data-and-wire-trees.md)
+reclaims `Wire` for addressless sending and names the full structure `WireTree`.
+The addressed interface below is now `AddressedWire`; its carrier and lifecycle
+obligations remain. This record preserves the historical names.
+
 **Superseded** by [decision 0006](0006-declared-composites-realize-deixis-nodes.md)
 on 2026-09-23, before any release. A node's value is now its origin alone,
 children keep their complete Wire access, and admission policy becomes an

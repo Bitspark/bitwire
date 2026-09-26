@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bitspark-bitwire"
-version = "0.2.0"
-description = "The shared relative-path Wire contract for Python"
+version = "0.3.0"
+description = "Addressless Wire primitives, full WireTree structure and addressed carrier contracts for Python"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"

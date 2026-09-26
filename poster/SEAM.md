@@ -1,5 +1,11 @@
 # Bitwire's public seam
 
+**Historical evidence:** the observations and names below refer to the stated
+0.1/0.2 addressed contract. In 0.3 that surface is `AddressedWire`; `Wire` is
+addressless and `WireTree` is complete byte-keyed structure. These results do
+not establish the new structural contract. See
+[decision 0012](https://github.com/Bitspark/bitwire/blob/main/docs/decisions/0012-explicit-data-and-wire-trees.md).
+
 The evidence base for [the poster](index.html). Every technical claim cites
 `path:line` at commit `02846d5` (main, 2026-09-24). A refinement run re-derives
 these facts before changing the page.

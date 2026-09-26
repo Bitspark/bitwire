@@ -1,4 +1,4 @@
-import type { Endpoint, Message, Path, Receiver, ReturnAddress, Wire } from '../../../wire/ts/src/index.ts';
+import type { Endpoint, Message, Path, Receiver, ReturnAddress, AddressedWire } from '../../../wire/ts/src/index.ts';
 
 // Test-only admission scheduler. No code here is a shipped runtime.
 class Scheduler {
@@ -43,12 +43,12 @@ function pair(scheduler: Scheduler): [TestEndpoint, TestEndpoint] {
   return [a, b];
 }
 
-function at(wire: Wire, prefix: Path): Wire {
+function at(wire: AddressedWire, prefix: Path): AddressedWire {
   const origin = [...prefix];
   return { send: (path, message) => wire.send([...origin, ...path], message) };
 }
 
-function mount(children: ReadonlyMap<string, Wire>): Wire {
+function mount(children: ReadonlyMap<string, AddressedWire>): AddressedWire {
   return { send(path, message) {
     if (!path.length || !children.has(path[0]!)) throw new Error('no mounted destination');
     children.get(path[0]!)!.send(path.slice(1), message);
@@ -60,7 +60,7 @@ function prefixOf(prefix: Path, path: Path): boolean {
 }
 
 // An explicit optional routing policy: unique prefixes, longest prefix wins,
-// and callbacks see suffixes relative to their selected view. Wire does not
+// and callbacks see suffixes relative to their selected view. AddressedWire does not
 // require this policy. Exactly one router owns the endpoint attachment.
 class TestRouter {
   private readonly routes = new Map<string, { prefix: Path; receiver: Receiver }>();
@@ -108,11 +108,11 @@ class TestRouter {
 // shares the same root dispatcher; even nested selection creates no root receiver.
 class SelectedEndpoint implements Endpoint {
   private readonly router: TestRouter;
-  private readonly access: Wire;
+  private readonly access: AddressedWire;
   private readonly prefix: Path;
   private attachment?: { receiver: Receiver; detachRoute: () => void };
   private ended = false;
-  constructor(router: TestRouter, root: Wire, prefix: Path) {
+  constructor(router: TestRouter, root: AddressedWire, prefix: Path) {
     this.router = router; this.prefix = [...prefix]; this.access = at(root, prefix);
   }
   select(suffix: Path): SelectedEndpoint { return this.router.select([...this.prefix, ...suffix]); }
