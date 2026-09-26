@@ -1,5 +1,10 @@
 # Poster design
 
+**Historical overview:** this design describes the 0.2 addressed contract.
+That former `Wire` is `AddressedWire` in 0.3; `Wire` is addressless and
+`WireTree` provides complete byte-keyed structure. The poster and its design
+remain historical material. See the [0.3 migration guide](../docs/migration-0.3.md).
+
 The editorial and visual contract for [the poster](index.html). Facts come from
 [SEAM.md](SEAM.md); this file decides what a reader sees, in what order, and
 why it looks the way it does.

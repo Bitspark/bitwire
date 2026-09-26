@@ -5,8 +5,8 @@
 Decision 0012 names the primitive `Wire`, its complete structure
 `WireTree = DeixisNode<Wire>`, and existing addressed access `AddressedWire`.
 Bitstore follows the same structure with `Data.read()` and `DataTree`.
-All eight source bindings target 0.3.0; publication and runtime adoption are
-separate. Follow the [migration guide](migration-0.3.md) and
+All eight bindings are present in the immutable 0.3.0 release. Distribution
+verification and runtime adoption remain separate. Follow the [migration guide](migration-0.3.md) and
 [language matrix](languages.md) rather than inferring adoption from old tests.
 
 ## Released baseline (0.2 names)

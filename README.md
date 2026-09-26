@@ -11,8 +11,10 @@ addresses. Bitstore uses the same construction: `Data.read(): Promise<Bytes>`
 and `DataTree = DeixisNode<Data>`. [Decision 0012](docs/decisions/0012-explicit-data-and-wire-trees.md)
 records the shared contract and the intentional breaking rename.
 
-**Source status: 0.3.0 declarations; publication pending.** The last published
-release is [0.2.0](https://github.com/Bitspark/bitwire/releases/tag/v0.2.0).
+**[0.3.0 is released](https://github.com/Bitspark/bitwire/releases/tag/v0.3.0).**
+All eight delivery routes are verified: Go, npm, Rust, Python and Maven Central,
+plus Swift/C++/Haskell source consumers. Hackage remains deferred.
+The [language matrix](docs/languages.md) records the evidence for each route.
 All eight source bindings distinguish the primitive, full tree and addressed
 carrier. Historical evidence remains versioned separately; compiling these
 interfaces does not prove runtime structural conformance. The

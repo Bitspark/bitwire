@@ -22,23 +22,51 @@ a repository-root manifest so a Git dependency can resolve the public package.
 C++ initially uses tagged source and an installable CMake package; registry
 recipes can be added without changing the access contract.
 
-## Source revision 0.3.0
+## Version 0.3.0 delivery
 
 [Decision 0012](decisions/0012-explicit-data-and-wire-trees.md) is accepted.
-All eight source bindings distinguish `Wire.send(message)`, the complete
+All eight bindings distinguish `Wire.send(message)`, the complete
 `WireTree = DeixisNode<Wire>`, and `AddressedWire.send(path, message)`.
 Each tree supplies own, complete byte-keyed children, partial selection and
 decomposition, matching Bitstore's DataTree. Endpoint and return-address
 surfaces remain addressed. See the [migration guide](migration-0.3.md).
 
-| Delivery boundary | Status |
-| --- | --- |
-| Shared contract and eight native source declarations | Updated for 0.3.0. |
-| Source/package checks | Run by core and native CI jobs; compilation is not runtime conformance. |
-| Independent full-tree observations | Go/TypeScript test-only interpreters; see [tree cases](../conformance/trees/README.md). |
-| Production full-tree construction and derived operators | Owned and delivered separately by bitruntime. |
-| 0.3.0 registry publication and clean installed consumers | Pending; changing version fields is not publication. |
-| Downstream adoption | Verify separately against migrated runtime and dependency versions. |
+The immutable [v0.3.0 release](https://github.com/Bitspark/bitwire/releases/tag/v0.3.0)
+was created on 2026-09-26 and names
+commit `f825f3f4a79135646b775e25dcd770656546b4a1`, merged through
+[PR #50](https://github.com/Bitspark/bitwire/pull/50). Its annotated tag object is
+`713c9c8b0df718e77f572fe4eb6937a2c429bc22`. The
+[exact-commit public provenance rehearsal](https://github.com/Bitspark/bitwire/actions/runs/36231327044)
+passed. Distribution availability is verified independently:
+
+| Language | Public delivery of 0.3.0 | Installation evidence |
+| --- | --- | --- |
+| Go | `github.com/Bitspark/bitwire@v0.3.0` through the public Go proxy. | Fresh strict public-proxy consumer passed with checksum database enabled, the exact release commit and no replacements. |
+| TypeScript | [`@bitspark/bitwire@0.3.0`](https://www.npmjs.com/package/@bitspark/bitwire/v/0.3.0) with provenance. | Fresh public npm installation, TypeScript compilation and runtime entry-point import passed. |
+| Rust | [`bitspark-bitwire@0.3.0`](https://crates.io/crates/bitspark-bitwire/0.3.0) published. | Publication and a clean public consumer passed in the [core workflow](https://github.com/Bitspark/bitwire/actions/runs/36231433436). |
+| Python | [`bitspark-bitwire==0.3.0`](https://pypi.org/project/bitspark-bitwire/0.3.0/) on PyPI. | Public installed-package tests passed after source/wheel checks and publication. |
+| Swift | Public SwiftPM Git dependency, exact version `0.3.0`. | Fresh anonymous URL consumer built and ran against the exact release commit. |
+| C++ | Public tagged source and installed `Bitwire::wire` CMake package. | Anonymous release checkout and external installed-package consumer passed against the exact release commit. |
+| Java | [`dev.bitspark:bitwire:0.3.0`](https://repo.maven.apache.org/maven2/dev/bitspark/bitwire/0.3.0/) on Maven Central. | Signed artifacts published; an independent Central consumer compiled and ran with a fresh Maven repository. |
+| Haskell | Public Git dependency pinned to the 0.3.0 release commit; Hackage remains deferred. | Anonymous Git consumer built and ran with a fresh Cabal store against the exact release. |
+
+The [core publication and public registry verification](https://github.com/Bitspark/bitwire/actions/runs/36231433436)
+passed for Go, npm and Rust. [Python publication and installed-package verification](https://github.com/Bitspark/bitwire/actions/runs/36232678897)
+passed using the configured API-token route. [Swift/C++/Haskell anonymous source verification](https://github.com/Bitspark/bitwire/actions/runs/36232682234)
+passed against the immutable release. [Maven Central publication and clean-consumer verification](https://github.com/Bitspark/bitwire/actions/runs/36232680583)
+also passed against that release. All eight delivery routes are verified.
+Hackage remains deferred under the existing uploader-approval decision.
+
+The [tree reference observations](../conformance/trees/README.md) exercise
+independent Go/TypeScript test-only interpreters. The package contains no
+production tree runtime. Runtime and downstream adoption remain separately
+verified in their owners; compiling these declarations or installing a package
+does not establish those behaviors.
+
+Decision 0007 originally planned public received-context evidence for 0.3.0.
+That separate lifecycle feature is not delivered by this naming/structure
+revision: existing message associations and addressed return semantics remain
+unchanged. Its design and delivery remain pending in the runtime/profile lane.
 
 ## Published 0.2.0 delivery (historical names)
 

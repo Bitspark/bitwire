@@ -1,6 +1,12 @@
 # Bitwire for Java
 
-**Source contract: 0.3.0; publication pending.** `Wire` is the addressless
+Version 0.3.0 is published on Maven Central. An independent consumer compiled
+and ran using only Central resolution and a fresh Maven repository in the
+[publication workflow](https://github.com/Bitspark/bitwire/actions/runs/36232680583).
+See the [delivery matrix](https://github.com/Bitspark/bitwire/blob/main/docs/languages.md#version-030-delivery)
+for the separately verified distribution and runtime boundaries.
+
+**Contract: 0.3.0.** `Wire` is the addressless
 primitive `send(message)`. `WireTree = DeixisNode<Wire>` provides the complete
 finite, acyclic structure: own value, complete byte-keyed children, partial
 selection and decomposition. Keys are exact arbitrary bytes, including empty
@@ -21,15 +27,19 @@ space, local identity, received context and closure rules remain intact.
 Carrier paths remain exact Unicode-scalar strings under unchanged `bitwire/1`;
 they do not imply support for arbitrary tree byte keys on that carrier.
 
-The following addressed-carrier examples use the **0.3 source names**. Older
+The following addressed-carrier examples use the **0.3 contract names**. Older
 0.2.0 artifacts used `Wire` for the addressed interface; their release evidence
 does not validate the renamed declarations or full structural trees.
 
-`dev.bitspark:bitwire:0.3.0` presents the shared relative-path AddressedWire contract
-for Java 21. It has no runtime dependencies. The public Java package and automatic
-module name are both `dev.bitspark.bitwire`.
+`dev.bitspark:bitwire:0.3.0` presents addressless Wire, full WireTree structure
+and addressed carrier access for Java 21. It has no runtime dependencies. The
+public Java package and automatic module name are both `dev.bitspark.bitwire`.
 
-Version 0.2.0 is available on [Maven Central](https://repo.maven.apache.org/maven2/dev/bitspark/bitwire/0.2.0/).
+Install [version 0.3.0 from Maven Central](https://repo.maven.apache.org/maven2/dev/bitspark/bitwire/0.3.0/)
+using the coordinates below. Its signed binary, POM, sources and Javadoc and
+clean consumer are verified in the publication workflow linked above.
+
+The historical version 0.2.0 remains available on [Maven Central](https://repo.maven.apache.org/maven2/dev/bitspark/bitwire/0.2.0/).
 The [publication run](https://github.com/Bitspark/bitwire/actions/runs/35589087610)
 signed and published the binary, POM, sources and Javadoc, then compiled and ran
 an independent consumer using only Central resolution in a fresh Maven repository.
