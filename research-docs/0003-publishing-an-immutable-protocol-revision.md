@@ -2,7 +2,7 @@
 
 **ID:** 0003
 **Date:** 26 September 2026
-**Status:** submitted
+**Status:** evaluated
 **Run-ID:** run_23f4568a-b763-403e-813e-3f71a76c47c3
 **Document-ID:** doc_5d2c3b30-5276-4722-acb5-6eea3de6079d
 **Reviewed:** https://github.com/Bitspark/bitwire/pull/58
@@ -496,3 +496,40 @@ a digest of `973503e7…6375a549`.
    specified by one implementation's documentation, into an independently
    owned specification: what are the typical failure modes, and what would you
    do first, before anything becomes immutable?
+
+## Applied
+
+**Evaluated against:** `0003-publishing-an-immutable-protocol-revision.submitted.md` (sha256 `8444feca…3db92e`), attempt 1, run `run_23f4568a-b763-403e-813e-3f71a76c47c3`; advice sha256 `aac1d7b8…4709998`, verified by `nightfall consult verify --output` (exit 0). Code at `ed6d1ed` (bitwire) and `5cc9723` (nightseam v0.6.0).
+**Graded:** by the owner. This repository has no architecture seat; decisions 0007, 0008 and 0010 bound every row.
+
+Two facts were checked in the released source before ruling:
+- **Tunnel abort.** Go's `Connection.Abort` (`tunnel/go/tunnel.go:638`) *transmits* `channel.close` with code 1006. The TypeScript tunnel has no channel abort, and both implementations accept any code in `channel.close`.
+- **Path boundary.** The structured Wire surface decodes a `method` only in canonical form (`runtime/go/wire.go:335`, `DecodePath`). A plain name is a valid envelope that reaches name-registered handlers or is answered `method_not_found`.
+
+| # | Recommendation | Verdict | Action | Owner | Link | Validation |
+|---|---|---|---|---|---|---|
+| 1 | Option C: byte-identical copies plus a normative, hashed `SCOPE.md`. Seven normative files. | HOLDS | Write `protocol/bitwire-1/SCOPE.md` and mark it normative. The six upstream files stay normative. | bitwire-12 | #58 | `protocol.test.mjs`: the digest covers `SCOPE.md`; changing it changes the identity |
+| 2 | Hash whole files, and scope portions by path, heading and sentence. | HOLDS | `SCOPE.md` states exclusions by file, heading and quoted sentence. | bitwire-12 | #58 | review of `SCOPE.md` against the source |
+| 3 | Do not exclude the `busy` row or the deadline; exclude only the local caller refusal and the local name. | HOLDS (corrects the brief) | The receiver's `busy` stays normative. The caller-local refusal is informative. The deadline and its cancel stay normative, and `request_timeout` is a local name. | bitwire-12 | #58 | `SCOPE.md`, Requests |
+| 4 | Keep reserved-prefix assignments as namespace facts; add no receiver-side rejection from generator rules. | HOLDS | `SCOPE.md`, Vocabulary. | bitwire-12 | #58 | review |
+| 5 | Adopt the three tables as finite normative constraints, with interpretations in `SCOPE.md`. `why` and names are informative. New examples go to evidence. | HOLDS | `SCOPE.md`, Tables. | bitwire-12 | #58 | review |
+| 6 | Give every outgoing link a disposition. No blanket precedence rule. | HOLDS | A link table in `SCOPE.md`. | bitwire-12 | #58 | `protocol.test.mjs` checks that every relative link in the three documents has a disposition |
+| 7 | Digest over exact bytes, with paths relative to `protocol/bitwire-1/` including `source/`, restricted ASCII, entries of the form hash, two spaces, path, LF, ordered by path. Identity is (`bitwire/1`, digest), recorded in the hashed scope. The manifest is not in its own digest. | NEEDS ADAPTATION | The script used paths relative to `source/`. Change them to bundle-relative, validate the repertoire, and reject symlinks. The procedure is stated in `SCOPE.md`. | bitwire-12 | #58 | `protocol.test.mjs`: a known-answer test for the digest procedure, and path rejection |
+| 8 | License, NOTICE, rationale, runner and scenarios are hashed in the manifest but outside the digest. | HOLDS | Already so. The test asserts it. | bitwire-12 | #58 | `protocol.test.mjs` |
+| 9 | Distinguish upstream-origin files from bitwire-authored files; only upstream files are fetched and compared. | HOLDS | Manifest field `origin`: upstream or bitwire. | bitwire-12 | #58 | `protocol.mjs verify --source` |
+| 10 | Record the full commit and the qualified former name, and keep provenance independent of upstream hosting. | NEEDS ADAPTATION | The commit, tag, paths and qualified alias go in `SCOPE.md`. The durable source archive is deferred (row 20). | bitwire-12 | #58 | review |
+| 11 | State the difference between artifact equality and behavioral equivalence. | HOLDS | `SCOPE.md`, Provenance. | bitwire-12 | #58 | review |
+| 12 | The tunnel is inside the `bitwire/1` identity, with conformance scopes "core" and "core and tunnel". | HOLDS | `SCOPE.md`, Conformance scopes. | bitwire-12 | #58 | review |
+| 13 | The tunnel `digest`: bitwire specifies carriage and admission (shape, presence, comparison, timing, errors); Bitlink specifies what a digest identifies and how it is computed. | HOLDS (corrects the brief's "syntax only") | `SCOPE.md`, Tunnel. | bitwire-12 | #58 | review |
+| 14 | 1006: distinguish action from observation, and inspect v0.6.0 abort. | HOLDS | Inspected: Go transmits `channel.close` 1006. Under decision 0008 revision 1 keeps this. Decision 0007's carrier rule applies to the carrier contract (#54) and later revisions, recorded as finding F2 (no change to revision-1 conformance). | bitwire-12 | #58, #54 | `SCOPE.md`, Tunnel; `FINDINGS.md` F2 |
+| 15 | Path encoding: find exactly where it is required, and do not newly reject plain names. | HOLDS | Inspected: canonical encoding is the mapping of addressed traffic, and plain names are valid envelopes. Stated in `SCOPE.md`, Paths. | bitwire-12 | #58 | review; evidence gap recorded as F3 |
+| 16 | Findings register: non-normative, outside the digest, with its fields; "changes conformance expectations: no" by default. | HOLDS | `protocol/bitwire-1/FINDINGS.md`. | bitwire-12 | #58 | review |
+| 17 | Exclude the change-process sentence in the frozen scope. | HOLDS | `SCOPE.md`, Exclusions. | bitwire-12 | #58 | review |
+| 18 | Local outcomes stay outside the identity when there is no network change. Examine observation points rather than weakening assertions. | HOLDS | `FINDINGS.md` I1–I3. | bitwire-12 | #58 | review |
+| 19 | Permanent entry page naming the authoritative artifacts; no mutable reinterpretation. | HOLDS | `protocol/bitwire-1/README.md` as a non-normative entry page. `SCOPE.md` states that nothing outside the bundle redefines it. | bitwire-12 | #58 | review |
+| 20 | Distribution integrity: an archive checksum or signature, plus a source archive or git bundle. | DEFERRED | Trigger: a bitwire release that carries `protocol/bitwire-1` exists (`gh release view` lists it). Attach the bundle archive, its checksum and a source bundle of `5cc9723` as release assets. | bitwire-12 | #53 | the release asset checksums |
+| 21 | A bitwire-owned conformance contract (driver-1 subset, consolidated matcher semantics) and a test-only runner. | DEFERRED | Staged, as the advice allows. Trigger: the protocol bundle is merged (`protocol/bitwire-1/SCOPE.md` exists on main). Tracked in a new issue. | bitwire-12 | new issue | the runner's matcher examples, red and green |
+| 22 | Scenario derivatives under a bitwire schema naming protocol and digest, with explicit, versioned selection; observer scenarios optional. | DEFERRED | Same trigger and issue as row 21. | bitwire-12 | new issue | — |
+| 23 | Three independently identified releases (protocol, conformance contract, evidence); keep `hello.driver = 1`. | HOLDS | Stated in `SCOPE.md`, Evidence; delivered with rows 21–22. | bitwire-12 | #58 | review |
+| 24 | Before sealing, check that the baseline is singular across languages and roles for disputed behavior. | NEEDS ADAPTATION | Checked for the three disputed points (tunnel abort, path boundary, `busy`) in Go and TypeScript. Anything wider is evidence work (rows 21–22). | bitwire-12 | #58 | this table |
+| 25 | A traceability matrix from scoped requirement to source to evidence. | NEEDS ADAPTATION | A section-level matrix in `SCOPE.md`, Traceability, pointing to the archived scenarios. Case-level mapping comes with row 22. | bitwire-12 | #58 | review |
