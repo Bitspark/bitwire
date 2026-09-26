@@ -1,5 +1,5 @@
-github.com/Bitspark/bitruntime v0.1.1-0.20260926101907-9c93bb77b9b8 h1:/kiJpZfuDA7uBQiCpVtRpDXPR7LEEvNySioBdMud9LY=
-github.com/Bitspark/bitruntime v0.1.1-0.20260926101907-9c93bb77b9b8/go.mod h1:2Jtfp03Neyk5cCKP/WizMw+w+5ABT4yt/Dzq/yeKsMY=
+github.com/Bitspark/bitruntime v0.2.0 h1:6sSEqVB9sRzxZPLcVcca9RtfRNYy+8+E5dvVmDpyFbQ=
+github.com/Bitspark/bitruntime v0.2.0/go.mod h1:2Jtfp03Neyk5cCKP/WizMw+w+5ABT4yt/Dzq/yeKsMY=
 github.com/Bitspark/bitwire v0.3.0 h1:RXgSS3XR1rHBMXu8dDvP3RHF16E8Uyt2aTfATRXzbhA=
 github.com/Bitspark/bitwire v0.3.0/go.mod h1:RCsIrMm1o0hg/SlyG2LkXXSzj2CMLEhoOIuuw8XrePk=
 github.com/coder/websocket v1.8.15 h1:6B2JPeOGlpff2Uz6vOEH1Vzpi0iUz20A+lPVhPHtNUA=

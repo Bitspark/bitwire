@@ -3,7 +3,7 @@ module bitwire.conformance/runtime
 go 1.26.0
 
 require (
-	github.com/Bitspark/bitruntime v0.1.1-0.20260926101907-9c93bb77b9b8
+	github.com/Bitspark/bitruntime v0.2.0
 	github.com/Bitspark/bitwire v0.3.0
 )
 

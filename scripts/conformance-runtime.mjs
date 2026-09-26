@@ -78,7 +78,7 @@ function verifyModules() {
   assert.deepEqual(graph[0].slice(0, 1), ['bitwire.conformance/runtime']);
   for (const [path, , replacement] of graph) assert.equal(replacement ?? '', '', `${path} must not be replaced`);
   const version = path => graph.find(([name]) => name === path)?.[1];
-  assert.equal(version(pin.module), pin.version, 'bitruntime is not the pinned candidate');
+  assert.equal(version(pin.module), pin.version, 'bitruntime is not the pinned version');
   assert.equal(version('github.com/Bitspark/bitwire'), pin.bitwireVersion, 'bitwire is not the pinned contract');
   for (const [path, version_, revision, sum] of [
     [pin.module, pin.version, pin.revision, pin.sum],
