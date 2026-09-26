@@ -8,5 +8,18 @@
   "profile": "bitwire/1",
   "bitwireVersion": "v0.3.0",
   "bitwireRevision": "f825f3f4a79135646b775e25dcd770656546b4a1",
-  "bitwireSum": "h1:RXgSS3XR1rHBMXu8dDvP3RHF16E8Uyt2aTfATRXzbhA="
+  "bitwireSum": "h1:RXgSS3XR1rHBMXu8dDvP3RHF16E8Uyt2aTfATRXzbhA=",
+  "npm": {
+    "package": "@bitspark/bitruntime",
+    "version": "0.2.0",
+    "tag": "v0.2.0",
+    "revision": "e28bb1adefbc8a5cb1b03f172b4e7212584bd7a2",
+    "tarball": "https://github.com/Bitspark/bitruntime/releases/download/v0.2.0/bitspark-bitruntime-0.2.0.tgz",
+    "sha256": "d19d377ad60037083b3158a7200f734e8bb37b17e7d1f7f7c2cd15e0ff2fb9d1",
+    "integrity": "sha512-1S62Lft9WdC9eX9lrEWYWgLMkeiEhZh1QTU/Ybd9NjleDAxYizi/n9D98w/sBGorKI2lkUmMBvTO1xFYul7lYQ==",
+    "status": "release",
+    "bitwireVersion": "0.3.0",
+    "bitwireTarball": "https://registry.npmjs.org/@bitspark/bitwire/-/bitwire-0.3.0.tgz",
+    "bitwireIntegrity": "sha512-6tqme+2nfJAp2xwmYIrO7hSSh+6TrJ7gPIb8SZX4dQAoZZHs/iqPPsZFv8vJsMUBejzgBxwNtOoC3PjI0KMPRw=="
+  }
 }

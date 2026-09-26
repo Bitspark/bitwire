@@ -104,10 +104,13 @@ test('production differs from the oracle only by exactly recorded gaps', () => {
 
 test('bitruntime keeps its own gap ledger, recorded only for the languages it runs', () => {
   const runtime = JSON.parse(readFileSync(new URL('../conformance/runtime/production-gaps.json', import.meta.url)));
-  const gaps = new Map(runtime.gaps.flatMap(gap => gap.cases.map(id => [id, gap.observed.go])));
-  const rows = expectedRows().map(row => gaps.has(row.id) ? { id: row.id, observations: structuredClone(gaps.get(row.id)) } : row);
-  const result = compareProduction(declared, rows, runtime, 'go', 'bitruntime');
-  assert.equal(result.gaps.length, gaps.size);
-  // No TypeScript observation is claimed before a TypeScript driver runs.
-  assert.throws(() => compareProduction(declared, rows, runtime, 'ts', 'bitruntime/ts'), /no ts observation/);
+  for (const language of ['go', 'ts']) {
+    const gaps = new Map(runtime.gaps.flatMap(gap => gap.cases.map(id => [id, gap.observed[language]])));
+    const rows = expectedRows().map(row => gaps.has(row.id) ? { id: row.id, observations: structuredClone(gaps.get(row.id)) } : row);
+    const result = compareProduction(declared, rows, runtime, language, `bitruntime/${language}`);
+    assert.equal(result.gaps.length, gaps.size);
+  }
+  // No observation is claimed for a language whose driver does not run.
+  assert.deepEqual([...new Set(runtime.gaps.flatMap(gap => Object.keys(gap.observed)))].sort(), ['go', 'ts']);
+  assert.throws(() => compareProduction(declared, expectedRows(), runtime, 'rust', 'bitruntime/rust'), /no rust observation/);
 });
