@@ -20,3 +20,11 @@ Read [COLLABORATION.md](COLLABORATION.md), the ownership decisions
 - Follow user-authorized scope through validation and delivery. An explicit
   decision in the active task is sufficient authorization; do not ask for it again.
 - Do not add private checkout dependencies, local orchestration state or credentials.
+
+## Repository layout
+
+Use component-first source paths with two-letter language directories:
+`<component>/<lang>/` and `cmd/<command>/<lang>/`. Read [LAYOUT.md](LAYOUT.md)
+for the shared codes, current paths and migration boundaries. Apply it to new
+components and ports; an existing path moves only with its imports, manifests,
+tests and tooling. Preserve the repository's ownership and release rules.
