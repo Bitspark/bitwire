@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Add the full-tree conformance family (`conformance/wiretree`) for decision
+  0012: 18 structural, 1 bridge and 7 carrier cases with independently authored
+  expectations, run in Go and TypeScript against released bitruntime v0.2.0 on
+  the local pair and real WebSockets in both directions. It separates
+  structural, bridge and carrier evidence, and rejects seven deliberately
+  unlawful realizations. A disposition maps all 39 historical declared cases,
+  their 19 recorded gaps and two limitations to current cases or explicit
+  historical addressed limitations; the historical files are unchanged and
+  pinned by digest. The adapters that bind a Wire to a carrier path and serve a
+  tree on a dispatcher are test-only until bitruntime provides them.
+
 ## 0.3.0 — 2026-09-26
 
 - Publish the immutable source release at `f825f3f4a79135646b775e25dcd770656546b4a1`.

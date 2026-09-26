@@ -42,6 +42,7 @@ the case files' SHA-256s and every family's result in each language.
 | Declared, reference | The 39 [declared](declared/cases.json) cases through the test-only interpreter over bitruntime's carriers | the same three | 39/39 on each | 39/39 on each |
 | Declared, production | The same cases through bitruntime's child-only addressed mount, with its selection and forwarding | the same three | 20 conform; 19 match bitruntime's own [gap ledger](runtime/production-gaps.json) | the same |
 | Trees | The [0.3 observations](trees/expected.json) through bitruntime's tree construction, selection, sending and addressed bridge | none, structural | 14/14 | 14/14 |
+| Full trees | The [full-tree cases](wiretree/README.md): 18 structural, 1 bridge, 7 carrier; test-only reference and bitruntime's tree operations | none for structure and bridge; the three carriers for carrier cases, with test-only bind and serve adapters | 26/26 in each realization | 26/26 in each realization |
 
 The Go drivers use `core.Invocation`, `core.NewPair`, the WebSocket engine,
 `dispatch`, `core.At`, `core.Mount`, `core.Forward`, `core.Compose`,
@@ -63,7 +64,10 @@ every refusal in these fixtures happens before a carrier or forwarder.
 
 Lifecycle, composition and declared results remain evidence about the 0.2
 addressed contract (`AddressedWire` in 0.3); trees is the 0.3 structural
-contract.
+contract. The full-tree family separates structural, bridge and carrier
+evidence, rejects seven deliberately unlawful TypeScript realizations, and
+[disposes](wiretree/disposition.json) every historical declared case and
+recorded gap.
 
 ## Current released runtime baseline
 

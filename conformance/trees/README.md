@@ -17,6 +17,10 @@ construction is deliberately scoped test infrastructure; it is not a shipped
 production tree runtime, carrier implementation or proof of downstream adoption.
 bitruntime owns production construction and derived operators.
 
+The [full-tree family](../wiretree/README.md) extends these observations with
+independent cases for reconstruction, retained state, the addressed bridge and
+composition across real carriers, run against released bitruntime.
+
 The older [declared cases](../declared/README.md) exercise retained owner parts
 and addressed forwarding. Their pinned release names and observations remain
 historical evidence and do not substitute for these structural laws.
