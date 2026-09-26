@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Publish protocol revision `bitwire/1` as an immutable bundle, `protocol/bitwire-1`. It
+  holds byte-identical copies of the released Nightseam v0.6.0 wire documents,
+  tables, rationale, runner material and scenarios, plus a normative `SCOPE.md`
+  that states the identity, selects the binding requirements, interprets the
+  tables and disposes every link. The identity is (`bitwire/1`, `normativeDigest`)
+  over the scope and the six adopted artifacts. `scripts/protocol.mjs` verifies the
+  bundle offline and against the public source. An informative `FINDINGS.md`
+  records defects without changing revision-1 obligations. Research 0003
+  (an outside consultation) chose this structure. The conformance contract and
+  runner follow separately (#59).
+
 - Add the full-tree conformance family (`conformance/wiretree`) for decision
   0012: 19 structural, 1 bridge and 7 carrier cases with independently authored
   expectations, run in Go and TypeScript against released bitruntime v0.2.0.

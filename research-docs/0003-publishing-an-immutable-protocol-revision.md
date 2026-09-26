@@ -2,7 +2,7 @@
 
 **ID:** 0003
 **Date:** 26 September 2026
-**Status:** evaluated
+**Status:** delivering
 **Run-ID:** run_23f4568a-b763-403e-813e-3f71a76c47c3
 **Document-ID:** doc_5d2c3b30-5276-4722-acb5-6eea3de6079d
 **Reviewed:** https://github.com/Bitspark/bitwire/pull/58
@@ -508,13 +508,13 @@ Two facts were checked in the released source before ruling:
 
 | # | Recommendation | Verdict | Action | Owner | Link | Validation |
 |---|---|---|---|---|---|---|
-| 1 | Option C: byte-identical copies plus a normative, hashed `SCOPE.md`. Seven normative files. | HOLDS | Write `protocol/bitwire-1/SCOPE.md` and mark it normative. The six upstream files stay normative. | bitwire-12 | #58 | `protocol.test.mjs`: the digest covers `SCOPE.md`; changing it changes the identity |
+| 1 | Option C: byte-identical copies plus a normative, hashed `SCOPE.md`. Seven normative files. | HOLDS | Write `protocol/bitwire-1/SCOPE.md` and mark it normative. The six upstream files stay normative. | bitwire-12 | #58 | `protocol.test.mjs` "the identity covers SCOPE.md…": green; a changed SCOPE hash changes the digest |
 | 2 | Hash whole files, and scope portions by path, heading and sentence. | HOLDS | `SCOPE.md` states exclusions by file, heading and quoted sentence. | bitwire-12 | #58 | review of `SCOPE.md` against the source |
 | 3 | Do not exclude the `busy` row or the deadline; exclude only the local caller refusal and the local name. | HOLDS (corrects the brief) | The receiver's `busy` stays normative. The caller-local refusal is informative. The deadline and its cancel stay normative, and `request_timeout` is a local name. | bitwire-12 | #58 | `SCOPE.md`, Requests |
 | 4 | Keep reserved-prefix assignments as namespace facts; add no receiver-side rejection from generator rules. | HOLDS | `SCOPE.md`, Vocabulary. | bitwire-12 | #58 | review |
 | 5 | Adopt the three tables as finite normative constraints, with interpretations in `SCOPE.md`. `why` and names are informative. New examples go to evidence. | HOLDS | `SCOPE.md`, Tables. | bitwire-12 | #58 | review |
-| 6 | Give every outgoing link a disposition. No blanket precedence rule. | HOLDS | A link table in `SCOPE.md`. | bitwire-12 | #58 | `protocol.test.mjs` checks that every relative link in the three documents has a disposition |
-| 7 | Digest over exact bytes, with paths relative to `protocol/bitwire-1/` including `source/`, restricted ASCII, entries of the form hash, two spaces, path, LF, ordered by path. Identity is (`bitwire/1`, digest), recorded in the hashed scope. The manifest is not in its own digest. | NEEDS ADAPTATION | The script used paths relative to `source/`. Change them to bundle-relative, validate the repertoire, and reject symlinks. The procedure is stated in `SCOPE.md`. | bitwire-12 | #58 | `protocol.test.mjs`: a known-answer test for the digest procedure, and path rejection |
+| 6 | Give every outgoing link a disposition. No blanket precedence rule. | HOLDS | A link table in `SCOPE.md`. | bitwire-12 | #58 | `protocol.test.mjs` "every relative link…": red with the `docs/auth/connection.md` disposition removed, green restored |
+| 7 | Digest over exact bytes, with paths relative to `protocol/bitwire-1/` including `source/`, restricted ASCII, entries of the form hash, two spaces, path, LF, ordered by path. Identity is (`bitwire/1`, digest), recorded in the hashed scope. The manifest is not in its own digest. | NEEDS ADAPTATION | The script used paths relative to `source/`. Change them to bundle-relative, validate the repertoire, and reject symlinks. The procedure is stated in `SCOPE.md`. | bitwire-12 | #58 | `protocol.test.mjs` known answers computed with `sha256sum` (b07360cd…, de0af775…) and path rejection: green |
 | 8 | License, NOTICE, rationale, runner and scenarios are hashed in the manifest but outside the digest. | HOLDS | Already so. The test asserts it. | bitwire-12 | #58 | `protocol.test.mjs` |
 | 9 | Distinguish upstream-origin files from bitwire-authored files; only upstream files are fetched and compared. | HOLDS | Manifest field `origin`: upstream or bitwire. | bitwire-12 | #58 | `protocol.mjs verify --source` |
 | 10 | Record the full commit and the qualified former name, and keep provenance independent of upstream hosting. | NEEDS ADAPTATION | The commit, tag, paths and qualified alias go in `SCOPE.md`. The durable source archive is deferred (row 20). | bitwire-12 | #58 | review |
@@ -528,8 +528,8 @@ Two facts were checked in the released source before ruling:
 | 18 | Local outcomes stay outside the identity when there is no network change. Examine observation points rather than weakening assertions. | HOLDS | `FINDINGS.md` I1–I3. | bitwire-12 | #58 | review |
 | 19 | Permanent entry page naming the authoritative artifacts; no mutable reinterpretation. | HOLDS | `protocol/bitwire-1/README.md` as a non-normative entry page. `SCOPE.md` states that nothing outside the bundle redefines it. | bitwire-12 | #58 | review |
 | 20 | Distribution integrity: an archive checksum or signature, plus a source archive or git bundle. | DEFERRED | Trigger: a bitwire release that carries `protocol/bitwire-1` exists (`gh release view` lists it). Attach the bundle archive, its checksum and a source bundle of `5cc9723` as release assets. | bitwire-12 | #53 | the release asset checksums |
-| 21 | A bitwire-owned conformance contract (driver-1 subset, consolidated matcher semantics) and a test-only runner. | DEFERRED | Staged, as the advice allows. Trigger: the protocol bundle is merged (`protocol/bitwire-1/SCOPE.md` exists on main). Tracked in a new issue. | bitwire-12 | new issue | the runner's matcher examples, red and green |
-| 22 | Scenario derivatives under a bitwire schema naming protocol and digest, with explicit, versioned selection; observer scenarios optional. | DEFERRED | Same trigger and issue as row 21. | bitwire-12 | new issue | — |
+| 21 | A bitwire-owned conformance contract (driver-1 subset, consolidated matcher semantics) and a test-only runner. | DEFERRED | Staged, as the advice allows. Trigger: the protocol bundle is merged (`protocol/bitwire-1/SCOPE.md` exists on main). Tracked in a new issue. | bitwire-12 | #59 | the runner's matcher examples, red and green |
+| 22 | Scenario derivatives under a bitwire schema naming protocol and digest, with explicit, versioned selection; observer scenarios optional. | DEFERRED | Same trigger and issue as row 21. | bitwire-12 | #59 | — |
 | 23 | Three independently identified releases (protocol, conformance contract, evidence); keep `hello.driver = 1`. | HOLDS | Stated in `SCOPE.md`, Evidence; delivered with rows 21–22. | bitwire-12 | #58 | review |
 | 24 | Before sealing, check that the baseline is singular across languages and roles for disputed behavior. | NEEDS ADAPTATION | Checked for the three disputed points (tunnel abort, path boundary, `busy`) in Go and TypeScript. Anything wider is evidence work (rows 21–22). | bitwire-12 | #58 | this table |
 | 25 | A traceability matrix from scoped requirement to source to evidence. | NEEDS ADAPTATION | A section-level matrix in `SCOPE.md`, Traceability, pointing to the archived scenarios. Case-level mapping comes with row 22. | bitwire-12 | #58 | review |
