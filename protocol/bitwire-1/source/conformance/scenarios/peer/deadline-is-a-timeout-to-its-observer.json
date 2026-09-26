@@ -1,0 +1,120 @@
+{
+  "name": "a call whose own deadline passes is a timeout to its observer, and a cancel goes with it",
+  "layer": "peer",
+  "description": "The caller's deadline is a deadline and not a withdrawal: the receiver may still have answered. What the observer is told is the outcome, and a cancel is sent so the receiver stops working on it.",
+  "needs": [
+    "observer",
+    "peer"
+  ],
+  "steps": [
+    {
+      "on": "runner",
+      "op": "pair.peers",
+      "args": {
+        "server": "a",
+        "server_options": {
+          "observe": true
+        },
+        "client_options": {
+          "observe": true,
+          "request_timeout_ms": 300
+        }
+      },
+      "bind": {
+        "server": "pa",
+        "client": "pb"
+      }
+    },
+    {
+      "on": "a",
+      "op": "peer.handle",
+      "args": {
+        "on": "$pa",
+        "method": "wait",
+        "behavior": {
+          "kind": "wait"
+        }
+      }
+    },
+    {
+      "on": "b",
+      "op": "peer.call",
+      "args": {
+        "on": "$pb",
+        "method": "wait",
+        "params": {}
+      },
+      "bind": "c"
+    },
+    {
+      "on": "b",
+      "op": "call.await",
+      "args": {
+        "on": "$c",
+        "within_ms": 3000
+      },
+      "expect": {
+        "error": {
+          "code": "request_timeout"
+        }
+      }
+    },
+    {
+      "on": "b",
+      "op": "peer.observed",
+      "args": {
+        "on": "$pb",
+        "drain": false
+      },
+      "expect": {
+        "$contains": [
+          {
+            "type": "request.started",
+            "method": "wait",
+            "incoming": false
+          },
+          {
+            "type": "request.ended",
+            "method": "wait",
+            "incoming": false,
+            "outcome": "timeout",
+            "error_code": "request_timeout",
+            "duration": true
+          },
+          {
+            "type": "frame.sent",
+            "kind": "cancel"
+          }
+        ]
+      },
+      "note": "the observer names the local deadline as request_timeout and ends the request before the best-effort cancel is sent. Repeated reads retain the earlier events while waiting for the writer to send the cancel",
+      "repeat": {
+        "max": 40,
+        "until": "match"
+      }
+    },
+    {
+      "on": "a",
+      "op": "peer.observed",
+      "args": {
+        "on": "$pa",
+        "drain": false
+      },
+      "expect": {
+        "$contains": [
+          {
+            "type": "request.ended",
+            "method": "wait",
+            "incoming": true,
+            "outcome": "cancelled",
+            "error_code": "cancelled"
+          }
+        ]
+      },
+      "repeat": {
+        "max": 40,
+        "until": "match"
+      }
+    }
+  ]
+}

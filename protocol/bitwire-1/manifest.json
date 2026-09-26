@@ -1,0 +1,377 @@
+{
+  "schemaVersion": 1,
+  "revision": "bitwire/1",
+  "status": "provisional: the normative selection awaits research 0003 and is not published",
+  "aliases": [
+    "nightseam.duplex/1 as released in Nightseam v0.6.0"
+  ],
+  "source": {
+    "repository": "https://github.com/Bitspark/nightseam",
+    "tag": "v0.6.0",
+    "commit": "5cc9723a24646c40ed1861f892b2b23eb6d785d7",
+    "license": "Apache-2.0"
+  },
+  "normativeDigest": "973503e7121d3f9dc3e75cc0a27d2010d0cb3534060c062052d0c44e6375a549",
+  "files": [
+    {
+      "path": "NOTICE",
+      "role": "notice",
+      "bytes": 150,
+      "sha256": "bb398df4e872a590b45112c9b427cb54d7bfcb82dac52905d3159410f22577b8"
+    },
+    {
+      "path": "LICENSE",
+      "role": "notice",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "docs/wire/profile.md",
+      "role": "normative",
+      "bytes": 21346,
+      "sha256": "a699c4f0c26cf7d622f0e4a1b2dad135b6fe9d41f917c1f4484730398040efa5"
+    },
+    {
+      "path": "docs/wire/vocabulary.md",
+      "role": "normative",
+      "bytes": 7624,
+      "sha256": "aa5bfc41d1cfca570b94779c9ab4ba08e496ded7be443bf56b487e7b9d62a310"
+    },
+    {
+      "path": "docs/wire/tunnel.md",
+      "role": "normative",
+      "bytes": 5713,
+      "sha256": "d207eaf34edfc60c681d275e4cd815fbc41257b2cbfa13d5d426a3d077632031"
+    },
+    {
+      "path": "conformance/tables/frames.json",
+      "role": "normative",
+      "bytes": 24605,
+      "sha256": "c2e6de22ba434d2760a867a0e7c3eb461a2b66d2294c847c7fdde806528b803d"
+    },
+    {
+      "path": "conformance/tables/serials.json",
+      "role": "normative",
+      "bytes": 2209,
+      "sha256": "807dcb1ff5a8c660a741ff771ca080e5cf6b93f661ad735f327ada0aa5034e2c"
+    },
+    {
+      "path": "conformance/tables/unicode.json",
+      "role": "normative",
+      "bytes": 1784,
+      "sha256": "f174ffd52e9debae4f2ce3b4d38c502daf7f83533bf16752a6a1380d7d262784"
+    },
+    {
+      "path": "docs/decisions/a-deadline-is-not-a-cancel.md",
+      "role": "informative",
+      "bytes": 1505,
+      "sha256": "6bf732b027e957aae03959a995642a9738e37be0311b7344f0fb2d51e8c8978b"
+    },
+    {
+      "path": "docs/decisions/busy-is-a-refusal-not-a-failure.md",
+      "role": "informative",
+      "bytes": 1556,
+      "sha256": "f5555bf477eea37bab87b3da2b125bfd6a611c4d48fd128eceb1de306f96f0c3"
+    },
+    {
+      "path": "docs/decisions/close-codes-are-the-websocket-registrys.md",
+      "role": "informative",
+      "bytes": 1336,
+      "sha256": "d44561d1a34abdb70dba7667b45b2544dc2b87fe5aa0be314c8443452fec87dc"
+    },
+    {
+      "path": "docs/decisions/credit-is-per-channel.md",
+      "role": "informative",
+      "bytes": 1389,
+      "sha256": "23f86af5712c3a7334dfbfd0809e534306f0d8f35c4131d8ea9a7ed9b7b3f263"
+    },
+    {
+      "path": "docs/decisions/envelope-members-are-what-the-peer-acts-on.md",
+      "role": "informative",
+      "bytes": 1821,
+      "sha256": "10ce814ada4afe2125c297806c0aabcfbbb616722dcb27b5b2442cbbfb834533"
+    },
+    {
+      "path": "docs/decisions/meta-is-a-header-not-a-member.md",
+      "role": "informative",
+      "bytes": 1713,
+      "sha256": "2042dc757d0968d8f49c7cfa85db45fe67f965af6144ddc95ecc6696b91692c6"
+    },
+    {
+      "path": "docs/decisions/no-subprotocol-by-default.md",
+      "role": "informative",
+      "bytes": 1545,
+      "sha256": "149b817455595808c3d3fdb99d5725c59af58d3cd172232ba5023fd90c57bc2a"
+    },
+    {
+      "path": "docs/decisions/queues-are-paced-for-one-deadline.md",
+      "role": "informative",
+      "bytes": 1879,
+      "sha256": "e96e8c73f91d231aa4b55c30222c6999f6cedafae5199e39eb260a579e860d21"
+    },
+    {
+      "path": "docs/decisions/request-serials-increase-in-publication-order.md",
+      "role": "informative",
+      "bytes": 3740,
+      "sha256": "b663fc725bbf82215302cd450341c0cb68fb29f1aeff307b4da2df5c4e543be5"
+    },
+    {
+      "path": "docs/decisions/strings-are-unicode-scalars.md",
+      "role": "informative",
+      "bytes": 2861,
+      "sha256": "f55e387c53467f088dcaaa40d43396d001b60901e1424dc5a16f02c09b4ccc01"
+    },
+    {
+      "path": "conformance/DRIVER.md",
+      "role": "runner",
+      "bytes": 51271,
+      "sha256": "30e4a043a7670418b65bc37e5cea97a9bd62fd36bd8285121b39d34735e600cb"
+    },
+    {
+      "path": "conformance/scenario.schema.json",
+      "role": "runner",
+      "bytes": 4389,
+      "sha256": "5101b5309878efc1de582fecbe527ee72db6da48be002c2b99d32b987f8d5831"
+    },
+    {
+      "path": "conformance/profiles.json",
+      "role": "runner",
+      "bytes": 1359,
+      "sha256": "2878b7596c3facc73be862391accf476aa7e9aee0b0329df9b9ad5a91f58eb74"
+    },
+    {
+      "path": "conformance/scenarios/peer/a-cancel-is-answered-when-the-handler-returns.json",
+      "role": "evidence",
+      "bytes": 4534,
+      "sha256": "d7e9dc0a0b64661bd860a76db66baea6591dffb5c1046a073a648286dcf2ce9c"
+    },
+    {
+      "path": "conformance/scenarios/peer/an-outgoing-queue-is-paced-then-ends-the-connection.json",
+      "role": "evidence",
+      "bytes": 2746,
+      "sha256": "88841fd439efb15dce0af55197170b5c3df8c48453d6ff09cc92c3a1ef0caa0a"
+    },
+    {
+      "path": "conformance/scenarios/peer/binary-frame-ends-the-connection.json",
+      "role": "evidence",
+      "bytes": 2746,
+      "sha256": "ff8fee10169f8b35754ce608e6adf9bee893dd03f25823dca108e705b10d7e67"
+    },
+    {
+      "path": "conformance/scenarios/peer/call-and-reverse-call.json",
+      "role": "evidence",
+      "bytes": 2832,
+      "sha256": "1c93b49de5c782e82195dc455e0e26846472a8ff2614aaccba11b9be9ff5b125"
+    },
+    {
+      "path": "conformance/scenarios/peer/cancellation-reaches-the-handler.json",
+      "role": "evidence",
+      "bytes": 2189,
+      "sha256": "941b265513210b09de5bf19550052eb6155620b1617cd372840a681c4f489c27"
+    },
+    {
+      "path": "conformance/scenarios/peer/close-is-clean-when-chosen.json",
+      "role": "evidence",
+      "bytes": 1420,
+      "sha256": "e6a69dee0b133f9dbece9caed9c31b86e6a431ed2271751e06bf0def3de61aa9"
+    },
+    {
+      "path": "conformance/scenarios/peer/deadline-is-a-timeout-to-its-observer.json",
+      "role": "evidence",
+      "bytes": 2693,
+      "sha256": "24ad70186fedbf72876a2ec41d405b11dd74ba387d6a8e337dd233038d28f486"
+    },
+    {
+      "path": "conformance/scenarios/peer/declaration-identity.json",
+      "role": "evidence",
+      "bytes": 2136,
+      "sha256": "b60aca4f3b8ff03161f1c2c9190fd8ce110a180ee9a55e220623c3086ffcd774"
+    },
+    {
+      "path": "conformance/scenarios/peer/events-both-ways.json",
+      "role": "evidence",
+      "bytes": 1755,
+      "sha256": "2073c3b0505dce71c07ab1926ae32e56ae23699257ac72668de40841e35b1bff"
+    },
+    {
+      "path": "conformance/scenarios/peer/handler-panic.json",
+      "role": "evidence",
+      "bytes": 2199,
+      "sha256": "d2fa7befcf938aa142a893e279bba3141df025711e034fbf2ecb6943f4edb4b4"
+    },
+    {
+      "path": "conformance/scenarios/peer/inbound-backpressure.json",
+      "role": "evidence",
+      "bytes": 2264,
+      "sha256": "5c400de2bf8cc17506b46f02a5381d1dd26fd5ae3f0b4fccc1e299efcc944c28"
+    },
+    {
+      "path": "conformance/scenarios/peer/inbound-burst-is-paced.json",
+      "role": "evidence",
+      "bytes": 2623,
+      "sha256": "5b1dcc24847d2f228cfff314ad511603dfd5a64d24594354bf8027fcc3bd2cdf"
+    },
+    {
+      "path": "conformance/scenarios/peer/malformed-frame-ends-the-connection.json",
+      "role": "evidence",
+      "bytes": 1917,
+      "sha256": "690f5d18ff02965d26a2d85722b0576490a4a3ab6774625bd9ce3a62b9e3dafc"
+    },
+    {
+      "path": "conformance/scenarios/peer/meta-travels-with-a-call-and-an-event.json",
+      "role": "evidence",
+      "bytes": 2879,
+      "sha256": "13aaa6198bd6ab5303325cb9bc06425099598d0b0a57a63f008fa54302901772"
+    },
+    {
+      "path": "conformance/scenarios/peer/no-payload-reaches-an-observer.json",
+      "role": "evidence",
+      "bytes": 4179,
+      "sha256": "cd86ce19f6b872c24e2be85028b78561f764aca20da68dfb0395d40b98bcd66c"
+    },
+    {
+      "path": "conformance/scenarios/peer/observer-sees-the-exchange-in-order.json",
+      "role": "evidence",
+      "bytes": 8107,
+      "sha256": "5759b409e1ea2a6bd32d2cfc83bdf97771ebe23d44d960d39e819ca395d33cca"
+    },
+    {
+      "path": "conformance/scenarios/peer/outstanding-call-limit.json",
+      "role": "evidence",
+      "bytes": 2867,
+      "sha256": "e849f6bc62df6236c158f2ac805295ddff6aeb429b0e313699954e11406f67f6"
+    },
+    {
+      "path": "conformance/scenarios/peer/public-cancelled-is-an-observed-error.json",
+      "role": "evidence",
+      "bytes": 1874,
+      "sha256": "9d840692ee594434075ea832e7cac59c1c723d639526d39c387aad24eb339add"
+    },
+    {
+      "path": "conformance/scenarios/peer/public-error.json",
+      "role": "evidence",
+      "bytes": 1830,
+      "sha256": "e1cde685976a19ec4c9b2cf1250b407c0fda66c20760a90211a4d22ef943b331"
+    },
+    {
+      "path": "conformance/scenarios/peer/recorded-wire-head-and-order.json",
+      "role": "evidence",
+      "bytes": 1503,
+      "sha256": "2fe44fb732705fbc5d21dd55d65d81aac86c7c7439c4d2c8da24fa234d9eaa43"
+    },
+    {
+      "path": "conformance/scenarios/peer/request-serials-increase-in-publication-order.json",
+      "role": "evidence",
+      "bytes": 2369,
+      "sha256": "424239739309685da162a7999ce2c58d6013f7d17def24ac30383887b0a635cf"
+    },
+    {
+      "path": "conformance/scenarios/peer/request-serials-may-leave-gaps.json",
+      "role": "evidence",
+      "bytes": 1703,
+      "sha256": "400ef58d8f0786b5b7c5cfb8b3df25f0dbf128a920bb4d832c50030aaafe3d9f"
+    },
+    {
+      "path": "conformance/scenarios/peer/request-timeout.json",
+      "role": "evidence",
+      "bytes": 1768,
+      "sha256": "78083d5818200afa614b9e96559533492c131da61c95d0338eb86f735c00952e"
+    },
+    {
+      "path": "conformance/scenarios/peer/subprotocol-negotiated-at-the-handshake.json",
+      "role": "evidence",
+      "bytes": 2444,
+      "sha256": "c0bcab91875395eecd08f94b86988cb301758ca101bd8da793cb881f98cce7e4"
+    },
+    {
+      "path": "conformance/scenarios/peer/trace-members-verbatim.json",
+      "role": "evidence",
+      "bytes": 1460,
+      "sha256": "6b0ca52c7bc0d47fefc5b0d253c78d45a99e8da4c5d12070b3f6b1d8bbe1ad15"
+    },
+    {
+      "path": "conformance/scenarios/peer/trace-propagation.json",
+      "role": "evidence",
+      "bytes": 5500,
+      "sha256": "c9dcfbecf8d1e43ef6e5ff3342404bbbc557d2f9edededb7df6a714e7acb102a"
+    },
+    {
+      "path": "conformance/scenarios/peer/well-formed-frame-is-served.json",
+      "role": "evidence",
+      "bytes": 1463,
+      "sha256": "d9c51c1039c0207ce54c7ffc8dd1acb89545852a4b8bfee795f048c52285e30f"
+    },
+    {
+      "path": "conformance/scenarios/seam/abort-ends-both-sides.json",
+      "role": "evidence",
+      "bytes": 1116,
+      "sha256": "cb7735f340d7013aa8ba0089366696073ced6d7c0ccef3d49c97aa33b6b112ad"
+    },
+    {
+      "path": "conformance/scenarios/seam/close-carries-code-and-reason.json",
+      "role": "evidence",
+      "bytes": 1699,
+      "sha256": "68f0b696e0d5e8d592a52c6648f082e075a5853ff42c1aacdac07740b3cbc367"
+    },
+    {
+      "path": "conformance/scenarios/seam/order-and-whole.json",
+      "role": "evidence",
+      "bytes": 2084,
+      "sha256": "05f23e7e24fc9ed3ff25c294279ea609fa89311c08af729304bd75a3789fe387"
+    },
+    {
+      "path": "conformance/scenarios/seam/over-limit-refused.json",
+      "role": "evidence",
+      "bytes": 2146,
+      "sha256": "65e2a47d97878d55575b8dad98dfe5952906da1c8cc14330f43a82b508bdf26b"
+    },
+    {
+      "path": "conformance/scenarios/seam/send-past-the-bound-waits.json",
+      "role": "evidence",
+      "bytes": 4704,
+      "sha256": "4e8c8d0812fc9e840a5bd51ec83e32ebb84e9b9903b97d61d69af34e61e108a7"
+    },
+    {
+      "path": "conformance/scenarios/tunnel/a-frame-beyond-the-window-ends-the-channel.json",
+      "role": "evidence",
+      "bytes": 3001,
+      "sha256": "90c14e6f14f20646fadd821fead00e29aa14805d4c5abf316da9222350b72b87"
+    },
+    {
+      "path": "conformance/scenarios/tunnel/credit-stall.json",
+      "role": "evidence",
+      "bytes": 3053,
+      "sha256": "1ecae675088f165b20b96336172adaaac31670a73f85bb3286ff729b957f05cb"
+    },
+    {
+      "path": "conformance/scenarios/tunnel/declaration-digest.json",
+      "role": "evidence",
+      "bytes": 3295,
+      "sha256": "e1eb208fb635a31272988f93b1f86eb02122d853917aa938845bdf31f05c68fd"
+    },
+    {
+      "path": "conformance/scenarios/tunnel/frames-over-a-channel.json",
+      "role": "evidence",
+      "bytes": 2438,
+      "sha256": "05570e18ad4014f97b6c33f2725b41a1c0e5167ef1260a5c20781d86c670ab6a"
+    },
+    {
+      "path": "conformance/scenarios/tunnel/observer-sees-the-channels.json",
+      "role": "evidence",
+      "bytes": 5614,
+      "sha256": "411299e3bee804ca04089114231e2b1ac96a9ec242d954cf09116861ebe06d98"
+    },
+    {
+      "path": "conformance/scenarios/tunnel/open-accept-and-speak-both-ways.json",
+      "role": "evidence",
+      "bytes": 3945,
+      "sha256": "a3f2a48bade0970dd80741759858881dd043affa3802dc1e666c9dbb3cd5a9d6"
+    },
+    {
+      "path": "conformance/scenarios/tunnel/open-refused.json",
+      "role": "evidence",
+      "bytes": 1556,
+      "sha256": "e245e0937ed793f51ddeced6e450eea4a1a5ca0fe1681474d66139c48f1ee92e"
+    }
+  ]
+}
