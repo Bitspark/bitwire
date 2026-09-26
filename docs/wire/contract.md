@@ -1,6 +1,7 @@
 # Wire and WireTree contract
 
-This page specifies the shared contract for Bitwire 0.3.0, currently unreleased.
+This page specifies the shared contract in the immutable
+[Bitwire v0.3.0 release](https://github.com/Bitspark/bitwire/releases/tag/v0.3.0).
 [Decision 0012](../decisions/0012-explicit-data-and-wire-trees.md) separates
 addressless interaction, its full structure and addressed carriers. The
 [conformance work](../../conformance/README.md) records executable evidence

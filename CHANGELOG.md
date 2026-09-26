@@ -2,7 +2,14 @@
 
 ## Unreleased
 
-- Accept decision 0012 and prepare breaking 0.3.0 declarations in all eight
+## 0.3.0 — 2026-09-26
+
+- Publish the immutable source release at `f825f3f4a79135646b775e25dcd770656546b4a1`.
+  Verify clean public Go/npm/Rust/Python/Maven Central and anonymous
+  Swift/C++/Haskell consumers. Hackage remains deferred.
+  [Delivery evidence](docs/languages.md#version-030-delivery) records each route.
+
+- Accept decision 0012 and publish breaking 0.3.0 declarations in all eight
   languages: `Wire.send(message)` is addressless; `WireTree = DeixisNode<Wire>`
   provides complete byte-keyed structure; the former addressed interface becomes
   `AddressedWire`. Align the model with Bitstore Data/DataTree, preserve Endpoint

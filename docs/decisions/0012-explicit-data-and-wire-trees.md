@@ -124,3 +124,10 @@ There is no compatibility alias that keeps the old addressed meaning under
 `Wire`; compilation failures identify call sites that must choose the correct
 capability. The spelling is intentionally changed now, before more consumers
 build against the ambiguous contract.
+
+## Delivery record
+
+The immutable [v0.3.0 release](https://github.com/Bitspark/bitwire/releases/tag/v0.3.0)
+was published on 2026-09-26 at `f825f3f4a79135646b775e25dcd770656546b4a1`.
+The [language matrix](../languages.md#version-030-delivery) records each verified
+distribution and separates package publication from production runtime adoption.

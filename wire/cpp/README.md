@@ -1,6 +1,12 @@
 # Bitwire for C++
 
-**Source contract: 0.3.0; publication pending.** `Wire` is the addressless
+Version 0.3.0 is available as public tagged source. An external installed-package
+consumer passed against the exact public release in the
+[source verification workflow](https://github.com/Bitspark/bitwire/actions/runs/36232682234).
+See the [delivery matrix](https://github.com/Bitspark/bitwire/blob/main/docs/languages.md#version-030-delivery)
+for the separately verified distribution and runtime boundaries.
+
+**Contract: 0.3.0.** `Wire` is the addressless
 primitive `send(message)`. `WireTree = DeixisNode<Wire>` provides the complete
 finite, acyclic structure: own value, complete byte-keyed children, partial
 selection and decomposition. Keys are exact arbitrary bytes, including empty
@@ -21,7 +27,7 @@ space, local identity, received context and closure rules remain intact.
 Carrier paths remain exact Unicode-scalar strings under unchanged `bitwire/1`;
 they do not imply support for arbitrary tree byte keys on that carrier.
 
-The following addressed-carrier examples use the **0.3 source names**. Older
+The following addressed-carrier examples use the **0.3 contract names**. Older
 0.2.0 artifacts used `Wire` for the addressed interface; their release evidence
 does not validate the renamed declarations or full structural trees.
 

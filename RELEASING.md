@@ -1,12 +1,18 @@
 # Releases
 
-The last published release is `0.2.0`; source declarations target `0.3.0` under
-[decision 0012](docs/decisions/0012-explicit-data-and-wire-trees.md). Publication
-is pending until the release process and clean registry checks succeed.
+Version [0.3.0 is released](https://github.com/Bitspark/bitwire/releases/tag/v0.3.0)
+under [decision 0012](docs/decisions/0012-explicit-data-and-wire-trees.md).
+Go/npm/Rust/Python/Maven Central and Swift/C++/Haskell source consumers are
+verified. Hackage remains deferred. The
+[delivery table](docs/languages.md#version-030-delivery) records verified results.
 `0.1.0` and `0.2.0` remain immutable. A release identifies the shared contract revision,
 native bindings and independent cases. The [language matrix](docs/languages.md)
 records implementation, package validation, registry publication and consumer
 adoption separately. A source tag does not claim an upload to every registry.
+
+This release changes primitive/tree declarations. The public received-context
+evidence originally planned for 0.3.0 in decision 0007 remains pending work in
+the runtime/profile lane; the version number is not evidence it was delivered.
 
 ## Compatibility and readiness
 
