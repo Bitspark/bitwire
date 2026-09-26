@@ -6,6 +6,7 @@ choice. An accepted repository boundary does not imply a completed implementatio
 
 | Decision | Status |
 | --- | --- |
+| [0011: Bitwire is Deixis over Ends](0011-bitwire-is-deixis-over-ends.md) | **Proposed** for review on #42 with Deixis, bitstore and bitruntime; not accepted. |
 | [0010: Bitwire holds the contract, and bitruntime implements it](0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md) | Accepted; supersedes where 0007 put the implementations and the part of 0009 that says Bitwire provides carriers. bitruntime, bittype and bittheory were created with charters on 2026-09-26 and hold no code yet. |
 | [0009: Which carriers Bitwire provides, and how byte streams carry frames](0009-carriers-bitwire-provides-and-byte-stream-framing.md) | Accepted; carrier groups and the `bitwire-stream/1` framing. The [carrier specification](../wire/carriers.md) is a draft; nothing is implemented. Implemented by bitruntime under 0010. |
 | [0008: A protocol revision has its own identity](0008-a-protocol-revision-has-its-own-identity.md) | Accepted; supersedes 0004's compatibility section. Takes effect when 0007 publishes the protocol. |
