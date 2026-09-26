@@ -18,8 +18,10 @@ the runtime/profile lane; the version number is not evidence it was delivered.
 
 Before 1.0, a breaking contract or native API change increments the minor version;
 a compatible correction increments the patch version. Published artifacts and
-tags are immutable. Preserve `nightseam.duplex/1` unless a separately specified
-protocol change requires a new identifier. Published libraries do not depend on
+tags are immutable. The network protocol is `bitwire/1` (formerly
+`nightseam.duplex/1`), an immutable bundle in `protocol/bitwire-1` identified by
+its `normativeDigest`; a package release states the revisions it implements and
+never changes one. A protocol change is a new revision. Published libraries do not depend on
 Nightseam; test-only drivers use the public revision in `conformance/nightseam.json`.
 
 The required core, behavioral, package and native-binding CI checks must pass.

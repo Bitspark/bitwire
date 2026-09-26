@@ -6,3 +6,9 @@
 *.yml text eol=lf
 *.mjs text eol=lf
 *.md text eol=lf
+
+# Byte-identical copies of released upstream files; never converted.
+protocol/bitwire-1/source/** -text
+
+# Frozen research submissions keep the exact bytes an expert read.
+research-docs/*.submitted.md -text

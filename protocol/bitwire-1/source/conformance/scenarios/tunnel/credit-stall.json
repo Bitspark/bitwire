@@ -1,0 +1,161 @@
+{
+  "name": "a sender past the receiver's window waits for credit, which the observer sees as a stall, and goes on when the receiver reads",
+  "layer": "tunnel",
+  "replaces": "tunnel/go/observer_test.go's stall case and tunnel/ts/src/tunnel.test.ts's",
+  "needs": [
+    "lazy",
+    "peer",
+    "seam",
+    "tunnel"
+  ],
+  "steps": [
+    {
+      "on": "runner",
+      "op": "pair.peers",
+      "args": {
+        "server": "a"
+      },
+      "bind": {
+        "server": "pa",
+        "client": "pb"
+      }
+    },
+    {
+      "on": "a",
+      "op": "tunnel.over",
+      "args": {
+        "on": "$pa",
+        "options": {
+          "window": 2
+        }
+      },
+      "bind": "ta"
+    },
+    {
+      "on": "b",
+      "op": "tunnel.over",
+      "args": {
+        "on": "$pb",
+        "options": {
+          "window": 2
+        }
+      },
+      "bind": "tb"
+    },
+    {
+      "on": "b",
+      "op": "tunnel.open",
+      "args": {
+        "on": "$tb",
+        "family": "probe",
+        "consume": "lazy"
+      },
+      "bind": {
+        "handle": "cb",
+        "id": "id"
+      }
+    },
+    {
+      "on": "a",
+      "op": "tunnel.accept",
+      "args": {
+        "on": "$ta",
+        "consume": "lazy"
+      },
+      "bind": {
+        "handle": "ca"
+      }
+    },
+    {
+      "on": "b",
+      "op": "conn.send",
+      "args": {
+        "on": "$cb",
+        "kind": "text",
+        "text": "1"
+      }
+    },
+    {
+      "on": "b",
+      "op": "conn.send",
+      "args": {
+        "on": "$cb",
+        "kind": "text",
+        "text": "2"
+      }
+    },
+    {
+      "on": "b",
+      "op": "conn.send",
+      "args": {
+        "on": "$cb",
+        "kind": "text",
+        "text": "3",
+        "within_ms": 300
+      },
+      "expect_error": {
+        "code": "timeout"
+      },
+      "note": "the window is two and nobody reads: the third send waits"
+    },
+    {
+      "on": "a",
+      "op": "conn.receive",
+      "args": {
+        "on": "$ca"
+      },
+      "expect": {
+        "kind": "text",
+        "text": "1"
+      }
+    },
+    {
+      "on": "a",
+      "op": "conn.receive",
+      "args": {
+        "on": "$ca"
+      },
+      "expect": {
+        "kind": "text",
+        "text": "2"
+      }
+    },
+    {
+      "on": "a",
+      "op": "conn.receive",
+      "args": {
+        "on": "$ca",
+        "within_ms": 300
+      },
+      "expect": {
+        "kind": "text",
+        "text": "3"
+      },
+      "expect_error": {
+        "code": "timeout"
+      },
+      "note": "a send that waited past its deadline is the sender's to have given up or to deliver once credit returns; the seam promises neither, and either way the reader is caught up"
+    },
+    {
+      "on": "b",
+      "op": "conn.send",
+      "args": {
+        "on": "$cb",
+        "kind": "text",
+        "text": "4"
+      },
+      "note": "with the reader caught up and credit returned, a send goes through"
+    },
+    {
+      "on": "a",
+      "op": "conn.receive",
+      "args": {
+        "on": "$ca"
+      },
+      "expect": {
+        "kind": "text",
+        "text": "4"
+      }
+    }
+  ]
+}

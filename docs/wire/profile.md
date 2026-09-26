@@ -59,15 +59,17 @@ preservation and explains how native presentations can carry them.
 | Complete byte-keyed WireTree structure and reconstruction laws ([0012](../decisions/0012-explicit-data-and-wire-trees.md)) | Production tree construction, primitive sending and explicit mapping into addressed carriers |
 | Native binding types and independent conformance expectations | Concrete runtimes, generators and any optional authority profile |
 
-The current profile baseline is Nightseam **v0.6.0**, at immutable revision
-`5cc9723a24646c40ed1861f892b2b23eb6d785d7`, with Bitwire **v0.2.0**:
+The network protocol is **`bitwire/1`**, published in this repository as the
+[immutable bundle](../../protocol/bitwire-1/README.md). Its identity is the pair
+(`bitwire/1`, `normativeDigest`). Its normative
+[scope](../../protocol/bitwire-1/SCOPE.md) adopts the network behavior of
+Nightseam **v0.6.0** at `5cc9723a24646c40ed1861f892b2b23eb6d785d7`, whose
+documents it carries byte for byte, and states which of their requirements bind.
+Nightseam v0.6.0 called it `nightseam.duplex/1`. The live-reference and
+declaration-identity layers are outside it; see the scope.
 
-- [Relative-path access and runtime obligations](https://github.com/Bitspark/nightseam/blob/5cc9723a24646c40ed1861f892b2b23eb6d785d7/docs/runtime/wire.md).
-- [Network profile and interpretation identity](https://github.com/Bitspark/nightseam/blob/5cc9723a24646c40ed1861f892b2b23eb6d785d7/docs/wire/profile.md).
-- [Live-reference profile](https://github.com/Bitspark/nightseam/blob/5cc9723a24646c40ed1861f892b2b23eb6d785d7/docs/wire/live.md).
-
-These references define the selected profile revision, not package dependencies
-or a claim that every profile obligation is checked here. The
+The bundle is a specification, not a package dependency or a claim that every
+obligation is checked here. The
 [current baseline](../../conformance/current/README.md) records executable
 coverage separately. The [historical baseline](../../conformance/nightseam.json)
 retains the old revision and its 0.1 registration semantics. Bitwire libraries

@@ -59,6 +59,9 @@ let count = 0;
 let fragments = 0;
 for (const file of files) {
   if (!file.endsWith('.md')) continue;
+  // Byte-identical upstream copies keep their source repository's links;
+  // scripts/protocol.mjs verifies their bytes instead.
+  if (file.startsWith('protocol/bitwire-1/source/')) continue;
   for (const [lineNumber, raw] of prose(read(file))) {
     const line = raw.replace(/`[^`]*`/g, '');
     for (const match of line.matchAll(/\]\(([^\s)]+)\)/g)) {
