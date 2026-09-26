@@ -15,8 +15,9 @@ Three things stand:
 - the protocol identity rule of [decision 0008](0008-a-protocol-revision-has-its-own-identity.md);
 - 0009's carrier groups and framing.
 
-Nothing described here is implemented yet, and none of the new repositories
-exists.
+Nothing described here is implemented yet. **Updated** 2026-09-26: the three new
+repositories exist, each opening with its charter and holding no code yet:
+[bitruntime](https://github.com/Bitspark/bitruntime), [bittype](https://github.com/Bitspark/bittype) and [bittheory](https://github.com/Bitspark/bittheory).
 
 ## Question
 
@@ -73,11 +74,11 @@ depends on Bitwire; Bitwire never depends on bitruntime.
 | --- | --- |
 | Deixis | Tree structure, its laws, vectors and libraries |
 | Bitwire | The wire contract, protocol and carrier specifications, conformance |
-| bitruntime (new, public) | The Go and TypeScript implementations above |
-| bittype (new, public) | A wire-independent contract language: a value-type core usable on its own, extended by abstract operations and callable signatures that do not name Bitwire. Also parsing, resolution and checking; rendering native types; canonical declaration identity; small runtime identity and presence libraries; and, at first, the generation kernel as a separate module that may not import the declaration language. |
+| [bitruntime](https://github.com/Bitspark/bitruntime) (new, public) | The Go and TypeScript implementations above |
+| [bittype](https://github.com/Bitspark/bittype) (new, public) | A wire-independent contract language: a value-type core usable on its own, extended by abstract operations and callable signatures that do not name Bitwire. Also parsing, resolution and checking; rendering native types; canonical declaration identity; small runtime identity and presence libraries; and, at first, the generation kernel as a separate module that may not import the declaration language. |
 | bitschema | The descriptor format, the validator, and the validation primitives they need |
 | Bitlink | The model-to-wire binding: mapping operations to paths and the profile; wire types; bind and stub adapters and their generation; the identity check; converting model values that contain live references |
-| The theory (new, public; name to be chosen) | The contract theory, versioned: its laws, which tests check which law, and pinned cross-repository integration checks |
+| [bittheory](https://github.com/Bitspark/bittheory) (new, public) | The contract theory, versioned: its laws, which tests check which law, and pinned cross-repository integration checks |
 | Consumers | Model instances, programs, placement and policy. Authority stays in its only user, repo-tool, above Archon, until a reusable authority contract is shown. |
 
 The main dependencies, where `A → B` means A depends on B:
@@ -223,7 +224,5 @@ this decision holds:
 
 ## Not decided here
 
-- The theory repository's name.
-- When each repository is created, and its charter.
 - The design of the new contract language.
 - Research 0001's open decisions 4, 5 and 6.

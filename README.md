@@ -70,7 +70,7 @@ is rebuilt, and a pending request still reaches its original invocation.
 | Project | Responsibility |
 | --- | --- |
 | **Bitwire** | Shared access contract, language declarations, protocol and carrier specifications, and independent conformance criteria. |
-| **bitruntime**, planned | The Go and TypeScript implementations: operators, carriers, protocol engine, dispatch, live references, tunnels ([decision 0010](docs/decisions/0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md)). Until it exists, Nightseam v0.6.0, now frozen, is the implementation in use. |
+| [**bitruntime**](https://github.com/Bitspark/bitruntime) | The Go and TypeScript implementations: operators, carriers, protocol engine, dispatch, live references, tunnels ([decision 0010](docs/decisions/0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md)). Until it delivers, Nightseam v0.6.0, now frozen, is the implementation in use. |
 | **Bitlink** | Its planned protocol projections and generated adapters. |
 | **Bitsystem** | Typed spaces and the kernel/system operations exposed through them. |
 

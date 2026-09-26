@@ -96,7 +96,7 @@ both languages. Adoption by a released runtime package is still pending.
 that using Bitwire never requires Nightseam. `node scripts/check.mjs` fails if any
 published package below depends on or imports Nightseam or bitruntime.
 [Decision 0010](decisions/0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md) places the
-implementations in bitruntime, which does not exist yet:
+implementations in [bitruntime](https://github.com/Bitspark/bitruntime), which has no code yet:
 
 | Language | Contract (Bitwire) | Operators (bitruntime) | In-process pair and transports (bitruntime) | Protocol engine (bitruntime) |
 | --- | --- | --- | --- | --- |
