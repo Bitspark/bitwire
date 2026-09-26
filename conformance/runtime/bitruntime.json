@@ -1,9 +1,9 @@
 {
   "repository": "https://github.com/Bitspark/bitruntime",
   "module": "github.com/Bitspark/bitruntime",
-  "version": "v0.1.1-0.20260926094813-e3237a7b79b8",
-  "revision": "e3237a7b79b881d2280111a0933f386db87174ac",
-  "sum": "h1:Akqj+hbgd+ZMsP7C8thtL971DminLgyyLcEkYjKzso8=",
+  "version": "v0.1.1-0.20260926101907-9c93bb77b9b8",
+  "revision": "9c93bb77b9b8a592b364962c0fc90414e715b229",
+  "sum": "h1:/kiJpZfuDA7uBQiCpVtRpDXPR7LEEvNySioBdMud9LY=",
   "status": "unreleased-source",
   "profile": "bitwire/1",
   "bitwireVersion": "v0.3.0",
