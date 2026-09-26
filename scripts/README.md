@@ -31,7 +31,8 @@ cases through pinned public Nightseam implementations.
 composition and scoped lifecycle baseline, described in
 [current conformance](../conformance/current/README.md). Both run in the required
 conformance CI job. `node scripts/conformance-runtime.mjs` runs the same
-independent cases against the pinned bitruntime Go module in its own CI job; see
+independent cases against the pinned bitruntime Go module and TypeScript release
+package in its own CI job; see
 [bitruntime runtime conformance](../conformance/README.md#bitruntime-runtime-conformance).
 `node scripts/smoke-packed.mjs` installs npm
 and Go artifacts outside the checkout. These are separate from declaration checks.
