@@ -20,31 +20,35 @@ Five decisions are open; we call them D1 to D5. Each is currently answered
 only by what one implementation happens to do:
 
 - **D1. Refusal and publication.** When a send is refused synchronously, does that
-   prove the message was never published, meaning it never became visible
-   beyond the sender? What evidence may justify a retry, and how is
-   "we cannot know" represented?
+  prove the message was never published, meaning it never became visible
+  beyond the sender? What evidence may justify a retry, and how is
+  "we cannot know" represented?
 - **D2. When a message becomes immutable.** At what moment does the carrier own a
-   message, so that what was validated is what is sent?
+  message, so that what was validated is what is sent?
 - **D3. Closing.** Abrupt close versus graceful drain. What happens to queued
-   refusals and to requests admitted but not yet answered? And should one
-   overflowing queue end the whole connection?
+  refusals and to requests admitted but not yet answered? And should one
+  overflowing queue end the whole connection?
 - **D4. Errors and close codes.** One classification for "this carrier is
-   closed" that keeps its cause. Which close codes may be sent and which may
-   only be observed. The code the receiver sends versus the code the sender
-   observes, which differ on some transports.
+  closed" that keeps its cause. Which close codes may be sent and which may
+  only be observed. The code the receiver sends versus the code the sender
+  observes, which differ on some transports.
 - **D5. The framed byte stream `bitwire-stream/1`.** Its exact framing, limits,
-   end-of-input, truncation, write-failure and close-race rules, fixed from a
-   specification rather than inferred from a runtime.
+  end-of-input, truncation, write-failure and close-race rules, fixed from a
+  specification rather than inferred from a runtime.
 
 **The hard constraint.** The network protocol revision `bitwire/1` is
-immutable. It was defined as the on-the-wire behavior of one released program,
-Nightseam v0.6.0, and its normative scope document states what binds.
+immutable. It was drawn from one released program, Nightseam v0.6.0, but
+what binds is its normative text: a scope document plus the upstream specification text it
+adopts, "as written", with no implementation's behavior taking precedence.
 - A rule that changes what that scope binds (a frame, a close code, a default
   bound) needs a new protocol revision. Revision 2 has no date: it waits on a
   separate design of how received context travels.
-- Where the scope leaves a choice open, for instance where that program's Go
-  and TypeScript versions behaved differently, the carrier contract may narrow
-  the choice now.
+- Where that text leaves a choice open, for instance which code a stalled
+  connection closes with, our reading is that a separate carrier contract may
+  require one of the permitted behaviors of the carriers that claim it, without
+  changing what `bitwire/1` conformance means. Decision 0008 also says "A
+  revision is never tightened in place", and we are not sure our reading
+  respects that. We ask about it below.
 - Rules about what happens in process are the carrier contract's alone.
 - The byte-stream format `bitwire-stream/1` is not yet published, so D5 is
   free until it is.
@@ -198,12 +202,15 @@ namespace it stands for.
 // context through routing. [...] Keep the message's contents immutable after
 // Send admits it; implementations may retain them.
 type Message struct {
-	Frame  ProfileFrame   // the envelope: kind, id, params/result/error/data, trace, meta
+	Frame  ProfileFrame   // the envelope: version (1), kind, id, params/result/error/data,
+	                      // trace, meta; no method or event member, the path supplies it
 	Return *ReturnAddress // the return capability; never sent over the network
 }
 
 // Receiver receives complete deliveries relative to its endpoint's origin,
 // and an ending.
+type Code int // a close code
+
 type Receiver struct {
 	Message func(path []string, message Message)
 	Closed  func(code Code, reason string)
@@ -341,8 +348,9 @@ addressless `Wire` is a separate contract.
 
 ### What `bitwire/1` already binds
 
-These sentences are in the revision's hashed scope document and cannot change
-without a new revision:
+These come from the revision's scope document and the upstream profile text it
+adopts. Quotation marks mark verbatim text; the rest is a close paraphrase.
+None can change without a new revision.
 
 - "A frame larger than the receiver's limit is refused before delivery. The
   receiver ends the connection with **1009**. What the sending side observes
@@ -352,17 +360,21 @@ without a new revision:
   sending a frame."
 - **Default bounds:** 128 outgoing frames; 128 events waiting for their
   handlers; 128 calls outstanding; 64 requests being handled; frames of at
-  most 1 MiB; a 30-second call deadline; a 10-second write deadline.
-- **Pacing:** a full queue is paced for one write deadline, and a consumer
-  that has not drained it by then is disconnected.
-- **"A full Wire queue ends that carrier."** (Verbatim: the carrier's own
-  queue, not the addressless `Wire`.) Each outstanding request reserves room
-  for its cancel, so a full queue can never block a cancel.
+  most 1 MiB; a 30-second call deadline; a 10-second write deadline; a
+  30-second dial handshake.
+- **Pacing** applies to a sender waiting for output capacity, to a physical
+  carrier write and to an inbound event consumer: each waits up to one write
+  deadline, and a consumer that has not drained by then is disconnected.
+- **The root's queue is not paced:** "Structured `Wire.Send` instead admits to
+  its bounded queue or refuses immediately [...] A full Wire queue ends that
+  carrier." (`Wire` here is the root endpoint, not the addressless `Wire`.)
+  Each outstanding request reserves room for its cancel, so a full queue can
+  never block a cancel.
 - **The queue order** of accepted data and control frames, and the two
   meanings of `busy`.
-- **Admission is enqueue.** An emitted event resolves when its frame is queued
-  for the connection. A later write failure or write-deadline expiry ends the
-  connection; it is not reported to that sender.
+- **Sending completes on acceptance:** "sending one completes when the frame
+  was accepted for sending". What happens to an accepted frame whose write
+  later fails is not stated; see "How the implementations behave today".
 
 **The tunnel's abort.** `bitwire/1` requires that "an aborting side sends
 `channel.close` with code **1006** and an empty reason, and ends the channel
@@ -391,8 +403,9 @@ these byte-stream details:
   - `Content-Length` is decimal, without leading zeros (an empty body is `0`),
     and at most 15 digits.
   - The header block, including its empty line, is at most 128 bytes.
-- **Close records.** A close record's body is the reason: UTF-8, at most 123
-  bytes, which is the WebSocket bound.
+- **Close records.** `Code: ` is followed by the close code in decimal, and
+  "the code must be one that may be sent, never 1005, 1006 or 1015". The body
+  is the reason: UTF-8, at most 123 bytes, which is the WebSocket bound.
 - **Closing:**
   > A side sends one close record and nothing after it. A side that receives a
   > close record replies with its own close record carrying the same code, as a
@@ -405,7 +418,8 @@ these byte-stream details:
   > - **End of input without a close record**, from an abort or a dropped stream,
   >   is observed as 1006.
   > - Anything received after a close record is discarded.
-- **Refusals:**
+- **Refusals.** "A receiver sends a close record with the given code and ends
+  the stream":
 
   | What it receives | Code |
   | --- | --- |
@@ -429,8 +443,8 @@ these byte-stream details:
 
 **The draft is silent on:**
 - a truncated record (end of input inside a header or a body);
-- the `Code:` line's syntax, and whether a close record's body counts toward
-  the receive limit;
+- the `Code:` line's digit count and leading zeros, and whether a close
+  record's body counts toward the receive limit;
 - what `Close` does when its wait expires;
 - what the sender of an over-limit frame observes;
 - a write that fails partway through a record;
@@ -446,6 +460,13 @@ yet.
 **The transport seam in Go** (`transports/go/transport.go`, abbreviated):
 
 ```go
+type Kind int  // Text or Binary
+type Frame struct {
+	Kind Kind
+	Data []byte
+}
+type Code int // a close code, the WebSocket registry's number
+
 // Conn is a frames duplex connection. [...] Once Close or Abort was called,
 // every Send and Receive returns ErrClosed; once the remote closed, Receive
 // returns a *CloseError and Send fails.
@@ -485,12 +506,17 @@ type CloseError struct { Code Code; Reason string }
 The seam does not say whether a `Send` that returned an error might still
 have delivered its frame. It says nothing about draining queued frames on
 `Close`, or about whether cancelling a `Receive` may damage the connection.
-(On WebSocket it does damage it.)
+(On WebSocket it does damage it.) And although `Close` promises to wait "until
+ctx ends", the Go WebSocket transport ignores the context and uses its
+library's fixed bounds of 5 s to write the close frame and 5 s to await the
+reply.
 
 **The transport seam in TypeScript** (`transports/ts/src/index.ts`,
 abbreviated). It is push-based and has no abort:
 
 ```ts
+export type Frame = { kind: 'text'; data: string } | { kind: 'binary'; data: ArrayBuffer | Uint8Array };
+
 export interface FrameConnection {
   readonly state: 'connecting' | 'open' | 'closing' | 'closed';
   /** What a send left with the connection that the transport has not taken yet.
@@ -504,22 +530,31 @@ export interface FrameConnection {
 }
 ```
 
-**The behavior today, side by side:**
+**The behavior today, side by side.** Error names used here:
+- `Unpublished` (Go) and `UnpublishedError` (TypeScript): bitruntime's marker
+  for "not published";
+- `ErrBackpressure`: a full queue;
+- `PublicError`: an error carrying a public code, the in-process form of
+  `ProfileError`.
 
 | Question | Go | TypeScript |
 | --- | --- | --- |
-| **D1.** What does a synchronous refusal from `Send` prove? | Every synchronous error from a root or a pair is wrapped as `Unpublished`: nothing was queued. | The same at the root. The *call helpers* (library functions that send a request and await its response) treat *any* synchronous throw from *any* `AddressedWire` as proof, which the contract does not promise. |
+| **D1.** What does a synchronous refusal from `Send` prove? | The root and the pair wrap every synchronous error as `Unpublished`: nothing was queued. | The root and the pair throw unmarked errors. |
+| What the call helpers infer | The helpers (library functions that send a request, or emit an event, through any `AddressedWire`) mark *any* synchronous error from *any* `AddressedWire` as unpublished, which the contract does not promise. | The same. |
 | Refusals that arrive later | `busy` for the caller's own limit of calls outstanding, a duplicate id and `method_not_found` come back through the return capability after `Send` returned success, and carry no proof. | The same. |
-| What does a successful `Send` mean? | "In the root queue". The frame then moves to the output queue, then to the transport. A failure at a later stage reaches a request's return capability, or is lost for an event. | The same, and the peer can still refuse when the root queue hands the frame to the engine, and end the carrier. |
+| What does a successful `Send` mean? | "In the root queue". The engine then moves the frame to the output queue, where a full queue ends the carrier, and then to the transport. A failure at a later stage reaches a request's return capability, or is lost for an event. | The same. |
+| A write that fails after acceptance | Ends the connection; the sender of that frame is not told. | The same. |
 | **D2.** When does the carrier own the message? | The root, the pair and return capabilities copy the payloads at the start of `Send`, then validate the copy. The WebSocket transport does not copy, but writes synchronously. | The root and pair take a JSON snapshot at admission. The in-memory pipe does not copy: the receiver gets the same byte array, so a later mutation by the sender shows. |
 | **D3.** Is there a graceful drain? | No. `Close` sends 1000 but abandons frames already accepted, including events whose send returned success. | No. Every ending drops the output queue and the inbound event queue. |
 | Pending work when a carrier ends | Pending calls and requests still queued at the root are answered `disconnected`. Queued refusals are answered with their refusal (a fix of a Nightseam defect in which 3 to 56 of 512 refused callers waited out their own deadline). Running handlers are cancelled and their responses dropped. | The same for calls and queued requests. Running handlers are aborted and never answered. |
 | A full queue | Ends the whole carrier, as `bitwire/1` requires. The peer aborts (the far side sees 1006); the pair ends with 4011. | Ends the whole carrier, sending 4011. |
-| **D4.** One closed classification | `errors.Is(err, ErrClosed)` holds everywhere and the cause is kept (`ErrBackpressure`, a remote `CloseError`, a context's end). But a call cut off by the carrier's end gets only the public error `disconnected`, which loses the cause and does not match `ErrClosed`. | `PublicError('disconnected')` is the classification, with the cause kept as a non-enumerable property. |
+| **D4.** One closed classification | `errors.Is(err, ErrClosed)` holds for errors raised at the carrier, and keeps the cause (`ErrBackpressure`, a remote `CloseError`, a context's end). | `PublicError('disconnected')` is the classification; errors raised at the peer or root keep their cause as a non-enumerable property. |
+| A call cut off by the carrier's end | Answered by a response carrying `disconnected`: the caller gets only that public error, which loses the cause and does not match `ErrClosed`. | The same loss: the caller rebuilds a fresh `PublicError('disconnected')`. A remote close's code and reason are also discarded. |
 | Close codes the engine sends | 1000 on close. 4011, with the decoder's error as reason, for a protocol violation, including a binary frame. (1003, unsupported data, would describe that better, but `bitwire/1` binds 4011: a revision-2 idea at most.) An operational failure (write failure, stall, overflow) is an abort, so the far side sees 1006 and cannot tell a stalled consumer from a dropped network. | 1000 on close. **Every internal failure sends 4011** with one fixed reason: malformed or oversized frames, write timeout, stalled consumer, full queue, socket error. |
-| An application asks to close with an observe-only code | Refused at the transport; the peer aborts instead, so the far side sees 1006. | Turned into 1000 with an empty reason, so the far side sees a *normal* close. |
+| Close codes a side *can* send | Any sendable code. | Over the browser WebSocket API, which Node's built-in WebSocket follows, only 1000 and 3000–4999. For any other code the adapter closes without a code, and the far side sees 1005. So a TypeScript client cannot send 1008, 1009 or 1011 at all. |
+| An application asks to close with an observe-only code | The engine checks and aborts instead (the transport would refuse the code too), so the far side sees 1006. | Turned into 1000 with an empty reason, so the far side sees a *normal* close. |
 | What the receiver's `Closed` callback reports | Always `1001 "peer ended"` at a peer's root, whatever happened. The local pair passes the real code. | The same. |
-| An over-limit frame | The receiver sends 1009. Over the pipe the sender sees 1009. Over WebSocket the sender sees 1009 or 1006, a race the test suite allows. | The peer sends 4011, not 1009. 1009 appears only when the WebSocket library's own limit trips first. |
+| An over-limit frame | The WebSocket transport's limit is set to the peer's frame limit, so the transport ends the connection with 1009 before the engine sees the frame. Over the pipe the sender sees 1009; over WebSocket, 1009 or 1006, a race the test suite allows. Were the transport's limit higher, the engine would refuse with 4011. | No transport limit is set, so the engine refuses the frame and sends 4011. That **deviates from `bitwire/1`**, which binds 1009. 1009 appears only when a WebSocket server library's own limit trips first. The in-memory pipe has no limit. |
 | **Tunnel** | Not ported. Nightseam v0.6.0 Go sends `channel.close` 1006 on abort, and sends any code unchecked. | Not ported. v0.6.0 TypeScript had no channel abort. |
 | **D5.** Byte streams | Not built. | Not built. |
 
@@ -696,13 +731,18 @@ as a revision-2 candidate.
     says a consumer that has not drained within one write deadline is
     disconnected, but not with which code. bitruntime's two languages, each
     ported from its Nightseam v0.6.0 counterpart, differ here.
-  - So the carrier contract can fix one code now: that narrows
-    implementations within what revision 1 already allows.
+  - So, by our reading under "The hard constraint", the carrier contract
+    could require one code now. None of the candidates below is a code either
+    Nightseam v0.6.0 language sent for these failures.
+  - A TypeScript client over the browser WebSocket API can send only 1000 and
+    3000–4999, so 1011 and 1008 are out of its reach; a code in 4000–4999 is
+    not.
   - **We lean to** an abort when the connection's own write path failed
-    (nothing more can be written), and 1011 (internal error) when the side
-    fails but can still write, such as on a full queue. The far side can then
-    tell overload from a dropped network. We do not know whether 1008 or an
-    application code in 4000–4999 would serve better.
+    (nothing more can be written), and a sent code when the side fails but can
+    still write, such as on a full queue, so that the far side can tell
+    overload from a dropped network. For that code, 1011 (internal error)
+    describes it best, but the browser limit above suggests a code of our own
+    in 4000–4999 beside 4011.
 - **Receiver versus sender.** Our proposal is that the contract promises the
   code a side *sends*. What the other side *observes* is promised only per
   transport:
@@ -750,11 +790,11 @@ our tentative answers:
 | D1: what a refusal proves; the three-valued outcome | In process | Carrier contract, valid now |
 | D1: the caller's own limit as a marked synchronous refusal | In process (no frame) | Carrier contract, valid now |
 | D2: copy-then-validate; the seam owns frame bytes | In process | Carrier contract, valid now |
-| D3 B: a draining `Close`; exactly one answer per admitted request | Wire, but within what `bitwire/1` leaves open, as we read its scope | Carrier contract, valid now |
+| D3 B: a draining `Close`; exactly one answer per admitted request | Wire, within what `bitwire/1` leaves open | Carrier contract now, if our reading of decision 0008 holds; otherwise revision 2 |
 | D3 C: a going-away phase | Wire, new frame | Revision 2 |
 | D3′: root-only overflow with reserved control room | Wire | Revision 2 |
 | D4: sendable set; refusing an observe-only close request | Seam and in process | Carrier contract, valid now |
-| D4: abort versus 1011 for operational failures | Wire, within what `bitwire/1` leaves open | Carrier contract, valid now |
+| D4: abort versus a sent code for operational failures | Wire, within what `bitwire/1` leaves open | Carrier contract now, if our reading of decision 0008 holds; otherwise revision 2 |
 | D4: one closed classification; `Closed` reports the real code | In process | Carrier contract, valid now |
 | D4: a tunnel abort without sending 1006 | Wire | Revision 2; revision 1 keeps 1006 as a recorded exception |
 | D5: every `bitwire-stream/1` rule | A transport format | Free until published, then immutable under decision 0008 |
@@ -825,4 +865,7 @@ need rules we can write down as contract text and byte vectors.
 
 5. **Open.** Looking at the whole packet, what are we not asking that we
    should? What would you do differently if you were designing this carrier
-   contract?
+   contract? One layering question in particular: a carrier contract that
+   requires, of the carriers claiming it, one of the behaviors `bitwire/1`
+   permits. Is that a separate layer, or does it tighten the revision in place,
+   which decision 0008 forbids?
