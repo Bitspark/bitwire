@@ -4,7 +4,7 @@
   "historical": {
     "conformance/declared/cases.json": "2c3ae3605581e30749d6c0225e8619bd797887be1d540499fb9fb6904c361dd6",
     "conformance/declared/production-gaps.json": "8c7262e7b72a9508d3d90d9b328a85749764f587bb9cd90f6ad67440c5ccd1f6",
-    "conformance/runtime/production-gaps.json": "b8becd0099bec9c3e283a7d7dc2e3951e6d3f52e0543568bfa5273e2a4c6eea4"
+    "conformance/runtime/production-gaps.json": "52ccf787b9ea19a89efa1c3eb2a9ab759512e3a386f2e3e4766a26a2e233aa49"
   },
   "kinds": {
     "structural": "A requirement of the full tree itself: construction, selection, own capability identity, exact keys, missing versus refusing nodes, decomposition and reconstruction. Evidence runs with no carrier.",
@@ -540,7 +540,7 @@
         "complete-cuts-agree",
         "children-alone-lose-own"
       ],
-      "note": "Public Compose/compose(own, children) takes the own value. The ledger entries remain true of addressed Mount, which is child-only by design. Its carrier members (forwarded-reconstruction, mounted-carrier-reconstruction, pending-across-reconstruction) are met through test-only adapters that bind a Wire to a carrier path and serve a tree on a dispatcher; production facilities for both are bitruntime#15.",
+      "note": "Public Compose/compose(own, children) takes the own value. The ledger entries remain true of addressed Mount, which is child-only by design. Its carrier members (forwarded-reconstruction, mounted-carrier-reconstruction, pending-across-reconstruction) are met in production through bitruntime's public binding and serving (Bind/bind and Serve/serve, v0.3.0, bitruntime#15), and in the reference through test-only adapters.",
       "limitation": "addressed-mount"
     },
     {

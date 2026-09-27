@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Run the released-runtime conformance against bitruntime v0.3.0 (tag v0.3.0 at
+  `26d1138e2d3bff4dc066d29b3d036550316363db`), in Go and TypeScript. The full-tree
+  carrier cases now bind and serve through bitruntime's public `Bind`/`bind` and
+  `Serve`/`serve` in the production realization, with `Update`/`update` when
+  the far tree is edited; the reference realization keeps its test-only
+  adapters. Every family's results are unchanged. The runtime gap ledger names
+  v0.3.0 and its moved line anchors, and the disposition's pinned digest of it is
+  revisited without changing any disposition.
 - Publish protocol revision `bitwire/1` as an immutable bundle, `protocol/bitwire-1`. It
   holds byte-identical copies of the released Nightseam v0.6.0 wire documents,
   tables, rationale, runner material and scenarios, plus a normative `SCOPE.md`

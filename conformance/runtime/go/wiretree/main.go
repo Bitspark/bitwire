@@ -4,9 +4,10 @@
 // what happened. "production" is bitruntime's core.Compose, core.Select,
 // core.Send and core.AsAddressed; "reference" is a test-only structural
 // interpreter that is never evidence about a runtime. Carrier cases always use
-// bitruntime's carriers, dispatcher, Forward, At and Mount. bind and serve are
-// test-only because bitruntime v0.2.0 has no public facility for either
-// (bitruntime#15).
+// bitruntime's carriers, dispatcher, Forward, At and Mount. Binding a Wire to a
+// carrier path and serving a tree follow the realization: production uses
+// core.Bind and dispatch.Serve (v0.3.0, bitruntime#15); the reference keeps
+// small test-only adapters, so the oracle stays satisfiable without them.
 package main
 
 import (
@@ -686,7 +687,32 @@ func local(t trees, in inputs, test testCase) any {
 
 // ---- Carrier family ----
 
-// bindWire is test-only addressless access at one fixed addressed path (bitruntime#15).
+// served is a tree served on a dispatcher: replaced in place, and released.
+type served interface {
+	Update(t tree) error
+	Close()
+}
+
+// carriage is how a realization binds a Wire to a carrier path and serves a tree.
+type carriage struct {
+	bind  func(access wire.AddressedWire, path []string) wire.Wire
+	serve func(d *dispatch.Dispatcher, prefix []string, t tree) (served, error)
+}
+
+// published is bitruntime's public core.Bind and dispatch.Serve (v0.3.0).
+var published = carriage{
+	bind: core.Bind,
+	serve: func(d *dispatch.Dispatcher, prefix []string, t tree) (served, error) {
+		s, err := dispatch.Serve(d, prefix, t)
+		if err != nil {
+			return nil, err
+		}
+		return s, nil
+	},
+}
+
+// bindWire is the reference's test-only addressless access at one fixed
+// addressed path, copied at binding.
 type bindWire struct {
 	access wire.AddressedWire
 	path   []string
@@ -694,34 +720,61 @@ type bindWire struct {
 
 func (b *bindWire) Send(m wire.Message) error { return b.access.Send(slices.Clone(b.path), m) }
 
-// serve is test-only: exact dispatcher routes for every node whose keys are all
-// UTF-8, each bound to that node's own Wire (bitruntime#15). A Go receiver
-// returns nothing, so a refused request is answered through core.Respond.
-func serve(d *dispatch.Dispatcher, t tree, prefix []string) func() {
-	var detach []func()
-	var visit func(n tree, path []string)
-	visit = func(n tree, path []string) {
+// testServed is the reference's test-only serving: exact dispatcher routes for
+// every position whose keys are all UTF-8, each bound to that position's own.
+// A Go receiver returns nothing, so a refused request is answered through
+// core.Respond, and a refused event is dropped. Update re-registers every
+// route, which is not atomic; dispatch.Serve is.
+type testServed struct {
+	d      *dispatch.Dispatcher
+	prefix []string
+	detach []func()
+}
+
+func (s *testServed) install(t tree) error {
+	var visit func(n tree, path []string) error
+	visit = func(n tree, path []string) error {
 		own := n.Own()
-		release, err := d.Register(append(slices.Clone(prefix), path...), wire.Receiver{Message: func(_ []string, m wire.Message) {
+		release, err := s.d.Register(append(slices.Clone(s.prefix), path...), wire.Receiver{Message: func(_ []string, m wire.Message) {
 			if err := own.Send(m); err != nil && m.Frame.Kind == wire.ProfileRequest {
 				_ = core.Respond(m, nil, err)
 			}
 		}})
-		check(err)
-		detach = append(detach, release)
+		if err != nil {
+			return err
+		}
+		s.detach = append(s.detach, release)
 		for _, c := range n.Children() {
 			if !utf8.Valid(c.Key) {
 				continue
 			}
-			visit(c.Tree, append(slices.Clone(path), string(c.Key)))
+			if err := visit(c.Tree, append(slices.Clone(path), string(c.Key))); err != nil {
+				return err
+			}
 		}
+		return nil
 	}
-	visit(t, []string{})
-	return func() {
-		for _, release := range detach {
-			release()
-		}
+	return visit(t, []string{})
+}
+func (s *testServed) Close() {
+	for _, release := range s.detach {
+		release()
 	}
+	s.detach = nil
+}
+func (s *testServed) Update(t tree) error {
+	s.Close()
+	return s.install(t)
+}
+
+var testOnly = carriage{
+	bind: func(access wire.AddressedWire, path []string) wire.Wire {
+		return &bindWire{access: access, path: slices.Clone(path)}
+	},
+	serve: func(d *dispatch.Dispatcher, prefix []string, t tree) (served, error) {
+		s := &testServed{d: d, prefix: slices.Clone(prefix)}
+		return s, s.install(t)
+	},
 }
 
 func take[T any](ch chan T) T {
@@ -748,7 +801,7 @@ type call struct {
 	replies chan wire.Message
 }
 
-func runCarrier(t trees, in inputs, test testCase) (result any) {
+func runCarrier(t trees, c carriage, in inputs, test testCase) (result any) {
 	var cleanups []func()
 	defer func() {
 		slices.Reverse(cleanups)
@@ -821,7 +874,8 @@ func runCarrier(t trees, in inputs, test testCase) (result any) {
 	farTree := h.must(h.build(test.Root, "", ""))
 	d, err := dispatch.NewDispatcher(far)
 	check(err)
-	unserve := serve(d, farTree, in.ServedAt)
+	srv, err := c.serve(d, in.ServedAt, farTree)
+	check(err)
 
 	// The near side: the same declared structure, each own Wire bound to its far
 	// carrier path. A carrier path names a far position, and addressed access
@@ -837,7 +891,7 @@ func runCarrier(t trees, in inputs, test testCase) (result any) {
 			}
 			children = append(children, child{Key: k, Tree: mirror(c[1], append(slices.Clone(path), string(k)))})
 		}
-		n, err := t.Compose(&bindWire{access: access, path: append(slices.Clone(in.ServedAt), path...)}, children)
+		n, err := t.Compose(c.bind(access, append(slices.Clone(in.ServedAt), path...)), children)
 		check(err)
 		return n
 	}
@@ -925,13 +979,13 @@ func runCarrier(t trees, in inputs, test testCase) (result any) {
 		case "direct":
 			h.derived(farTree, true, s.Path, event(label))
 		case "teardown":
-			unserve()
+			srv.Close()
+			srv = nil
 			check(d.Close(transports.CodeNormal, "released"))
 		default:
 			if s.Side == "far" {
 				farTree = h.edit(farTree, s, func(id string) tree { return h.must(h.build(id, "", "")) })
-				unserve()
-				unserve = serve(d, farTree, in.ServedAt)
+				check(srv.Update(farTree))
 			} else {
 				nearTree = h.edit(nearTree, s, func(id string) tree { return mirror(id, segments(s.Path)) })
 			}
@@ -940,7 +994,9 @@ func runCarrier(t trees, in inputs, test testCase) (result any) {
 
 	// Every borrowed endpoint outlives each composition over it: the dispatcher,
 	// the relay's forwarding and the addressed mount.
-	unserve()
+	if srv != nil {
+		srv.Close()
+	}
 	_ = d.Close(transports.CodeNormal, "released")
 	for _, release := range compositions {
 		release()
@@ -979,8 +1035,9 @@ func main() {
 		panic("usage: wiretree reference|production local|carrier inputs.json")
 	}
 	var t trees = reference{}
+	c := testOnly
 	if os.Args[1] == "production" {
-		t = production{}
+		t, c = production{}, published
 	}
 	data, err := os.ReadFile(os.Args[3])
 	check(err)
@@ -996,7 +1053,7 @@ func main() {
 		}
 		var observations any
 		if test.Family == "carrier" {
-			observations = runCarrier(t, in, test)
+			observations = runCarrier(t, c, in, test)
 		} else {
 			observations = local(t, in, test)
 		}
