@@ -157,6 +157,11 @@ func TestLoadChecks(t *testing.T) {
 		{"observe option in a required scenario", "peer", "x.json", map[string]any{"needs": []string{"observer", "peer"}, "steps": []any{step(map[string]any{"on": "runner", "op": "pair.peers", "args": map[string]any{"server": "a", "server_options": map[string]any{"observe": true}}})}}, "required scenario"},
 		{"excluded op", "peer", "x.json", map[string]any{"needs": []string{"peer"}, "steps": []any{peerPair, step(map[string]any{"on": "a", "op": "peer.identity", "args": map[string]any{"on": "$ps"}})}}, "excluded"},
 		{"excluded behaviour", "peer", "x.json", map[string]any{"needs": []string{"peer"}, "steps": []any{peerPair, step(map[string]any{"on": "a", "op": "peer.handle", "args": map[string]any{"on": "$ps", "method": "m", "behavior": map[string]any{"kind": "through"}}})}}, "excluded"},
+		{"repeat.max 2.0 is an integer", "seam", "x.json", map[string]any{"steps": []any{step(map[string]any{"on": "runner", "op": "pair.conns", "bind": map[string]any{"a": "ca"}}), step(map[string]any{"on": "a", "op": "conn.receive", "args": map[string]any{"on": "$ca"}, "repeat": map[string]any{"max": 2.0}})}}, ""},
+		{"an argument named id", "seam", "x.json", map[string]any{"steps": []any{step(map[string]any{"on": "runner", "op": "pair.conns"}), step(map[string]any{"on": "a", "op": "conn.send", "args": map[string]any{"id": 1}})}}, "request's own member"},
+		{"an argument named op", "seam", "x.json", map[string]any{"steps": []any{step(map[string]any{"on": "runner", "op": "pair.conns"}), step(map[string]any{"on": "a", "op": "conn.send", "args": map[string]any{"op": "x"}})}}, "request's own member"},
+		{"bind names a keyword", "seam", "x.json", map[string]any{"steps": []any{step(map[string]any{"on": "runner", "op": "pair.conns", "bind": map[string]any{"a": "any"}})}}, "keyword"},
+		{"$bind names a keyword", "seam", "x.json", map[string]any{"steps": []any{step(map[string]any{"on": "runner", "op": "pair.conns", "bind": map[string]any{"a": "ca"}}), step(map[string]any{"on": "a", "op": "conn.receive", "args": map[string]any{"on": "$ca"}, "expect": map[string]any{"text": "$bind:regex"}})}}, "keyword"},
 		{"op family of the layer", "seam", "x.json", map[string]any{"needs": []string{"peer", "seam"}, "steps": []any{step(map[string]any{"on": "runner", "op": "pair.conns"}), step(map[string]any{"on": "a", "op": "peer.close", "args": map[string]any{"on": "x"}})}}, "does not belong"},
 	}
 	for _, c := range cases {
@@ -228,5 +233,28 @@ func TestTableExpansion(t *testing.T) {
 	missing, err := tableRows(root, "tables/frames.json", map[string]any{"no-such-member": nil})
 	if err != nil || len(missing) != len(all) {
 		t.Fatalf("a member no row has compares as null: %d of %d", len(missing), len(all))
+	}
+}
+
+// §5.7: a kept row is named by its name when that is a string, and
+// otherwise by its index among the kept rows.
+func TestRowLabels(t *testing.T) {
+	if got := rowLabel(map[string]any{"name": "ok frame"}, 3); got != "ok frame" {
+		t.Errorf("a named row: %q", got)
+	}
+	if got := rowLabel(map[string]any{"name": 7}, 3); got != "3" {
+		t.Errorf("a row whose name is not a string: %q", got)
+	}
+	if got := rowLabel(map[string]any{}, 0); got != "0" {
+		t.Errorf("an unnamed row: %q", got)
+	}
+	evidence, err := Load(checkoutRoot(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range evidence.Scenarios {
+		if name, ok := s.Row["name"].(string); ok && !strings.HasSuffix(s.Name, "["+name+"]") {
+			t.Errorf("%s is not named by its row %s", s.Name, name)
+		}
 	}
 }

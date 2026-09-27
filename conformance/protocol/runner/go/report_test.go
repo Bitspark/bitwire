@@ -120,10 +120,17 @@ func TestExecute(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	var top map[string]json.RawMessage
+	if err := json.Unmarshal(data, &top); err != nil {
+		t.Fatal(err)
+	}
 	for _, member := range []string{"protocol", "scope", "roles", "transports", "configuration", "implementation", "counterparts", "pairings", "runner", "contract", "evidence", "cases", "claim"} {
-		if !strings.Contains(string(data), `"`+member+`":`) {
+		if _, ok := top[member]; !ok {
 			t.Errorf("the report lacks %s", member)
 		}
+	}
+	if report.Implementation.Command.Argv[0] != self {
+		t.Errorf("the report records the command %+v", report.Implementation.Command)
 	}
 
 	// -only: the unselected required cases are skips that fail the claim.
@@ -171,5 +178,49 @@ func TestExecuteStartFailure(t *testing.T) {
 	}
 	if harness == 0 || report.Claim.Counts[Harness] != harness {
 		t.Errorf("%d harness failures, claim %+v", harness, report.Claim)
+	}
+}
+
+// §3.8: a testee that dies is ended, and a new process serves the next case.
+func TestExecuteRestartsADeadTestee(t *testing.T) {
+	root := checkoutRoot(t)
+	evidence, err := Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	script, log := filepath.Join(dir, "script.json"), filepath.Join(dir, "requests.log")
+	if err := os.WriteFile(script, []byte(`{"conn.listen":["EXIT"]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	self, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	config := &Config{
+		Scope: "core", Implementation: "fake",
+		Implementations: map[string]Implementation{"fake": {Testee: Command{Argv: fakeCommand(self).Argv, Env: map[string]string{"RUNNER_FAKE_TESTEE": script, "RUNNER_FAKE_LOG": log}}}},
+		Pairings:        [][2]string{{"fake", "fake"}},
+		Transports:      []Transport{{Name: "fake"}},
+		dir:             dir,
+	}
+	report, err := Execute(config, root, evidence, regexp.MustCompile(`^seam/`), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	harness := 0
+	for _, c := range report.Cases {
+		if c.Result == Harness {
+			harness++
+		}
+	}
+	hellos := 0
+	for _, r := range requests(t, log) {
+		if r["op"] == "hello" {
+			hellos++
+		}
+	}
+	if harness < 2 || hellos != harness {
+		t.Fatalf("%d harness cases, %d processes", harness, hellos)
 	}
 }

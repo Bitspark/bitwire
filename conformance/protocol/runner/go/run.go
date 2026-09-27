@@ -24,15 +24,19 @@ type Outcome struct {
 	Failure *Failure
 }
 
-// Failure is where a case parted from its scenario (§9).
+// Failure is where a case parted from its scenario (§9). Step is the
+// index of the scenario's own step; Expansion is the position within the
+// testee ops a runner op expanded into, when the step was one. A failed
+// reset has neither.
 type Failure struct {
-	Step    *int           `json:"step,omitempty"`
-	Op      string         `json:"op,omitempty"`
-	On      string         `json:"on,omitempty"`
-	Request map[string]any `json:"request,omitempty"`
-	Answer  string         `json:"answer,omitempty"`
-	StderrA string         `json:"stderrA"`
-	StderrB string         `json:"stderrB"`
+	Step      *int           `json:"step,omitempty"`
+	Expansion *int           `json:"expansion,omitempty"`
+	Op        string         `json:"op,omitempty"`
+	On        string         `json:"on,omitempty"`
+	Request   map[string]any `json:"request"`
+	Answer    string         `json:"answer,omitempty"`
+	StderrA   string         `json:"stderrA"`
+	StderrB   string         `json:"stderrB"`
 }
 
 // pollPause and pollDeadline are the pause between polls of a step repeated
@@ -66,7 +70,7 @@ func Run(a, b *Testee, hello map[string]Hello, s Scenario) Outcome {
 	harness := func(step int, request map[string]any, err error) Outcome {
 		f := &Failure{Request: request, StderrA: a.Stderr(), StderrB: b.Stderr()}
 		if step >= 0 {
-			f.Step, f.Op, f.On = &step, steps[step].Op, steps[step].On
+			f.locate(steps[step])
 		}
 		return Outcome{Result: Harness, Reason: err.Error(), Failure: f}
 	}
@@ -85,10 +89,9 @@ func Run(a, b *Testee, hello map[string]Hello, s Scenario) Outcome {
 			testee = b
 		}
 		fail := func(request map[string]any, answer, reason string) Outcome {
-			return Outcome{Result: Fail, Reason: reason, Failure: &Failure{
-				Step: &i, Op: step.Op, On: step.On, Request: request, Answer: answer,
-				StderrA: a.Stderr(), StderrB: b.Stderr(),
-			}}
+			f := &Failure{Request: request, Answer: answer, StderrA: a.Stderr(), StderrB: b.Stderr()}
+			f.locate(step)
+			return Outcome{Result: Fail, Reason: reason, Failure: f}
 		}
 		substituted, err := substitute(step.Args, bindings)
 		if err != nil {
@@ -103,14 +106,25 @@ func Run(a, b *Testee, hello map[string]Hello, s Scenario) Outcome {
 			return harness(i, args, err)
 		}
 		if outcome, done := judge(step, answer, bindings, testee.Name); done {
-			outcome.Failure = &Failure{Step: &i, Op: step.Op, On: step.On, Request: args, Answer: answer.rendered(), StderrA: a.Stderr(), StderrB: b.Stderr()}
-			if outcome.Result == Unsupported {
-				outcome.Failure = nil
+			if outcome.Result != Unsupported {
+				outcome.Failure = &Failure{Request: args, Answer: answer.rendered(), StderrA: a.Stderr(), StderrB: b.Stderr()}
+				outcome.Failure.locate(step)
 			}
 			return outcome
 		}
 	}
 	return Outcome{Result: Pass}
+}
+
+// locate records which step failed: the scenario's own step, and the
+// position within a runner op's expansion when it came from one.
+func (f *Failure) locate(step Step) {
+	source := step.source
+	f.Step, f.Op, f.On = &source, step.Op, step.On
+	if step.part >= 0 {
+		part := step.part
+		f.Expansion = &part
+	}
 }
 
 // send sends a step's op, again as its repeat says, and returns the last

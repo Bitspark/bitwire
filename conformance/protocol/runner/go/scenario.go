@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"math"
 	"os"
 	"path"
 	"path/filepath"
@@ -64,6 +65,9 @@ type Step struct {
 	ExpectError map[string]any
 	Assert      map[string]any
 	Repeat      *Repeat
+	// source is the step's index in its scenario, and part its position
+	// within a runner op's expansion, or -1 for the scenario's own step.
+	source, part int
 }
 
 // Repeat is a step's repeat (§7.2).
@@ -294,11 +298,7 @@ func parse(checkout, file string, data []byte, schema *jsonschema.Schema) ([]Sce
 	for i, row := range rows {
 		s := base
 		s.Row, s.RowAs = row, sf.Foreach.As
-		label := fmt.Sprint(i)
-		if name, ok := row["name"].(string); ok {
-			label = name
-		}
-		s.Name = fmt.Sprintf("%s[%s]", base.Name, label)
+		s.Name = fmt.Sprintf("%s[%s]", base.Name, rowLabel(row, i))
 		out = append(out, s)
 	}
 	return out, nil
@@ -324,7 +324,53 @@ func checkStep(sf scenarioFile, step Step) error {
 	if step.Op == "peer.observed" && step.Repeat != nil && step.Repeat.Until == "match" && step.Args["drain"] != false {
 		return fmt.Errorf("peer.observed repeated until match must set drain: false")
 	}
+	for _, member := range []string{"id", "op"} {
+		if _, ok := step.Args[member]; ok {
+			return fmt.Errorf("an argument is named %s, which is the request's own member", member)
+		}
+	}
+	for _, name := range boundNames(step) {
+		if keywords[name] {
+			return fmt.Errorf("binds %s, a keyword of the matching language", name)
+		}
+	}
 	return checkRunnerStep(step)
+}
+
+// boundNames is every name a step binds: through bind, and through $bind:
+// in its expectations (§6.7).
+func boundNames(step Step) []string {
+	var names []string
+	switch b := step.Bind.(type) {
+	case string:
+		names = append(names, b)
+	case map[string]any:
+		for _, name := range b {
+			if s, ok := name.(string); ok {
+				names = append(names, s)
+			}
+		}
+	}
+	var walk func(v any)
+	walk = func(v any) {
+		switch x := v.(type) {
+		case string:
+			if name, ok := strings.CutPrefix(x, "$bind:"); ok {
+				names = append(names, name)
+			}
+		case map[string]any:
+			for _, member := range x {
+				walk(member)
+			}
+		case []any:
+			for _, member := range x {
+				walk(member)
+			}
+		}
+	}
+	walk(step.Expect)
+	walk(step.ExpectError)
+	return names
 }
 
 func parseStep(raw json.RawMessage) (Step, error) {
@@ -352,14 +398,24 @@ func parseStep(raw json.RawMessage) (Step, error) {
 		step.Assert = a
 	}
 	if r, ok := object["repeat"].(map[string]any); ok {
-		max, err := r["max"].(json.Number).Int64()
-		if err != nil {
-			return Step{}, fmt.Errorf("repeat.max: %w", err)
+		// JSON Schema's integer admits any integral number, such as 2.0.
+		max, err := r["max"].(json.Number).Float64()
+		if err != nil || max != math.Trunc(max) || max < 1 || max > 1e6 {
+			return Step{}, fmt.Errorf("repeat.max is %s", r["max"])
 		}
 		until, _ := r["until"].(string)
 		step.Repeat = &Repeat{Max: int(max), Until: until}
 	}
 	return step, nil
+}
+
+// rowLabel names a kept row: its name when that is a string, and otherwise
+// its index among the kept rows (§5.7).
+func rowLabel(row map[string]any, index int) string {
+	if name, ok := row["name"].(string); ok {
+		return name
+	}
+	return fmt.Sprint(index)
 }
 
 // tableRows reads a normative table's rows and keeps those whose members

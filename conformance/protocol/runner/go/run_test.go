@@ -1,8 +1,11 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func stepOf(t *testing.T, text string) Step {
@@ -375,6 +378,80 @@ func TestClaim(t *testing.T) {
 		}
 		if tc.name == "a named limitation" && (len(got.Limitations) != 1 || got.Counts[Skip] != 1) {
 			t.Errorf("limitations %v, counts %v", got.Limitations, got.Counts)
+		}
+	}
+}
+
+// §7.5: a step with an integer within_ms waits within_ms plus the grace.
+func TestWithinDeadline(t *testing.T) {
+	saved := grace
+	grace = 300 * time.Millisecond
+	defer func() { grace = saved }()
+	testee, _, err := fake(t, map[string][]string{"conn.receive": {"HANG"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	start := time.Now()
+	outcome := Run(testee, testee, map[string]Hello{"a": testee.Hello, "b": testee.Hello}, Scenario{Name: "w", Layer: "seam", Steps: []Step{stepOf(t, `{"on":"a","op":"conn.receive","args":{"within_ms":200}}`)}})
+	elapsed := time.Since(start)
+	if outcome.Result != Harness || !strings.Contains(outcome.Reason, "within 500ms") {
+		t.Fatalf("%s: %s", outcome.Result, outcome.Reason)
+	}
+	if elapsed > 5*time.Second {
+		t.Errorf("the deadline took %s", elapsed)
+	}
+	if outcome.Failure == nil || outcome.Failure.Step == nil || *outcome.Failure.Step != 0 || outcome.Failure.Expansion != nil {
+		t.Errorf("failure %+v", outcome.Failure)
+	}
+}
+
+// A failure inside a runner op's expansion names the scenario's step and
+// the position within the expansion.
+func TestFailureLocation(t *testing.T) {
+	testee, _, err := fake(t, map[string][]string{
+		"conn.pipe":   {`{"id":ID,"ok":{"a":"p1","b":"p2"}}`},
+		"conn.listen": {`{"id":ID,"ok":{"handle":"l1","url":"ws://x"}}`},
+		"conn.dial":   {`{"id":ID,"error":{"code":"failed","message":"refused"}}`},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := Scenario{Name: "f", Layer: "seam", Steps: []Step{stepOf(t, `{"on":"a","op":"conn.pipe","args":{}}`), stepOf(t, `{"on":"runner","op":"pair.conns"}`)}}
+	outcome := Run(testee, testee, map[string]Hello{"a": testee.Hello, "b": testee.Hello}, s)
+	f := outcome.Failure
+	if outcome.Result != Fail || f == nil || f.Step == nil || *f.Step != 1 || f.Expansion == nil || *f.Expansion != 1 || f.Op != "conn.dial" {
+		t.Fatalf("%s %s %+v", outcome.Result, outcome.Reason, f)
+	}
+}
+
+func TestReadConfig(t *testing.T) {
+	dir := t.TempDir()
+	write := func(text string) string {
+		file := filepath.Join(dir, "run.json")
+		if err := os.WriteFile(file, []byte(text), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return file
+	}
+	good := `{"scope":"core","implementation":"x","implementations":{"x":{"name":"x","listen":false,"testee":{"argv":["{config}/testee{exe}"],"cwd":"sub","env":{"HOME_DIR":"{checkout}"}}},"y":{"name":"y","testee":{"argv":["y"]}}},"pairings":[["x","y"],["y","x"]],"transports":[{"name":"websocket","subprotocols":true}]}`
+	c, err := ReadConfig(write(good))
+	if err != nil {
+		t.Fatal(err)
+	}
+	command := c.command(c.Implementations["x"], "/checkout")
+	if !strings.HasPrefix(command.Argv[0], c.dir) || command.Cwd != filepath.Join(c.dir, "sub") || command.Env["HOME_DIR"] != "/checkout" {
+		t.Errorf("command %+v", command)
+	}
+	for name, bad := range map[string]string{
+		"an unknown member":      strings.Replace(good, `"scope":"core"`, `"scope":"core","extra":1`, 1),
+		"a scope":                strings.Replace(good, `"scope":"core"`, `"scope":"tunnel"`, 1),
+		"no transport":           strings.Replace(good, `[{"name":"websocket","subprotocols":true}]`, `[]`, 1),
+		"an unknown pairing":     strings.Replace(good, `["y","x"]`, `["z","x"]`, 1),
+		"a counterpart's listen": strings.Replace(good, `"y":{"name":"y",`, `"y":{"name":"y","listen":true,`, 1),
+		"an optional kind":       strings.Replace(good, `"scope":"core"`, `"scope":"core","optional":["all"]`, 1),
+	} {
+		if _, err := ReadConfig(write(bad)); err == nil {
+			t.Errorf("%s was accepted", name)
 		}
 	}
 }

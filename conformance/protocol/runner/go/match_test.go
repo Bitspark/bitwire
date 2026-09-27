@@ -292,3 +292,11 @@ func TestDecodeRefusesTrailingData(t *testing.T) {
 		}
 	}
 }
+
+// §6.1: the runner reports where the values parted.
+func TestMismatchLocation(t *testing.T) {
+	err := match(value(t, `{"events": [{"n": 1}, {"n": 1}]}`), value(t, `{"events": [{"n": 1}, {"n": 2}]}`), Bindings{})
+	if err == nil || err.Error() != "the answer.events[1].n: expected 1, got 2" {
+		t.Fatalf("%v", err)
+	}
+}

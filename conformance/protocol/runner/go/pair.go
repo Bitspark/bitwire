@@ -195,8 +195,9 @@ func mirrorRunnerStep(step Step) Step {
 func expand(steps []Step, hello map[string]Hello) ([]Step, string) {
 	var out []Step
 	n := 0
-	for _, step := range steps {
+	for i, step := range steps {
 		if step.On != "runner" {
+			step.source, step.part = i, -1
 			out = append(out, step)
 			continue
 		}
@@ -204,6 +205,9 @@ func expand(steps []Step, hello map[string]Hello) ([]Step, string) {
 		expanded, unsupported := expandPair(step, hello, fmt.Sprintf("_p%d", n))
 		if unsupported != "" {
 			return nil, unsupported
+		}
+		for k := range expanded {
+			expanded[k].source, expanded[k].part = i, k
 		}
 		out = append(out, expanded...)
 	}

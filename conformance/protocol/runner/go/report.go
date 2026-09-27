@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"sort"
 	"strings"
 	"time"
 )
@@ -42,7 +43,8 @@ type Implementation struct {
 	Artifacts []string `json:"artifacts"`
 	// Configuration is where it departs from the default bounds, or "default".
 	Configuration any `json:"configuration"`
-	// Listen is false when the implementation does not accept connections.
+	// Listen is false when the implementation under test does not accept
+	// connections (§8.2). Only the implementation under test declares it.
 	Listen *bool   `json:"listen,omitempty"`
 	Testee Command `json:"testee"`
 }
@@ -85,6 +87,11 @@ func ReadConfig(file string) (*Config, error) {
 			if _, ok := c.Implementations[name]; !ok {
 				return nil, fmt.Errorf("%s: pairing names %q, which is not among the implementations", file, name)
 			}
+		}
+	}
+	for id, i := range c.Implementations {
+		if id != c.Implementation && i.Listen != nil {
+			return nil, fmt.Errorf("%s: %q declares listen, which only the implementation under test declares", file, id)
 		}
 	}
 	if len(c.Transports) == 0 {
@@ -152,6 +159,7 @@ type reportConfig struct {
 
 type reportImpl struct {
 	ID        string           `json:"id"`
+	Command   Command          `json:"command"`
 	Name      string           `json:"name"`
 	Version   string           `json:"version"`
 	Revision  string           `json:"revision"`
@@ -236,7 +244,7 @@ func Execute(c *Config, checkout string, evidence *Evidence, only *regexp.Regexp
 	}
 	impls := map[string]*reportImpl{}
 	for id, i := range c.Implementations {
-		entry := &reportImpl{ID: id, Name: i.Name, Version: i.Version, Revision: i.Revision, Language: i.Language, Toolchain: i.Toolchain, Artifacts: []reportArtifact{}}
+		entry := &reportImpl{ID: id, Command: c.command(i, checkout), Name: i.Name, Version: i.Version, Revision: i.Revision, Language: i.Language, Toolchain: i.Toolchain, Artifacts: []reportArtifact{}}
 		for _, artifact := range i.Artifacts {
 			file := c.resolve(artifact, checkout)
 			if !filepath.IsAbs(file) {
@@ -285,7 +293,7 @@ func Execute(c *Config, checkout string, evidence *Evidence, only *regexp.Regexp
 			return t, nil
 		}
 		helloOf := func(id string, t *Testee) Hello {
-			if !c.Implementations[id].listens() {
+			if id == c.Implementation && !c.Implementations[id].listens() {
 				return t.Hello.without("listen")
 			}
 			return t.Hello
@@ -327,17 +335,24 @@ func Execute(c *Config, checkout string, evidence *Evidence, only *regexp.Regexp
 			}
 		}
 		for _, t := range testees {
-			t.Stop()
+			_ = t.Stop()
 		}
 	}
 	report.Implementation = *impls[c.Implementation]
-	for id, entry := range impls {
-		if id != c.Implementation {
-			report.Counterparts = append(report.Counterparts, *entry)
+	report.Counterparts = []reportImpl{}
+	paired := map[string]bool{}
+	for _, p := range c.Pairings {
+		paired[p[0]], paired[p[1]] = true, true
+	}
+	ids := make([]string, 0, len(impls))
+	for id := range impls {
+		if id != c.Implementation && paired[id] {
+			ids = append(ids, id)
 		}
 	}
-	if report.Counterparts == nil {
-		report.Counterparts = []reportImpl{}
+	sort.Strings(ids)
+	for _, id := range ids {
+		report.Counterparts = append(report.Counterparts, *impls[id])
 	}
 	report.Claim = claim(c, report.Cases)
 	return report, nil

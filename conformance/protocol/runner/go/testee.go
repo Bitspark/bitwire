@@ -44,8 +44,9 @@ func (h Hello) Has(need string) bool {
 	return false
 }
 
-// without is hello less a feature, for an implementation whose report
-// declares it does not accept connections.
+// without is hello less a feature: the runner's reading of the
+// implementation under test when its report declares that it does not
+// accept connections (§8.2).
 func (h Hello) without(feature string) Hello {
 	out := h
 	out.Features = nil
@@ -97,9 +98,13 @@ type Testee struct {
 	stderr *transcript
 	next   int64
 	dead   error
-	exited chan struct{}
-	stop   chan struct{}
-	once   sync.Once
+	// exited is closed once stdout has ended and the process was reaped;
+	// exitCode is then its status, -1 when it was killed.
+	exited   chan struct{}
+	exitCode int
+	stop     chan struct{}
+	once     sync.Once
+	killTree func()
 }
 
 type line struct {
@@ -127,6 +132,11 @@ func Start(name string, c Command, extraEnv map[string]string) (*Testee, error) 
 		}
 	}
 	cmd.Env = env
+	// A testee may be a wrapper (a script, go run) whose child holds the
+	// streams: the runner ends the whole tree, and never waits unboundedly
+	// for a stream a leftover process keeps open.
+	cmd.WaitDelay = time.Second
+	prepareTree(cmd)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, err
@@ -142,25 +152,27 @@ func Start(name string, c Command, extraEnv map[string]string) (*Testee, error) 
 	}
 	t := &Testee{
 		Name: name, cmd: cmd, stdin: stdin, lines: make(chan line), stderr: errs,
-		exited: make(chan struct{}), stop: make(chan struct{}),
+		exited: make(chan struct{}), stop: make(chan struct{}), killTree: adoptTree(cmd),
 	}
 	go func() {
-		defer close(t.lines)
 		reader := bufio.NewReaderSize(stdout, 1<<20)
 		for {
 			data, err := reader.ReadBytes('\n')
-			select {
-			case t.lines <- line{data: data, err: err}:
-			case <-t.stop:
-				return
+			if err == nil || len(data) > 0 {
+				select {
+				case t.lines <- line{data: data, err: err}:
+				case <-t.stop:
+				}
 			}
 			if err != nil {
-				return
+				break
 			}
 		}
-	}()
-	go func() {
+		close(t.lines)
+		// Only now may Wait close the pipe: os/exec forbids waiting while
+		// stdout is still being read.
 		_ = cmd.Wait()
+		t.exitCode = cmd.ProcessState.ExitCode()
 		close(t.exited)
 	}()
 	answer, err := t.Request("hello", nil, 10*time.Second)
@@ -169,36 +181,54 @@ func Start(name string, c Command, extraEnv map[string]string) (*Testee, error) 
 		t.Kill()
 		return nil, fmt.Errorf("the %s testee did not answer hello: %w\n%s", name, err, stderr)
 	}
-	hello, ok := readHello(answer)
-	if !ok {
+	hello, reason := readHello(answer)
+	if reason != "" {
 		t.Kill()
-		return nil, fmt.Errorf("the %s testee answered hello with %s, not driver 1", name, answer.rendered())
+		return nil, fmt.Errorf("the %s testee answered hello with %s: %s", name, answer.rendered(), reason)
 	}
 	t.Hello = hello
 	return t, nil
 }
 
-// readHello reads hello's ok by its exact member names: driver exactly the
-// integer 1, language a string, layers and features arrays of strings.
-func readHello(answer Answer) (Hello, bool) {
+// readHello reads hello's ok by its exact member names (§3.5): driver
+// exactly the integer 1; language a string; layers and features arrays of
+// strings. An absent or null language, layers or features reads as empty,
+// as the upstream runner read it; a member of another type is refused. It
+// says why a hello is refused, or "".
+func readHello(answer Answer) (Hello, string) {
+	if answer.Error != nil {
+		return Hello{}, "an error, not a hello"
+	}
 	object, isObject := answer.OK.(map[string]any)
-	if answer.Error != nil || !isObject {
-		return Hello{}, false
+	if !isObject {
+		return Hello{}, "not an object"
 	}
 	driver, isNumber := object["driver"].(json.Number)
-	language, isString := object["language"].(string)
-	if !isNumber || driver.String() != "1" || !isString {
-		return Hello{}, false
+	if !isNumber || driver.String() != "1" {
+		return Hello{}, "driver is not the integer 1"
 	}
-	layers, okLayers := stringList(object["layers"])
-	features, okFeatures := stringList(object["features"])
-	if !okLayers || !okFeatures {
-		return Hello{}, false
+	hello := Hello{Driver: 1}
+	switch language := object["language"].(type) {
+	case nil:
+	case string:
+		hello.Language = language
+	default:
+		return Hello{}, "language is not a string"
 	}
-	return Hello{Driver: 1, Language: language, Layers: layers, Features: features}, true
+	var ok bool
+	if hello.Layers, ok = stringList(object["layers"]); !ok {
+		return Hello{}, "layers is not an array of strings"
+	}
+	if hello.Features, ok = stringList(object["features"]); !ok {
+		return Hello{}, "features is not an array of strings"
+	}
+	return hello, ""
 }
 
 func stringList(v any) ([]string, bool) {
+	if v == nil {
+		return nil, true
+	}
 	list, isList := v.([]any)
 	if !isList {
 		return nil, false
@@ -214,7 +244,8 @@ func stringList(v any) ([]string, bool) {
 	return out, true
 }
 
-// Request sends one op and waits for its answer. Any breach of the
+// Request sends one op and waits for its answer, within one deadline for
+// both writing the request and reading the answer. Any breach of the
 // exchange makes the testee dead and ends its process (§3.8).
 func (t *Testee) Request(op string, args map[string]any, within time.Duration) (Answer, error) {
 	if t.dead != nil {
@@ -230,11 +261,21 @@ func (t *Testee) Request(op string, args map[string]any, within time.Duration) (
 	if err != nil {
 		return Answer{}, fmt.Errorf("the request cannot be written: %w", err)
 	}
-	if _, err := t.stdin.Write(append(data, '\n')); err != nil {
-		return Answer{}, t.die(fmt.Errorf("the %s testee stopped reading: %w", t.Name, err))
-	}
 	timer := time.NewTimer(within)
 	defer timer.Stop()
+	written := make(chan error, 1)
+	go func() {
+		_, err := t.stdin.Write(append(data, '\n'))
+		written <- err
+	}()
+	select {
+	case err := <-written:
+		if err != nil {
+			return Answer{}, t.die(fmt.Errorf("the %s testee stopped reading: %w", t.Name, err))
+		}
+	case <-timer.C:
+		return Answer{}, t.die(fmt.Errorf("the %s testee did not read %s within %s", t.Name, op, within))
+	}
 	var l line
 	select {
 	case got, open := <-t.lines:
@@ -246,10 +287,7 @@ func (t *Testee) Request(op string, args map[string]any, within time.Duration) (
 		return Answer{}, t.die(fmt.Errorf("the %s testee did not answer %s within %s", t.Name, op, within))
 	}
 	if l.err != nil {
-		if len(bytes.TrimSpace(l.data)) != 0 {
-			return Answer{}, t.die(fmt.Errorf("the %s testee's stdout ended inside a line: %q", t.Name, l.data))
-		}
-		return Answer{}, t.die(fmt.Errorf("the %s testee's stdout has ended", t.Name))
+		return Answer{}, t.die(fmt.Errorf("the %s testee's stdout ended inside a line: %q", t.Name, l.data))
 	}
 	answer, err := readAnswer(l.data, t.next)
 	if err != nil {
@@ -259,8 +297,8 @@ func (t *Testee) Request(op string, args map[string]any, within time.Duration) (
 }
 
 // readAnswer reads one answer line to request id (§3.3): exact member
-// names, nothing after the object, an error that is an object with a
-// nonempty string code, and an absent ok read as {}.
+// names, nothing but JSON whitespace after the object, an error that is an
+// object with a nonempty string code, and an absent ok read as {}.
 func readAnswer(data []byte, id int64) (Answer, error) {
 	trimmed := bytes.TrimSuffix(data, []byte("\n"))
 	value, err := decode(trimmed)
@@ -314,37 +352,61 @@ func (t *Testee) Reset() error {
 	return nil
 }
 
-// Stop says bye, closes stdin and waits 10 s for the exit, then kills (§3.5).
-func (t *Testee) Stop() {
-	if t.dead == nil {
-		if _, err := t.Request("bye", nil, 10*time.Second); err == nil {
+// Stop says bye, closes stdin and waits 10 s for the exit, then kills
+// (§3.5). It reports whether the testee answered bye and exited with
+// status 0 by itself.
+func (t *Testee) Stop() bool {
+	clean := false
+	if t.dead == nil && !t.Exited() {
+		if answer, err := t.Request("bye", nil, 10*time.Second); err == nil && answer.Error == nil {
 			_ = t.stdin.Close()
 			select {
 			case <-t.exited:
+				clean = t.exitCode == 0
 			case <-time.After(10 * time.Second):
 			}
 		}
 	}
 	t.Kill()
+	return clean
 }
 
-// Kill ends the process without ceremony.
+// Kill ends the process and every process it started, without ceremony.
 func (t *Testee) Kill() {
-	t.once.Do(func() { close(t.stop) })
-	if t.cmd.Process != nil {
-		_ = t.cmd.Process.Kill()
-		select {
-		case <-t.exited:
-		case <-time.After(10 * time.Second):
+	t.once.Do(func() {
+		close(t.stop)
+		_ = t.stdin.Close()
+		if !t.Exited() {
+			t.killTree()
 		}
+	})
+	select {
+	case <-t.exited:
+	case <-time.After(10 * time.Second):
 	}
 	if t.dead == nil {
 		t.dead = fmt.Errorf("the %s testee was stopped", t.Name)
 	}
 }
 
-// Dead reports why the testee is no longer usable, or nil.
-func (t *Testee) Dead() error { return t.dead }
+// Exited reports whether the process has ended.
+func (t *Testee) Exited() bool {
+	select {
+	case <-t.exited:
+		return true
+	default:
+		return false
+	}
+}
+
+// Dead reports why the testee is no longer usable, or nil. A process that
+// ended between requests is dead too (§3.8).
+func (t *Testee) Dead() error {
+	if t.dead == nil && t.Exited() {
+		t.dead = fmt.Errorf("the %s testee exited with status %d", t.Name, t.exitCode)
+	}
+	return t.dead
+}
 
 // Stderr is what the testee wrote on stderr since its last reset.
 func (t *Testee) Stderr() string { return t.stderr.String() }

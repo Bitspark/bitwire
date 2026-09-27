@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -14,7 +15,7 @@ import (
 // The fake testee is this test binary run again with RUNNER_FAKE_TESTEE
 // naming a script: for each op, the answer lines to write in turn (the last
 // repeats), with ID standing for the request's id. HANG writes nothing,
-// EXIT ends the process, <FF> writes the byte 0xFF, and STDERR:text writes text to stderr and then
+// EXIT ends the process, THEN_EXIT:line answers and then exits, <FF> writes the byte 0xFF, and STDERR:text writes text to stderr and then
 // answers {}. Every request received is appended to RUNNER_FAKE_LOG.
 func TestMain(m *testing.M) {
 	if script := os.Getenv("RUNNER_FAKE_TESTEE"); script != "" {
@@ -74,6 +75,10 @@ func fakeTestee(scriptFile, logFile string) {
 			continue
 		case answer == "EXIT":
 			os.Exit(3)
+		case strings.HasPrefix(answer, "THEN_EXIT:"):
+			fmt.Fprintln(out, strings.ReplaceAll(strings.TrimPrefix(answer, "THEN_EXIT:"), "ID", id))
+			out.Flush()
+			os.Exit(0)
 		case strings.HasPrefix(answer, "STDERR:"):
 			fmt.Fprint(os.Stderr, strings.TrimPrefix(answer, "STDERR:"))
 			answer = `{"id":ID,"ok":{}}`
@@ -139,7 +144,7 @@ func TestHelloRefusals(t *testing.T) {
 		"driver 1.0":        `{"id":ID,"ok":{"driver":1.0,"language":"x","layers":[],"features":[]}}`,
 		"driver as string":  `{"id":ID,"ok":{"driver":"1","language":"x","layers":[],"features":[]}}`,
 		"capitalized":       `{"id":ID,"ok":{"Driver":1,"language":"x","layers":[],"features":[]}}`,
-		"no language":       `{"id":ID,"ok":{"driver":1,"layers":[],"features":[]}}`,
+		"language a number": `{"id":ID,"ok":{"driver":1,"language":1,"layers":[],"features":[]}}`,
 		"layers not a list": `{"id":ID,"ok":{"driver":1,"language":"x","layers":"seam","features":[]}}`,
 		"an error":          `{"id":ID,"error":{"code":"nope"}}`,
 		"exits":             `EXIT`,
@@ -271,11 +276,19 @@ func TestResetAndBye(t *testing.T) {
 	if err := testee.Reset(); err != nil || testee.Stderr() != "" {
 		t.Fatalf("reset: %v, stderr %q", err, testee.Stderr())
 	}
-	testee.Stop()
-	select {
-	case <-testee.exited:
-	default:
-		t.Error("the testee did not exit after bye")
+	if !testee.Stop() || !testee.Exited() {
+		t.Error("the testee did not answer bye and exit 0 by itself")
+	}
+	ignoring, _, err := fake(t, map[string][]string{"bye": {"HANG"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	start := time.Now()
+	if ignoring.Stop() {
+		t.Error("a testee that ignores bye stopped cleanly")
+	}
+	if time.Since(start) > 15*time.Second || !ignoring.Exited() {
+		t.Errorf("stopping a testee that ignores bye took %s, exited %v", time.Since(start), ignoring.Exited())
 	}
 	failing, _, err := fake(t, map[string][]string{"reset": {`{"id":ID,"error":{"code":"internal"}}`}})
 	if err != nil {
@@ -283,5 +296,51 @@ func TestResetAndBye(t *testing.T) {
 	}
 	if err := failing.Reset(); err == nil {
 		t.Error("a reset error was accepted")
+	}
+}
+
+// §3.8: a process that ended between requests is dead, and the runner
+// starts a new one for the next case.
+func TestExitBetweenRequests(t *testing.T) {
+	testee, _, err := fake(t, map[string][]string{"conn.send": {"THEN_EXIT:" + okEmpty}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := testee.Request("conn.send", nil, 5*time.Second); err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	for !testee.Exited() && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+	}
+	if err := testee.Dead(); err == nil || !strings.Contains(err.Error(), "exited") {
+		t.Fatalf("dead: %v", err)
+	}
+}
+
+// A testee command may be a wrapper whose child holds the streams: killing
+// it ends the whole tree promptly.
+func TestKillEndsTheTree(t *testing.T) {
+	self, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	script := filepath.Join(dir, "script.json")
+	if err := os.WriteFile(script, []byte("{}"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	argv := []string{"sh", "-c", "\"$0\" -test.run='^$'; true", self}
+	if runtime.GOOS == "windows" {
+		argv = []string{"cmd", "/c", self, "-test.run=^$"}
+	}
+	testee, err := Start("wrapped", Command{Argv: argv}, map[string]string{"RUNNER_FAKE_TESTEE": script})
+	if err != nil {
+		t.Fatal(err)
+	}
+	start := time.Now()
+	testee.Kill()
+	if !testee.Exited() || time.Since(start) > 5*time.Second {
+		t.Fatalf("killing a wrapped testee took %s, exited %v", time.Since(start), testee.Exited())
 	}
 }
