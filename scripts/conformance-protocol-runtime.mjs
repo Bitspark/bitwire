@@ -6,7 +6,16 @@
 // pairing with itself and with the other language in both orders. Both must
 // be supported.
 //
+// It then runs deliberately invalid testees (conformance/protocol/mutants/go):
+// the released Go testee behind a proxy that changes one thing. The control,
+// which relays every connection and changes nothing, must be supported. Every
+// other mutant must not be, and a required case of a scenario it names must
+// fail. By the claim rule one failing required case is enough to reject a
+// claim, so a rejected mutant runs only the
+// scenarios it names; --mutants-full runs its whole claim instead.
+//
 //   node scripts/conformance-protocol-runtime.mjs [--keep-scratch]
+//     [--mutants=name,...|--no-mutants] [--mutants-full]
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -18,6 +27,7 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const home = join(root, 'conformance/protocol/testees');
 const runnerDir = join(root, 'conformance/protocol/runner/go');
+const mutantDir = join(root, 'conformance/protocol/mutants/go');
 const pins = JSON.parse(readFileSync(join(home, 'bitruntime.json'), 'utf8'));
 const exe = process.platform === 'win32' ? '.exe' : '';
 const goEnv = { ...process.env, GOWORK: 'off', GOFLAGS: '-mod=readonly' };
@@ -68,6 +78,8 @@ try {
   run('go', ['build', ...(race ? ['-race'] : []), '-o', goTestee, pins.go.testee], { cwd: join(home, 'go'), env: goEnv, stdio: ['ignore', 'inherit', 'inherit'] });
   const runner = join(scratch, `runner${exe}`);
   run('go', ['build', '-o', runner, '.'], { cwd: runnerDir, env: goEnv, stdio: ['ignore', 'inherit', 'inherit'] });
+  const mutant = join(scratch, `mutant${exe}`);
+  run('go', ['build', '-o', mutant, '.'], { cwd: mutantDir, env: goEnv, stdio: ['ignore', 'inherit', 'inherit'] });
 
   const ts = join(scratch, 'ts');
   cpSync(join(home, 'ts'), ts, { recursive: true });
@@ -92,18 +104,61 @@ try {
     ['go', [['go', 'go'], ['go', 'ts'], ['ts', 'go']]],
     ['ts', [['ts', 'ts'], ['ts', 'go'], ['go', 'ts']]],
   ];
-  const lines = [];
-  for (const [implementation, pairings] of claims) {
+  // Runs one claim and returns the runner's exit status and its report.
+  const claim = (implementation, implementations, pairings, only) => {
     const config = join(scratch, `run-${implementation}.json`);
     const report = join(scratch, `report-${implementation}.json`);
     writeFileSync(config, JSON.stringify({ scope: 'core', implementation, implementations, pairings, transports: [{ name: 'websocket', subprotocols: true }] }, null, 2));
-    const result = spawnSync(runner, ['run', '-config', config, '-report', report, '-quiet', '-checkout', root], { encoding: 'utf8' });
+    const result = spawnSync(runner, ['run', '-config', config, '-report', report, '-quiet', '-checkout', root, ...(only ? ['-only', only] : [])], { encoding: 'utf8' });
     process.stderr.write(result.stderr);
-    const parsed = JSON.parse(readFileSync(report, 'utf8'));
-    const failing = parsed.cases.filter(entry => entry.required && entry.result !== 'pass');
+    return { status: result.status, report: JSON.parse(readFileSync(report, 'utf8')) };
+  };
+  const lines = [];
+  for (const [implementation, pairings] of claims) {
+    const { status, report } = claim(implementation, implementations, pairings);
+    const failing = report.cases.filter(entry => entry.required && entry.result !== 'pass');
     for (const entry of failing.slice(0, 20)) console.log(`  ${entry.result} ${entry.id} [${entry.pairing.a} | ${entry.pairing.b}]: ${entry.reason}`);
-    assert.equal(result.status, 0, `the ${implementation} claim is not supported`);
-    lines.push({ implementation, report: parsed });
+    assert.equal(status, 0, `the ${implementation} claim is not supported`);
+    lines.push({ implementation, report });
+  }
+
+  // Deliberately invalid testees, each paired with the valid Go testee in both orders.
+  const selected = process.argv.find(arg => arg.startsWith('--mutants='))?.slice('--mutants='.length).split(',');
+  const table = process.argv.includes('--no-mutants') ? [] : JSON.parse(run(mutant, ['-list']))
+    .filter(entry => !selected || entry.name === 'none' || selected.includes(entry.name));
+  if (selected) for (const name of selected) assert.ok(table.some(entry => entry.name === name), `no mutation ${name}`);
+  const full = process.argv.includes('--mutants-full');
+  // A case id is the scenario's layer and name, then any row and mirroring.
+  const scenarioId = file => {
+    const scenario = JSON.parse(readFileSync(join(root, 'conformance/protocol/scenarios', file), 'utf8'));
+    return `${file.split('/')[0]}/${scenario.name}`;
+  };
+  const escape = text => text.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&');
+  const verdicts = [];
+  for (const { name, violates, catches = [] } of table) {
+    const started = Date.now();
+    const focused = !full && catches.length > 0;
+    const only = focused ? `^(?:${catches.map(file => escape(scenarioId(file))).join('|')})(?:\\[| \\(|$)` : undefined;
+    const { status, report } = claim(name, {
+      go: implementations.go,
+      [name]: {
+        ...implementations.go, name: `bitruntime (Go) behind mutant ${name}`,
+        artifacts: [goTestee, mutant], testee: { argv: [mutant, '-mutation', name, '--', goTestee] },
+      },
+    }, [[name, 'go'], ['go', name]], only);
+    const seconds = ((Date.now() - started) / 1000).toFixed(0);
+    const failing = report.cases.filter(entry => entry.required && entry.result === 'fail');
+    if (name === 'none') {
+      for (const entry of report.cases.filter(entry => entry.required && entry.result !== 'pass').slice(0, 20)) console.log(`  ${entry.result} ${entry.id} [${entry.pairing.a} | ${entry.pairing.b}]: ${entry.reason}`);
+      assert.equal(status, 0, 'the control is not supported, so the mutant proxy is not transparent');
+      verdicts.push(`control (${violates}): supported, ${report.claim.counts.pass} required cases pass; ${seconds}s`);
+      continue;
+    }
+    assert.notEqual(status, 0, `the mutant ${name} is supported: ${violates}`);
+    const caught = failing.filter(entry => catches.includes(entry.file.replace(/^scenarios\//, '')));
+    assert.ok(caught.length, `the mutant ${name} fails no case of ${catches.join(', ')}; it fails ${failing.map(entry => entry.id).join('; ') || 'nothing'}`);
+    const ran = report.cases.filter(entry => entry.required && entry.result !== 'skip').length;
+    verdicts.push(`${name}: rejected by "${caught[0].id}"; ${failing.length} of the ${ran} required cases run fail${focused ? ' (its named scenarios only)' : ''}; ${seconds}s`);
   }
 
   const [{ report: first }] = lines;
@@ -116,6 +171,10 @@ try {
   for (const { implementation, report } of lines) {
     const counts = report.claim.counts;
     console.log(`  claim ${implementation}: ${report.claim.result}; required ${counts.pass} pass, ${counts.fail} fail, ${counts.unsupported} unsupported, ${counts.skip} skip, ${counts.harness} harness; pairings ${report.pairings.map(p => `${p.a}/${p.b}`).join(', ')}; ${report.implementation.toolchain}`);
+  }
+  if (verdicts.length) {
+    console.log('Deliberately invalid testees (the released Go testee behind conformance/protocol/mutants/go):');
+    for (const verdict of verdicts) console.log(`  ${verdict}`);
   }
   console.log('Released-runtime evidence for bitwire/1, core scope, over WebSockets. Edition 1 of the contract is a draft.');
 } finally {

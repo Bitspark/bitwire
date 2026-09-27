@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- Add deliberately invalid `bitwire/1` testees (#59).
+  `conformance/protocol/mutants/go` wraps a valid driver-1 testee and changes
+  one thing: an argument in the exchange, or a WebSocket frame, through a
+  transparent TCP relay. `scripts/conformance-protocol-runtime.mjs` runs each
+  mutation around bitruntime's released Go testee:
+  - the control, which changes nothing, must be supported;
+  - every mutant must be rejected by a failing case of a scenario it names.
+
+  Among the mutants is the defect of bitruntime#21: 4011 where 1009 is bound.
+  It exposed a gap in the authored over-limit scenarios. They asserted the
+  refusing peer's own report, but not the code the sender reads off the wire.
+  They now do, as the malformed-frame scenario does for 4011, which gives a new
+  `evidenceDigest`.
+
+  The runs also exposed a rare race in bitruntime's Go client, now
+  bitruntime#32: a cancelled call's slot is freed after the caller learns it
+  ended, so a call made at once can be refused `busy`.
 - Move the runtime conformance families from bitruntime v0.3.0 to v0.4.2, the
   release the `bitwire/1` runs pin. This includes the full-tree family's
   production realization, bound and served by bitruntime. The Go module,

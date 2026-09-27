@@ -90,7 +90,7 @@ evidence, and their raw frames name a driver's handler canonically (`4:echo`).
 | [`peer/trace-members-any-order`](scenarios/peer/trace-members-any-order.json) | A response carries its request's `traceparent` and `tracestate` byte for byte, wherever the envelope places its members and with any whitespace; a `tracestate` that arrived alone comes back alone. The `tracestate` keeps W3C's optional whitespace, so re-serializing it fails. Replaces `peer/trace-members-verbatim`. | "Trace context": "a response carries its request's members byte for byte" |
 | [`tunnel/declaration-digest-names-the-family`](scenarios/tunnel/declaration-digest-names-the-family.json) | A differing declaration digest is refused `contract_mismatch`, read on the wire through a raw `channel.open`, naming the family in the message or the data. Every other step of `tunnel/declaration-digest` is kept. Replaces it. | `tunnel.md`: "refused `contract_mismatch`, naming the family" |
 | [`peer/binary-frame-ends-the-connection-canonical`](scenarios/peer/binary-frame-ends-the-connection-canonical.json) | Every step of `peer/binary-frame-ends-the-connection`, with its raw frames naming `4:echo`. Replaces it. | A binary frame ends the connection with 4011, undispatched |
-| [`peer/over-limit-frame-ends-with-1009`](scenarios/peer/over-limit-frame-ends-with-1009.json), [`…-client`](scenarios/peer/over-limit-frame-ends-with-1009-client.json) | A frame of exactly the receiving peer's limit is served; one byte over ends the connection with 1009, and never reaches its handler. Once with the peer as server, once as client. The sender's observation is the transport's. | "The connection beneath": refused before delivery, with 1009 |
+| [`peer/over-limit-frame-ends-with-1009`](scenarios/peer/over-limit-frame-ends-with-1009.json), [`…-client`](scenarios/peer/over-limit-frame-ends-with-1009-client.json) | A frame of exactly the receiving peer's limit is served; one byte over ends the connection with 1009, and never reaches its handler. Once with the peer as server, once as client. The sender's send may succeed or fail, and it then reads 1009 off the wire. | "The connection beneath": refused before delivery, with 1009 |
 | [`peer/empty-method-ends-with-4011`](scenarios/peer/empty-method-ends-with-4011.json), [`peer/empty-event-name-ends-with-4011`](scenarios/peer/empty-event-name-ends-with-4011.json) | A request with an empty `method`, or an event with an empty `event`, ends the connection with 4011, as both sides observe it. | "The envelope": nonempty names |
 | [`peer/plain-names-are-not-rejected`](scenarios/peer/plain-names-are-not-rejected.json) | A plain request name nothing handles is answered `method_not_found`; a plain event name is dropped; the connection lives. | "Paths": "Revision 1 does not reject plain names" |
 | [`peer/only-canonical-names-reach-a-path`](scenarios/peer/only-canonical-names-reach-a-path.json) | `4:echo` reaches the path `["echo"]`; `04:echo`, `5:echo`, `4:echox` and `echo` are not canonical for it and are answered `method_not_found`. | "Paths": canonical decoding |
@@ -173,10 +173,64 @@ At bitruntime v0.4.2, and this evidence set, both claims are supported locally:
 end in a harness failure. These runs are the ones edition 1's release waits
 for ([§1](CONTRACT.md#1-identity-and-status)); the edition is still a draft.
 
+## Deliberately invalid testees
+
+A supported claim means little unless the same evidence rejects an
+implementation that breaks `bitwire/1`. [`mutants/go`](mutants/go/main.go) is a
+test-only testee that wraps a valid driver-1 testee and changes one thing, in
+one of two ways:
+- **In the exchange.** It changes an argument the runner sends, or answers a
+  request itself instead of forwarding it. An example is a peer given no limit.
+- **On the wire.** It relays every WebSocket connection of the testee through a
+  TCP relay. The handshake passes through byte for byte, with `Host` naming the
+  endpoint. The relay then reads each frame and may change, drop, repeat or
+  abort it. An example is 4011 sent where the testee closed with 1009.
+
+`node scripts/conformance-protocol-runtime.mjs` runs each mutation around the
+released Go testee as the implementation under test, paired with the valid Go
+testee in both orders. It requires:
+- the control, `none`, to be supported. It relays every connection frame by
+  frame and changes nothing, so it shows that the proxy and relay are
+  transparent.
+- every other mutant not to be supported, with a required case of a scenario
+  that the mutant names failing (not merely ending in a harness failure).
+
+By the claim rule ([§8.4](CONTRACT.md#84-claim-rule)), one failing required case
+rejects a claim. So a mutant runs only the scenarios it names, and
+`--mutants-full` runs its whole claim instead. `--mutants=name,…` runs only
+those mutants, and `--no-mutants` none.
+
+A mutant changes only what the other side sees. One that changes a close code
+turns the other side's answering close frame back into the testee's own code,
+so the testee sees the handshake it expects, as a peer that chose that code
+would.
+
+| Mutant | Changes | Breaks | Rejected by a failing case of |
+| --- | --- | --- | --- |
+| `aborts-instead-of-closing` | wire: ends the connection instead of sending its close frame | a side that closes or refuses sends a close frame with its code, and a refusal reaches the other side as 4011 | [`peer/malformed-frame-ends-the-connection`](scenarios/peer/malformed-frame-ends-the-connection.json), [`peer/empty-method-ends-with-4011`](scenarios/peer/empty-method-ends-with-4011.json), [`seam/close-carries-code-and-reason`](scenarios/seam/close-carries-code-and-reason.json) |
+| `accepts-non-canonical-names` | wire: rewrites a received name to its canonical encoding, as a lenient decoder would | only a name's canonical encoding reaches the path it encodes | [`peer/only-canonical-names-reach-a-path`](scenarios/peer/only-canonical-names-reach-a-path.json) |
+| `accepts-repeated-serials` | wire: drops a received request whose serial does not increase | a request serial that does not increase ends the connection | [`peer/request-serials-increase-in-publication-order`](scenarios/peer/request-serials-increase-in-publication-order.json) |
+| `closes-normally-as-going-away` | wire: sends 1001 where the testee closed with 1000 | a normal close is 1000, and the other side reports it clean; 1001 means going away | [`peer/well-formed-frame-is-served`](scenarios/peer/well-formed-frame-is-served.json), [`peer/request-serials-may-leave-gaps`](scenarios/peer/request-serials-may-leave-gaps.json) |
+| `delivers-binary-as-text` | wire: delivers a received binary frame as text | a frame arrives with its kind; a binary frame is never an envelope | [`seam/order-and-whole`](scenarios/seam/order-and-whole.json), [`peer/binary-frame-ends-the-connection-canonical`](scenarios/peer/binary-frame-ends-the-connection-canonical.json) |
+| `delivers-frames-twice` | wire: sends every data frame twice | frames arrive in order, whole and once | [`seam/order-and-whole`](scenarios/seam/order-and-whole.json) |
+| `drops-error-data` | wire: removes `data` from the errors it sends | a public error reaches the caller with its code, message and data | [`peer/public-error`](scenarios/peer/public-error.json) |
+| `drops-events` | wire: drops the events it sends | an emitted event reaches the other side | [`peer/events-both-ways`](scenarios/peer/events-both-ways.json) |
+| `drops-meta` | wire: removes `meta` from what it sends | meta travels with a request and an event | [`peer/meta-travels-with-a-call-and-an-event`](scenarios/peer/meta-travels-with-a-call-and-an-event.json) |
+| `ignores-call-deadline` | exchange: drops a call's `timeout_ms` and the peer's `request_timeout_ms` | a call whose deadline passes ends with request_timeout | [`peer/request-timeout`](scenarios/peer/request-timeout.json) |
+| `ignores-cancel` | exchange: answers `call.cancel` without cancelling | a caller's cancellation reaches the handler, and the call ends cancelled | [`peer/cancellation-reaches-the-handler`](scenarios/peer/cancellation-reaches-the-handler.json) |
+| `ignores-its-limit` | exchange: raises every receive limit to 64 MiB | a frame over the receiver's limit is refused, and the connection ended | [`seam/over-limit-refused`](scenarios/seam/over-limit-refused.json), [`peer/over-limit-frame-ends-with-1009`](scenarios/peer/over-limit-frame-ends-with-1009.json), [`peer/over-limit-frame-ends-with-1009-client`](scenarios/peer/over-limit-frame-ends-with-1009-client.json) |
+| `ignores-pending-limit` | exchange: drops `max_pending_requests` | the call past max_pending_requests is refused busy | [`peer/outstanding-call-limit`](scenarios/peer/outstanding-call-limit.json) |
+| `ignores-subprotocols` | exchange: drops the subprotocols of `peer.listen` and `peer.dial` | the handshake selects a subprotocol the client offered and the server accepts | [`peer/subprotocol-negotiated-at-the-handshake`](scenarios/peer/subprotocol-negotiated-at-the-handshake.json) |
+| `refuses-over-limit-with-4011` | wire: sends 4011 where the testee refused with 1009 | an over-limit frame ends the connection with 1009, not 4011 (the defect of bitruntime#21) | [`peer/over-limit-frame-ends-with-1009`](scenarios/peer/over-limit-frame-ends-with-1009.json), [`peer/over-limit-frame-ends-with-1009-client`](scenarios/peer/over-limit-frame-ends-with-1009-client.json) |
+| `replaces-invalid-unicode` | wire: replaces unpaired surrogates and invalid UTF-8 in received text | strings hold Unicode scalar values; a frame with an unpaired surrogate is refused | [`peer/malformed-frame-ends-the-connection`](scenarios/peer/malformed-frame-ends-the-connection.json) |
+| `substitutes-its-close-code` | wire: sends another code than the one the testee closed with | a close carries the code its side chose | [`seam/close-carries-code-and-reason`](scenarios/seam/close-carries-code-and-reason.json) |
+
+The mutants run only against the Go testee. Each change is one a defective
+implementation of either language could make.
+
 ## Not yet here
 
 - The release of edition 1.
-- Deliberately invalid testees that a run must reject.
 - Path-encoding evidence beyond one segment (finding F3), which driver 1 cannot
   reach.
 
