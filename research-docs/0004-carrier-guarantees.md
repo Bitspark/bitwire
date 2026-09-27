@@ -2,7 +2,9 @@
 
 **ID:** 0004
 **Date:** 27 September 2026
-**Status:** awaiting-advice
+**Status:** submitted
+**Run-ID:** run_0433aa85-2cb9-4776-aeb8-18070e987502
+**Document-ID:** doc_90198353-fd44-4d82-9e19-1eb08ee241de
 **Author:** Julian Matschinske <julian@matschinske.com>
 **Issue:** [bitwire#54](https://github.com/Bitspark/bitwire/issues/54)
 
