@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { derive, expected, loadCheck, verify } from './protocol-scenarios.mjs';
+import { derive, digests, expected, loadCheck, verify } from './protocol-scenarios.mjs';
 
 const root = new URL('../', import.meta.url);
 const json = path => JSON.parse(readFileSync(new URL(path, root), 'utf8'));
@@ -43,6 +43,20 @@ test('authored scenarios name the identity, derive from nothing and replace each
     const name = entry.path.split('/').slice(-2).join('/').replace('.json', '');
     assert.ok(authored.some(([, scenario]) => scenario.description?.includes(name)), `no authored replacement names ${name}`);
   }
+});
+
+test('the contract files are a released edition, and change only by a new record', () => {
+  const { editions } = json('conformance/protocol/editions.json');
+  const { contractDigest } = digests();
+  const released = editions.filter(entry => entry.edition === 1);
+  assert.ok(released.length > 0, 'edition 1 is not released');
+  for (const entry of released) {
+    assert.match(entry.released, /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/);
+    assert.equal(entry.driver, 1);
+    assert.deepEqual(entry.protocol, { revision: 'bitwire/1', normativeDigest: digest });
+  }
+  assert.ok(released.some(entry => entry.contractDigest === contractDigest),
+    `the contract files (contractDigest ${contractDigest}) are no released edition 1. An editorial correction is recorded in conformance/protocol/editions.json as a new contractDigest of edition 1 (CONTRACT.md §1); any other change is a new edition.`);
 });
 
 test('the selection excludes, marks diagnostics and marks known defects', () => {

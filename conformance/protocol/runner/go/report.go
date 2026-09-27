@@ -239,6 +239,31 @@ type reportClaim struct {
 // read from the checkout.
 const runnerVersion = "0.1.0"
 
+// releaseStatus is "released" when conformance/protocol/editions.json in the
+// checkout records this edition with this contractDigest, and "draft"
+// otherwise (§1).
+func releaseStatus(checkout, contractDigest string) string {
+	data, err := os.ReadFile(filepath.Join(checkout, "conformance", "protocol", "editions.json"))
+	if err != nil {
+		return "draft"
+	}
+	var record struct {
+		Editions []struct {
+			Edition        int    `json:"edition"`
+			ContractDigest string `json:"contractDigest"`
+		} `json:"editions"`
+	}
+	if json.Unmarshal(data, &record) != nil {
+		return "draft"
+	}
+	for _, e := range record.Editions {
+		if e.Edition == edition && e.ContractDigest == contractDigest {
+			return "released"
+		}
+	}
+	return "draft"
+}
+
 // Execute runs every case the configuration asks for and builds the report.
 func Execute(c *Config, checkout string, evidence *Evidence, only *regexp.Regexp, log io.Writer) (*Report, error) {
 	report := &Report{
@@ -247,7 +272,7 @@ func Execute(c *Config, checkout string, evidence *Evidence, only *regexp.Regexp
 		Roles:      []string{"client", "server"},
 		Transports: c.Transports,
 		Runner:     runnerIdentity(checkout),
-		Contract:   reportContract{Edition: edition, ContractDigest: evidence.ContractDigest, Status: "draft"},
+		Contract:   reportContract{Edition: edition, ContractDigest: evidence.ContractDigest, Status: releaseStatus(checkout, evidence.ContractDigest)},
 		Evidence:   reportEvidence{EvidenceDigest: evidence.EvidenceDigest, OptionalRequested: append([]string{}, c.Optional...)},
 		Time:       time.Now().UTC().Format(time.RFC3339),
 		Platform:   runtime.GOOS + "/" + runtime.GOARCH,

@@ -224,3 +224,20 @@ func TestExecuteRestartsADeadTestee(t *testing.T) {
 		t.Fatalf("%d harness cases, %d processes", harness, hellos)
 	}
 }
+
+func TestReleaseStatus(t *testing.T) {
+	root := checkoutRoot(t)
+	evidence, err := Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := releaseStatus(root, evidence.ContractDigest); got != "released" {
+		t.Errorf("the checkout's own contract is %s; editions.json does not record its contractDigest", got)
+	}
+	if got := releaseStatus(root, strings.Repeat("0", 64)); got != "draft" {
+		t.Errorf("an unrecorded contractDigest is %s", got)
+	}
+	if got := releaseStatus(t.TempDir(), evidence.ContractDigest); got != "draft" {
+		t.Errorf("a checkout without editions.json is %s", got)
+	}
+}

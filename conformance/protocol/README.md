@@ -9,7 +9,7 @@ defines the separation, and nothing here changes a protocol requirement.
 | What | Identity | Files |
 | --- | --- | --- |
 | Protocol | (`bitwire/1`, `normativeDigest`) | [`protocol/bitwire-1`](../../protocol/bitwire-1/README.md) |
-| Conformance contract | Edition 1, compatible with driver 1 | [`CONTRACT.md`](CONTRACT.md), [`scenario.schema.json`](scenario.schema.json), [`selection.json`](selection.json) |
+| Conformance contract | Edition 1, released on 28 September 2026, compatible with driver 1 | [`CONTRACT.md`](CONTRACT.md), [`scenario.schema.json`](scenario.schema.json), [`selection.json`](selection.json); the release in [`editions.json`](editions.json) |
 | Evidence set | These files' content hashes | [`scenarios/`](scenarios) |
 | Runner | Its name, version and source revision | [`runner/go`](runner/go/main.go), test-only and never published |
 
@@ -139,11 +139,24 @@ as `scripts/protocol-scenarios.mjs`. The tests hold the runner to:
 - the exchange's failure modes, through a scripted fake testee;
 - `repeat`, judging, binding, applicability and the claim rule.
 
-**Edition 1 is still a draft.** This runner passes the contract's examples, which
-is the first condition for releasing it ([§1](CONTRACT.md#1-identity-and-status)).
-The release follows the first runs against real testees, so that anything those
-runs expose can still enter edition 1. Until then every report says
-`"status": "draft"`.
+**Edition 1 is released,** on 28 September 2026, with `contractDigest`
+`310daabd…`. [`editions.json`](editions.json) records it, outside the files the
+digest covers ([§1](CONTRACT.md#1-identity-and-status)). The release followed:
+- this runner passing the contract's examples;
+- the runs against bitruntime's released testees;
+- the deliberately invalid testees below.
+
+Nothing they exposed needed a change to the contract. A report says
+`"status": "released"` when its (edition, `contractDigest`) is recorded, and
+`"draft"` otherwise.
+
+`node scripts/check.mjs` fails when the contract files match no recorded
+digest, so edition 1 cannot change in place:
+- an editorial correction is recorded as a new `contractDigest` of edition 1;
+- any other change is a new edition.
+
+The evidence set may still change within the edition, under a new
+`evidenceDigest`.
 
 ## Runs against released bitruntime
 
@@ -170,8 +183,7 @@ release, and each claim's counts and toolchain.
 
 At bitruntime v0.4.2, and this evidence set, both claims are supported locally:
 345 required cases pass in each, and none fail, are unsupported, are skipped or
-end in a harness failure. These runs are the ones edition 1's release waits
-for ([§1](CONTRACT.md#1-identity-and-status)); the edition is still a draft.
+end in a harness failure. Edition 1's release followed these runs.
 
 ## Deliberately invalid testees
 
@@ -230,9 +242,6 @@ implementation of either language could make.
 
 ## Not yet here
 
-- The release of edition 1.
-- Path-encoding evidence beyond one segment (finding F3), which driver 1 cannot
-  reach.
-
-[#59](https://github.com/Bitspark/bitwire/issues/59) tracks each of these as a
-separate increment.
+Path-encoding evidence beyond one segment (finding F3) is not here. Driver 1
+cannot reach it, so it needs a new driver and therefore a new edition
+([#59](https://github.com/Bitspark/bitwire/issues/59)).
