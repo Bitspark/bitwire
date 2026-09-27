@@ -176,7 +176,7 @@ Two of these cases have nothing else: `guard-around-composite` and
 - The origin-bearing construction gap (16 cases) and the conflicting and
   missing-child gaps are met structurally by public `Compose`/`compose`. The
   origin-bearing gap's carrier members are met in production through
-  bitruntime's `Bind`/`bind` and `Serve`/`serve` (v0.3.0), and in the reference
+  bitruntime's `Bind`/`bind` and `Serve`/`serve` (since v0.3.0), and in the reference
   through its test-only adapters.
 - The invalid-segment gap changed meaning: no tree key is invalid, and the bridge
   refuses ill-formed segments.

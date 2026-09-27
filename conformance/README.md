@@ -32,11 +32,11 @@ the case files' SHA-256s and every family's result in each language.
   any other module graph, revision or sum, and runs every driver with
   `GOWORK=off` under the race detector (required in CI).
 - **TypeScript.** The private, test-only package
-  [`runtime/ts`](runtime/ts/package.json) depends on bitruntime's v0.3.0
+  [`runtime/ts`](runtime/ts/package.json) depends on bitruntime's v0.4.2
   release asset, `@bitspark/bitwire` 0.3.0 and `ws` 8.21.3, and its
   `.npmrc` takes the `@bitspark` scope from the public npm registry. The
   runner downloads the release asset and checks its SHA-256 and integrity and
-  that tag v0.3.0 names the pinned revision. It refuses a lockfile entry that is
+  that the release tag names the pinned revision. It refuses a lockfile entry that is
   not a public, integrity-pinned artifact or that names another bitruntime or
   bitwire, installs with `npm ci` in scratch, type-checks the drivers with
   TypeScript and runs them with Node 24's type stripping.

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Move the runtime conformance families from bitruntime v0.3.0 to v0.4.2, the
+  release the `bitwire/1` runs pin. This includes the full-tree family's
+  production realization, bound and served by bitruntime. The Go module,
+  TypeScript release asset, SHA-256, integrity and lockfile move together.
+  bitwire stays at 0.3.0.
 - Adopt the carrier contract's first part (decision 0013, #54), after research
   0004:
   - Decision 0013 clarifies decision 0008. A separately versioned carrier

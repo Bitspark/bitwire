@@ -7,7 +7,7 @@
   "type": "module",
   "engines": { "node": ">=24.0.0" },
   "dependencies": {
-    "@bitspark/bitruntime": "https://github.com/Bitspark/bitruntime/releases/download/v0.3.0/bitspark-bitruntime-0.3.0.tgz",
+    "@bitspark/bitruntime": "https://github.com/Bitspark/bitruntime/releases/download/v0.4.2/bitspark-bitruntime-0.4.2.tgz",
     "@bitspark/bitwire": "0.3.0",
     "ws": "8.21.3"
   },
