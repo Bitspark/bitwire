@@ -11,13 +11,31 @@ const digest = manifest.normativeDigest;
 const bySource = () => new Map([...expected().values()].map(scenario => [scenario.source.path.split('/').slice(-2).join('/'), scenario]));
 
 test('every derivative matches its archived source and names the published identity', () => {
-  const scenarios = verify();
+  const scenarios = new Map([...verify()].filter(([, scenario]) => scenario.source));
   assert.equal(scenarios.size, 37);
   for (const [path, scenario] of scenarios) {
     assert.equal(scenario.protocol.normativeDigest, digest, path);
     const source = json(scenario.source.path);
     assert.deepEqual(scenario.steps, source.steps, `${path}: steps are the upstream steps, unchanged`);
     assert.deepEqual(scenario.foreach, source.foreach, `${path}: table expansion is unchanged`);
+  }
+});
+
+test('authored scenarios name the identity, derive from nothing and replace each known defect', () => {
+  const authored = [...verify()].filter(([, scenario]) => !scenario.source);
+  const paths = authored.map(([path]) => path).sort();
+  assert.deepEqual(paths, [
+    'conformance/protocol/scenarios/peer/over-limit-frame-ends-with-1009.json',
+    'conformance/protocol/scenarios/peer/trace-members-any-order.json',
+    'conformance/protocol/scenarios/tunnel/declaration-digest-names-the-family.json',
+  ]);
+  for (const [path, scenario] of authored) {
+    assert.equal(scenario.protocol.normativeDigest, digest, path);
+    assert.equal(scenario.optional, undefined, `${path} is required evidence`);
+  }
+  for (const entry of selection.defective) {
+    const name = entry.path.split('/').slice(-2).join('/').replace('.json', '');
+    assert.ok(authored.some(([, scenario]) => scenario.description?.includes(name)), `no authored replacement names ${name}`);
   }
 });
 

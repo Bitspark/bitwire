@@ -1,0 +1,64 @@
+{
+  "name": "a response carries its request's trace members byte for byte, in any member order",
+  "layer": "peer",
+  "protocol": {
+    "revision": "bitwire/1",
+    "normativeDigest": "7797682b0f05f86c508eafbd3be23c2084acd2f5cfc766922f9372b652dc416e"
+  },
+  "scope": "core",
+  "description": "Authored by bitwire from SCOPE.md, \"Trace context\": \"a response and a cancel carry their request's members\". It replaces the defective derivative peer/trace-members-verbatim, whose pattern assumed an order of envelope members and no whitespace; the envelope orders no members.",
+  "needs": [
+    "peer",
+    "propagator",
+    "seam"
+  ],
+  "steps": [
+    {
+      "on": "runner",
+      "op": "pair.peer_and_conn",
+      "args": {
+        "peer": "b",
+        "role": "server",
+        "options": {
+          "propagate": true
+        }
+      },
+      "bind": {
+        "peer": "pb",
+        "conn": "ca"
+      }
+    },
+    {
+      "on": "b",
+      "op": "peer.handle",
+      "args": {
+        "on": "$pb",
+        "method": "echo",
+        "behavior": {
+          "kind": "echo"
+        }
+      }
+    },
+    {
+      "on": "a",
+      "op": "conn.send",
+      "args": {
+        "on": "$ca",
+        "kind": "text",
+        "text": "{\"version\":1,\"kind\":\"request\",\"id\":\"c:1\",\"method\":\"echo\",\"params\":{},\"traceparent\":\"00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\",\"tracestate\":\"congo=t61rcWkgMzE,rojo=00f067aa0ba902b7\"}"
+      }
+    },
+    {
+      "on": "a",
+      "op": "conn.receive",
+      "args": {
+        "on": "$ca"
+      },
+      "expect": {
+        "kind": "text",
+        "text": "$regex:(?s)^\\s*\\{.*(?:\"id\"\\s*:\\s*\"c:1\".*\"traceparent\"\\s*:\\s*\"00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\".*\"tracestate\"\\s*:\\s*\"congo=t61rcWkgMzE,rojo=00f067aa0ba902b7\"|\"id\"\\s*:\\s*\"c:1\".*\"tracestate\"\\s*:\\s*\"congo=t61rcWkgMzE,rojo=00f067aa0ba902b7\".*\"traceparent\"\\s*:\\s*\"00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\"|\"traceparent\"\\s*:\\s*\"00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\".*\"id\"\\s*:\\s*\"c:1\".*\"tracestate\"\\s*:\\s*\"congo=t61rcWkgMzE,rojo=00f067aa0ba902b7\"|\"traceparent\"\\s*:\\s*\"00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\".*\"tracestate\"\\s*:\\s*\"congo=t61rcWkgMzE,rojo=00f067aa0ba902b7\".*\"id\"\\s*:\\s*\"c:1\"|\"tracestate\"\\s*:\\s*\"congo=t61rcWkgMzE,rojo=00f067aa0ba902b7\".*\"id\"\\s*:\\s*\"c:1\".*\"traceparent\"\\s*:\\s*\"00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\"|\"tracestate\"\\s*:\\s*\"congo=t61rcWkgMzE,rojo=00f067aa0ba902b7\".*\"traceparent\"\\s*:\\s*\"00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\".*\"id\"\\s*:\\s*\"c:1\")"
+      },
+      "note": "the response to c:1 carries the request's traceparent and tracestate byte for byte, wherever the envelope places them"
+    }
+  ]
+}

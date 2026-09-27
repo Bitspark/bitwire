@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add three bitwire-authored `bitwire/1` scenarios under
+  `conformance/protocol/scenarios`, written from `SCOPE.md`. Two replace the
+  known defects: the trace members of a response in any member order, and a
+  refused channel open that names the family. The third holds the receiver's
+  1009 for an over-limit frame, which no archived scenario asserted. The
+  evidence set is now 40 scenarios.
 - Add the `bitwire/1` conformance contract, edition 1, as a draft, with its evidence set,
   under `conformance/protocol` (#60). `CONTRACT.md` defines the driver-1 exchange,
   the scenario format, the matching language, case execution, scopes, the claim

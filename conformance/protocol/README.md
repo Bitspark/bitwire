@@ -15,8 +15,8 @@ defines the separation, and nothing here changes a protocol requirement.
 
 ## The evidence set
 
-The scenarios under `scenarios/` derive from the upstream scenarios archived
-unmodified in the protocol bundle. The selection rules in
+Most scenarios under `scenarios/` derive from the upstream scenarios archived
+unmodified in the protocol bundle; bitwire authors the rest (below). The selection rules in
 [`selection.json`](selection.json) decide which ones travel and with what
 scope. A derivative keeps the upstream steps, table expansion and expectations
 exactly as they are. It adds:
@@ -69,9 +69,25 @@ protocol:
 They stay faithful to their archived sources and are marked
 `"optional": "defect"` through `selection.json`. They run and are reported,
 but under the claim rule ([CONTRACT.md §8.1](CONTRACT.md#81-required-cases))
-they count neither toward nor against a claim. Bitwire-authored replacements
-that test only what the revision requires follow with the first testee runs
-([#59](https://github.com/Bitspark/bitwire/issues/59)).
+they count neither toward nor against a claim. Each has an authored
+replacement that tests only what the revision requires.
+
+## Authored scenarios
+
+bitwire writes these from `SCOPE.md`, never from an implementation. They derive
+from no archived file, so they carry no `source`, and a `description` names
+the requirement they test. They are required evidence.
+
+| Scenario | Tests | Requirement |
+| --- | --- | --- |
+| [`peer/trace-members-any-order`](scenarios/peer/trace-members-any-order.json) | A response carries its request's `traceparent` and `tracestate` byte for byte, wherever the envelope places its members and with any whitespace. Replaces `peer/trace-members-verbatim`. | "Trace context": "a response and a cancel carry their request's members" |
+| [`tunnel/declaration-digest-names-the-family`](scenarios/tunnel/declaration-digest-names-the-family.json) | A differing declaration digest is refused `contract_mismatch` with a message that names the family; every other step of `tunnel/declaration-digest` is kept. Replaces it. | The tunnel's admission comparison |
+| [`peer/over-limit-frame-ends-with-1009`](scenarios/peer/over-limit-frame-ends-with-1009.json) | A well-formed frame one byte over the receiving peer's limit ends the connection with 1009, as the receiver observes it. The sender's observation is the transport's, so it is not held. | "The connection beneath": the receiver ends the connection with 1009 |
+
+No archived scenario asserted 1009. bitruntime's TypeScript peer answers 4011
+here ([bitruntime#21](https://github.com/Bitspark/bitruntime/issues/21)).
+None of these scenarios has yet run against a testee; the first runs follow
+the testees ([bitruntime#20](https://github.com/Bitspark/bitruntime/issues/20)).
 
 ## The runner
 
