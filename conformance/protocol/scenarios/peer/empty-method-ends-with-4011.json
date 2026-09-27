@@ -1,0 +1,71 @@
+{
+  "name": "a request with an empty method ends the connection with 4011",
+  "layer": "peer",
+  "protocol": {
+    "revision": "bitwire/1",
+    "normativeDigest": "7797682b0f05f86c508eafbd3be23c2084acd2f5cfc766922f9372b652dc416e"
+  },
+  "scope": "core",
+  "description": "Authored by bitwire from SCOPE.md, \"The envelope\": \"A request's method and an event's event are nonempty strings. An empty one makes the frame malformed, and the connection ends with 4011, as for any malformed frame.\" tables/frames.json has no row for it (finding F3).",
+  "needs": [
+    "peer",
+    "seam"
+  ],
+  "steps": [
+    {
+      "on": "runner",
+      "op": "pair.peer_and_conn",
+      "args": {
+        "peer": "b",
+        "role": "server"
+      },
+      "bind": {
+        "peer": "pb",
+        "conn": "ca"
+      }
+    },
+    {
+      "on": "b",
+      "op": "peer.handle",
+      "args": {
+        "on": "$pb",
+        "method": "echo",
+        "behavior": {
+          "kind": "echo"
+        }
+      }
+    },
+    {
+      "on": "a",
+      "op": "conn.send",
+      "args": {
+        "on": "$ca",
+        "kind": "text",
+        "text": "{\"version\":1,\"kind\":\"request\",\"id\":\"c:1\",\"method\":\"\",\"params\":{}}"
+      }
+    },
+    {
+      "on": "b",
+      "op": "peer.await_close",
+      "args": {
+        "on": "$pb"
+      },
+      "expect": {
+        "clean": false,
+        "code": 4011
+      },
+      "note": "the empty name is a malformed frame"
+    },
+    {
+      "on": "a",
+      "op": "conn.await_close",
+      "args": {
+        "on": "$ca"
+      },
+      "expect": {
+        "code": 4011
+      },
+      "note": "and the raw side reads 4011 off the wire"
+    }
+  ]
+}

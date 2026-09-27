@@ -82,9 +82,10 @@ the requirement they test. They are required evidence.
 | --- | --- | --- |
 | [`peer/trace-members-any-order`](scenarios/peer/trace-members-any-order.json) | A response carries its request's `traceparent` and `tracestate` byte for byte, wherever the envelope places its members and with any whitespace. Replaces `peer/trace-members-verbatim`. | "Trace context": "a response and a cancel carry their request's members" |
 | [`tunnel/declaration-digest-names-the-family`](scenarios/tunnel/declaration-digest-names-the-family.json) | A differing declaration digest is refused `contract_mismatch` with a message that names the family; every other step of `tunnel/declaration-digest` is kept. Replaces it. | The tunnel's admission comparison |
+| [`peer/empty-method-ends-with-4011`](scenarios/peer/empty-method-ends-with-4011.json), [`peer/empty-event-name-ends-with-4011`](scenarios/peer/empty-event-name-ends-with-4011.json) | A request with an empty `method`, or an event with an empty `event`, ends the connection with 4011, as both sides observe it. The frames table has no row for it. | "The envelope": nonempty names |
 | [`peer/over-limit-frame-ends-with-1009`](scenarios/peer/over-limit-frame-ends-with-1009.json) | A well-formed frame one byte over the receiving peer's limit ends the connection with 1009, as the receiver observes it. The sender's observation is the transport's, so it is not held. | "The connection beneath": the receiver ends the connection with 1009 |
 
-No archived scenario asserted 1009. bitruntime's TypeScript peer answers 4011
+No archived scenario asserted 1009 or the nonempty-name rule. bitruntime's TypeScript peer answers 4011
 here ([bitruntime#21](https://github.com/Bitspark/bitruntime/issues/21)).
 None of these scenarios has yet run against a testee; the first runs follow
 the testees ([bitruntime#20](https://github.com/Bitspark/bitruntime/issues/20)).
