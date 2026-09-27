@@ -55,7 +55,8 @@ A driver records any other outcome under its own name, such as `fallback`,
 
 Two realizations run every case in Go and TypeScript:
 - **production** uses bitruntime's released `Compose`/`compose`,
-  `Select`/`select`, `Send`/`send` and `AsAddressed`/`asAddressed`;
+  `Select`/`select`, `Send`/`send` and `AsAddressed`/`asAddressed`, and for
+  carrier cases `Bind`/`bind` and `Serve`/`serve`;
 - **reference** is a test-only interpreter that shows the oracle can be met. It
   is never evidence about a runtime.
 
@@ -109,9 +110,9 @@ The cases state what follows from this model:
     answered `internal`. That is the profile's code for a handler that failed
     with a non-public error. It arises because serving answers a refused request
     with its refusal. bitruntime's `Serve` answers through `core.Respond` /
-    `respond`, as `internal` unless the refusal is a public error. The reference
-    adapter does the same in Go; in TypeScript it lets the error fail the
-    receiver, and the carrier answers it. A refused event is dropped in both.
+    `respond`, as `internal` for a plain error. The reference adapter does the
+    same in Go; in TypeScript it lets the error fail the receiver, and the
+    carrier answers it. (Both drop a refused event; no case sends one.)
   - A binary key cannot be named over the carrier at all.
 - **Captured cancellation survives replacement.**
   - The dispatcher captures each request's traversal on its invocation. After
@@ -167,8 +168,9 @@ Two of these cases have nothing else: `guard-around-composite` and
 **The 19 recorded gaps:**
 - The origin-bearing construction gap (16 cases) and the conflicting and
   missing-child gaps are met structurally by public `Compose`/`compose`. The
-  origin-bearing gap's carrier members are met through the test-only adapters
-  above.
+  origin-bearing gap's carrier members are met in production through
+  bitruntime's `Bind`/`bind` and `Serve`/`serve` (v0.3.0), and in the reference
+  through its test-only adapters.
 - The invalid-segment gap changed meaning: no tree key is invalid, and the bridge
   refuses ill-formed segments.
 - The ledger entries stay accurate about the addressed `Mount`, which is a

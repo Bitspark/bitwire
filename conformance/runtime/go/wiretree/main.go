@@ -801,7 +801,7 @@ type call struct {
 	replies chan wire.Message
 }
 
-func runCarrier(t trees, c carriage, in inputs, test testCase) (result any) {
+func runCarrier(t trees, carry carriage, in inputs, test testCase) (result any) {
 	var cleanups []func()
 	defer func() {
 		slices.Reverse(cleanups)
@@ -874,7 +874,7 @@ func runCarrier(t trees, c carriage, in inputs, test testCase) (result any) {
 	farTree := h.must(h.build(test.Root, "", ""))
 	d, err := dispatch.NewDispatcher(far)
 	check(err)
-	srv, err := c.serve(d, in.ServedAt, farTree)
+	srv, err := carry.serve(d, in.ServedAt, farTree)
 	check(err)
 
 	// The near side: the same declared structure, each own Wire bound to its far
@@ -891,7 +891,7 @@ func runCarrier(t trees, c carriage, in inputs, test testCase) (result any) {
 			}
 			children = append(children, child{Key: k, Tree: mirror(c[1], append(slices.Clone(path), string(k)))})
 		}
-		n, err := t.Compose(c.bind(access, append(slices.Clone(in.ServedAt), path...)), children)
+		n, err := t.Compose(carry.bind(access, append(slices.Clone(in.ServedAt), path...)), children)
 		check(err)
 		return n
 	}
@@ -1035,9 +1035,9 @@ func main() {
 		panic("usage: wiretree reference|production local|carrier inputs.json")
 	}
 	var t trees = reference{}
-	c := testOnly
+	carry := testOnly
 	if os.Args[1] == "production" {
-		t, c = production{}, published
+		t, carry = production{}, published
 	}
 	data, err := os.ReadFile(os.Args[3])
 	check(err)
@@ -1053,7 +1053,7 @@ func main() {
 		}
 		var observations any
 		if test.Family == "carrier" {
-			observations = runCarrier(t, c, in, test)
+			observations = runCarrier(t, carry, in, test)
 		} else {
 			observations = local(t, in, test)
 		}

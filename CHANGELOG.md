@@ -2,14 +2,11 @@
 
 ## Unreleased
 
-- Run the released-runtime conformance against bitruntime v0.3.0 (tag v0.3.0 at
-  `26d1138e2d3bff4dc066d29b3d036550316363db`), in Go and TypeScript. The full-tree
-  carrier cases now bind and serve through bitruntime's public `Bind`/`bind` and
-  `Serve`/`serve` in the production realization, with `Update`/`update` when
-  the far tree is edited; the reference realization keeps its test-only
-  adapters. Every family's results are unchanged. The runtime gap ledger names
-  v0.3.0 and its moved line anchors, and the disposition's pinned digest of it is
-  revisited without changing any disposition.
+- Move the released-runtime conformance from bitruntime v0.2.0 to v0.3.0 (tag
+  v0.3.0 at `26d1138e2d3bff4dc066d29b3d036550316363db`), in Go and TypeScript.
+  Every family's results are unchanged. The runtime gap ledger names v0.3.0 and
+  its moved line anchors, and the disposition re-pins its digest without
+  changing any disposition.
 - Publish protocol revision `bitwire/1` as an immutable bundle, `protocol/bitwire-1`. It
   holds byte-identical copies of the released Nightseam v0.6.0 wire documents,
   tables, rationale, runner material and scenarios, plus a normative `SCOPE.md`
@@ -23,11 +20,14 @@
 
 - Add the full-tree conformance family (`conformance/wiretree`) for decision
   0012: 19 structural, 1 bridge and 7 carrier cases with independently authored
-  expectations, run in Go and TypeScript against released bitruntime v0.2.0.
+  expectations, run in Go and TypeScript against released bitruntime.
   Structural and bridge cases run without a carrier; carrier cases run on the
-  local pair and on real WebSockets in both directions, through test-only
-  adapters that bind a Wire to a carrier path and serve a tree on a dispatcher
-  until bitruntime provides them. Eight deliberately unlawful TypeScript
+  local pair and on real WebSockets in both directions. The production
+  realization binds a Wire to a carrier path and serves a tree through
+  bitruntime's public `Bind`/`bind` and `Serve`/`serve` (v0.3.0), with
+  `Update`/`update` when the far tree is edited; the reference realization
+  uses test-only adapters, which answer a refused request and drop a refused
+  event as `Serve` does. Eight deliberately unlawful TypeScript
   realizations are each rejected by the case aimed at them. A disposition maps
   all 39 historical declared cases, their 19 recorded gaps and two limitations
   to current cases or explicit historical addressed limitations; the historical
