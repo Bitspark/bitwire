@@ -15,8 +15,8 @@ defines the separation, and nothing here changes a protocol requirement.
 
 ## The evidence set
 
-The scenarios under `scenarios/` derive from the upstream scenarios archived
-unmodified in the protocol bundle. The selection rules in
+Most scenarios under `scenarios/` derive from the upstream scenarios archived
+unmodified in the protocol bundle; bitwire authors the rest (below). The selection rules in
 [`selection.json`](selection.json) decide which ones travel and with what
 scope. A derivative keeps the upstream steps, table expansion and expectations
 exactly as they are. It adds:
@@ -56,7 +56,7 @@ evidence set.
 
 ## Known evidence defects
 
-Two derivatives expect more than `bitwire/1` requires. By decision 0008 a
+Three derivatives expect more than `bitwire/1` requires. By decision 0008 a
 scenario that contradicts its revision is a defect in the scenario, not in the
 protocol:
 
@@ -64,14 +64,42 @@ protocol:
   members `id`, `traceparent` and `tracestate` arrive in that order, on one line,
   with no whitespace after the colons. The envelope orders no members.
 - `tunnel/declaration-digest`: it expects Nightseam Go's exact refusal message.
-  The tunnel requires only that the message name the family.
+  The tunnel requires only that the refusal name the family.
+- `peer/binary-frame-ends-the-connection`: its raw frames name the plain
+  method `echo` and expect the request to be served. Serving a plain name needs
+  a plain-name handler, which revision 1 does not require: a name nothing
+  handles is answered `method_not_found` (`SCOPE.md`, Paths). Under
+  [CONTRACT.md §4.3](CONTRACT.md#43-peer-peer-call-core), "Names", a driver's
+  handler is the one-segment path `["echo"]`, carried as `4:echo`.
 
 They stay faithful to their archived sources and are marked
 `"optional": "defect"` through `selection.json`. They run and are reported,
 but under the claim rule ([CONTRACT.md §8.1](CONTRACT.md#81-required-cases))
-they count neither toward nor against a claim. Bitwire-authored replacements
-that test only what the revision requires follow with the first testee runs
-([#59](https://github.com/Bitspark/bitwire/issues/59)).
+they count neither toward nor against a claim. Each has an authored
+replacement that tests only what the revision requires.
+
+## Authored scenarios
+
+bitwire writes these from `SCOPE.md` and the text it adopts, never from an
+implementation. They derive from no archived file, so they carry no `source`,
+and a `description` names the requirement they test. They are required
+evidence, and their raw frames name a driver's handler canonically (`4:echo`).
+
+| Scenario | Tests | Requirement |
+| --- | --- | --- |
+| [`peer/trace-members-any-order`](scenarios/peer/trace-members-any-order.json) | A response carries its request's `traceparent` and `tracestate` byte for byte, wherever the envelope places its members and with any whitespace; a `tracestate` that arrived alone comes back alone. The `tracestate` keeps W3C's optional whitespace, so re-serializing it fails. Replaces `peer/trace-members-verbatim`. | "Trace context": "a response carries its request's members byte for byte" |
+| [`tunnel/declaration-digest-names-the-family`](scenarios/tunnel/declaration-digest-names-the-family.json) | A differing declaration digest is refused `contract_mismatch`, read on the wire through a raw `channel.open`, naming the family in the message or the data. Every other step of `tunnel/declaration-digest` is kept. Replaces it. | `tunnel.md`: "refused `contract_mismatch`, naming the family" |
+| [`peer/binary-frame-ends-the-connection-canonical`](scenarios/peer/binary-frame-ends-the-connection-canonical.json) | Every step of `peer/binary-frame-ends-the-connection`, with its raw frames naming `4:echo`. Replaces it. | A binary frame ends the connection with 4011, undispatched |
+| [`peer/over-limit-frame-ends-with-1009`](scenarios/peer/over-limit-frame-ends-with-1009.json), [`…-client`](scenarios/peer/over-limit-frame-ends-with-1009-client.json) | A frame of exactly the receiving peer's limit is served; one byte over ends the connection with 1009, and never reaches its handler. Once with the peer as server, once as client. The sender's observation is the transport's. | "The connection beneath": refused before delivery, with 1009 |
+| [`peer/empty-method-ends-with-4011`](scenarios/peer/empty-method-ends-with-4011.json), [`peer/empty-event-name-ends-with-4011`](scenarios/peer/empty-event-name-ends-with-4011.json) | A request with an empty `method`, or an event with an empty `event`, ends the connection with 4011, as both sides observe it. | "The envelope": nonempty names |
+| [`peer/plain-names-are-not-rejected`](scenarios/peer/plain-names-are-not-rejected.json) | A plain request name nothing handles is answered `method_not_found`; a plain event name is dropped; the connection lives. | "Paths": "Revision 1 does not reject plain names" |
+| [`peer/only-canonical-names-reach-a-path`](scenarios/peer/only-canonical-names-reach-a-path.json) | `4:echo` reaches the path `["echo"]`; `04:echo`, `5:echo`, `4:echox` and `echo` are not canonical for it and are answered `method_not_found`. | "Paths": canonical decoding |
+
+No archived scenario asserted 1009, the nonempty-name rule or the path
+encoding (finding F3); the last two are covered here as far as driver 1
+reaches. bitruntime's TypeScript peer answered 4011 for an over-limit frame
+([bitruntime#21](https://github.com/Bitspark/bitruntime/issues/21)); bitruntime
+v0.4.0 fixes it.
 
 ## The runner
 

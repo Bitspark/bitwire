@@ -39,8 +39,15 @@ func TestLoadEvidence(t *testing.T) {
 			t.Errorf("%s: scope %s", s.ID(), s.Scope)
 		}
 	}
-	if len(scenarios) != 37 {
-		t.Errorf("%d scenario files, want 37", len(scenarios))
+	var onDisk int
+	_ = filepath.WalkDir(filepath.Join(checkoutRoot(t), filepath.FromSlash(contractDir), "scenarios"), func(_ string, entry fs.DirEntry, err error) error {
+		if err == nil && !entry.IsDir() {
+			onDisk++
+		}
+		return nil
+	})
+	if len(scenarios) != onDisk || onDisk < 37 {
+		t.Errorf("%d scenario files loaded, %d on disk", len(scenarios), onDisk)
 	}
 	if tables == 0 || mirrored == 0 {
 		t.Errorf("expected expanded tables (%d) and mirrored scenarios (%d)", tables, mirrored)

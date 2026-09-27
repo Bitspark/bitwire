@@ -1,22 +1,16 @@
 {
-  "name": "a binary frame ends the connection without dispatching its JSON request",
+  "name": "a binary frame ends the connection without dispatching its JSON request, with canonical names",
   "layer": "peer",
   "protocol": {
     "revision": "bitwire/1",
     "normativeDigest": "7797682b0f05f86c508eafbd3be23c2084acd2f5cfc766922f9372b652dc416e"
   },
   "scope": "core",
-  "optional": "defect",
-  "source": {
-    "path": "protocol/bitwire-1/source/conformance/scenarios/peer/binary-frame-ends-the-connection.json",
-    "sha256": "ff8fee10169f8b35754ce608e6adf9bee893dd03f25823dca108e705b10d7e67"
-  },
-  "description": "The profile accepts JSON only in text frames. A valid request in a binary frame is refused with 4011 before dispatch, as read by both the rejecting peer and the raw remote connection. A successful text request first proves the handler is reachable.",
+  "description": "Authored by bitwire. It keeps every step of the defective derivative peer/binary-frame-ends-the-connection, whose raw frames name the plain method \"echo\": serving a plain name needs a plain-name handler, which revision 1 does not require (SCOPE.md, Paths). Here the raw frames name the driver's handler canonically, \"4:echo\" (CONTRACT.md §4.3, Names).",
   "needs": [
     "peer",
     "seam"
   ],
-  "mirror": true,
   "steps": [
     {
       "on": "runner",
@@ -47,7 +41,7 @@
       "args": {
         "on": "$ca",
         "kind": "text",
-        "text": "{\"version\":1,\"kind\":\"request\",\"id\":\"c:1\",\"method\":\"echo\",\"params\":\"text\"}"
+        "text": "{\"version\":1,\"kind\":\"request\",\"id\":\"c:1\",\"method\":\"4:echo\",\"params\":\"text\"}"
       }
     },
     {
@@ -79,9 +73,9 @@
       "args": {
         "on": "$ca",
         "kind": "binary",
-        "base64": "eyJ2ZXJzaW9uIjoxLCJraW5kIjoicmVxdWVzdCIsImlkIjoiYzoyIiwibWV0aG9kIjoiZWNobyIsInBhcmFtcyI6ImJpbmFyeSJ9"
+        "base64": "eyJ2ZXJzaW9uIjoxLCJraW5kIjoicmVxdWVzdCIsImlkIjoiYzoyIiwibWV0aG9kIjoiNDplY2hvIiwicGFyYW1zIjoiYmluYXJ5In0="
       },
-      "note": "The bytes are {\"version\":1,\"kind\":\"request\",\"id\":\"c:2\",\"method\":\"echo\",\"params\":\"binary\"}: a valid request, carried by the wrong frame kind."
+      "note": "The bytes are {\"version\":1,\"kind\":\"request\",\"id\":\"c:2\",\"method\":\"4:echo\",\"params\":\"binary\"}: a valid request, carried by the wrong frame kind."
     },
     {
       "on": "b",
