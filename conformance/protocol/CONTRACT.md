@@ -114,8 +114,10 @@ A request is `{"id": n, "op": "…", …}`, with the op's arguments as further
 members.
 - `id` is an integer that the runner increments per process, starting at 1
   with `hello` [driver.go:Testee.Request].
-- No op has an argument named `id` or `op`, and a scenario must not write one.
-  The upstream runner lets such an argument overwrite the request's own member.
+- No op has an argument named `id` or `op`. A scenario that writes one is
+  refused at load ([5.5](#55-loading)), and the runner's own `id` and `op`
+  are the ones sent. The upstream runner let such an argument overwrite the
+  request's own member.
 
 ### 3.3 Answers
 
@@ -137,7 +139,8 @@ An answer that breaks rule 1 or 2, or whose `ok` is not JSON, makes the testee
 dead (see [3.8](#38-a-testee-that-fails-the-exchange)).
 
 Edition 1 reads member names exactly (`id`, `ok`, `error`, `code`,
-`message`) and nothing may follow the object on its line. The upstream Go runner
+`message`), and only JSON whitespace (a CR, for instance) may follow the
+object on its line. The upstream Go runner
 also accepted other capitalizations and trailing data; a testee that relies on
 either is outside driver 1. Invalid UTF-8, or an unpaired surrogate escape, in
 an answer is decoded as U+FFFD before matching.
@@ -149,7 +152,7 @@ an answer is decoded as U+FFFD before matching.
 | `unsupported` | The testee does not implement the op, or the feature its arguments ask for. The case's result is `unsupported` [run.go:Run]. |
 | `timeout` | The op did not settle within its `within_ms`. |
 | `unknown_handle` | `on` names nothing this testee minted. |
-| `invalid` | The arguments are malformed, or `on` names a handle of the wrong kind. The upstream Go testee answers `unknown_handle` instead when `conn.accept` or `peer.accept` is given something that is not a listener; a runner accepts either for a wrong-kind handle, and no edition-1 scenario depends on it. |
+| `invalid` | The arguments are malformed, or `on` names a handle of the wrong kind. The upstream Go testee answers `unknown_handle` instead when `conn.accept` or `peer.accept` is given something that is not a listener. No edition-1 scenario depends on which of the two a testee answers. |
 | `closed` | `conn.send`, `conn.close` or `conn.receive` on a connection a close ended. `conn.receive` adds `close_code` and `reason` when a close frame carried them. |
 | `failed` | An op whose transport broke, or could not be reached: `conn.send`, `conn.close` and `conn.receive` on a broken transport, and `conn.dial`, `peer.dial` and `peer.over` that could not connect (the upstream Go testee's closeError). |
 | `disconnected` | `peer.emit`, `peer.await_event`, `tunnel.open` or `tunnel.accept` after the peer's connection ended. |
@@ -170,7 +173,8 @@ Every error answer except `unsupported` is judged by the step (see
   `{"driver": 1, "language", "layers", "features"}`. The runner refuses a
   testee whose `ok` does not decode to that shape with `driver` exactly the
   integer 1 [driver.go:Start]. That is a harness failure of every case the
-  testee was to run.
+  testee was to run. An absent or null `language`, `layers` or `features`
+  reads as empty, as upstream read it; a member of another type is refused.
   - `layers` names the op families it implements. Edition 1 reads `seam`,
     `peer` and `tunnel` and ignores the others.
   - `features` names any of `listen`, `pipe`, `lazy`, `propagator` and
@@ -260,7 +264,10 @@ a handle takes `on`. Each op has one status in edition 1:
 
 A scenario never says which side listens. It writes one of these ops with
 `"on": "runner"`, and the runner expands it into testee ops from what the two
-sides answered `hello` with [pair.go:expandPair]. They are core.
+sides answered `hello` with [pair.go:expandPair]. For an implementation under
+test that the report declares does not accept connections, the runner reads its
+`hello` without `listen`, here and for needs ([8.2](#82-pairings-roles-and-transports)).
+They are core.
 
 | Op | Arguments | Binds (object form only) |
 | --- | --- | --- |
@@ -543,6 +550,9 @@ union** of the derived needs over both sides, before expansion
 
 A runner refuses the evidence set when any scenario fails one of these checks.
 It then reports no claim from that set.
+- the protocol bundle, whose tables `foreach` reads, has the target identity
+  and verifies against its manifest;
+- every file under `scenarios/` is a scenario;
 - the schema;
 - the layer and directory ([5.3](#53-layers));
 - the declared needs ([5.4](#54-needs));
@@ -562,6 +572,9 @@ It then reports no claim from that set.
 - a scenario that needs `observer` is marked `"optional": "observer"`;
 - no step uses an excluded op ([4.5](#45-excluded-ops-and-arguments)), and only an
   optional scenario uses `peer.observed` or the `observe` option;
+- no step's `args` has a member named `id` or `op` ([3.2](#32-requests));
+- no step binds a keyword of the matching language, through `bind` or
+  `$bind:` ([6.5](#65-placeholders));
 - each op family a step uses belongs to the scenario's layer or one beneath it:
   `conn.*` everywhere, `peer.*` and `call.*` in `peer` and `tunnel`, and
   `tunnel.*` only in `tunnel`. Upstream held this in a test
@@ -706,7 +719,11 @@ the exact string `"$absent"` is the member rule, and `$absent:x` fails the step.
 
 Within an expectation, the keywords `any`, `string`, `int`, `number`, `odd`,
 `even`, `bool`, `absent`, `bind`, `not` and `regex` take precedence over a
-binding of the same name. A scenario must not bind these names.
+binding of the same name. A scenario must not bind these names, and the loader
+refuses one that does.
+
+A `$path` placeholder's path is everything after the `$`, colons included, so
+a path that contains `:` never resolves [expect.go:matchPlaceholder].
 
 ### 6.6 Subsequences: `$contains` and lanes
 
@@ -821,8 +838,9 @@ bindings, so a failed poll binds nothing [run.go:holds]:
 - **error answer:** it holds only when `expect_error` exists and matches; the
   `assert` is not consulted;
 - **ok answer:** it holds when `expect` (if present) matches and the `assert`
-  (if present) holds. An `ok` answer to a step that has `expect_error` and no
-  `expect` holds, which stops the polling; the judgement then fails it.
+  (if present) holds. So an `ok` answer to a step that has `expect_error` and
+  no `expect` holds unless its `assert` fails; holding stops the polling, and
+  the judgement then fails the step.
 
 A read-only op, such as `peer.observed`, sees what is held at that moment. A
 step that expects what the far side has yet to send therefore waits with
@@ -923,9 +941,15 @@ toward or against a claim. Removing one from that list is a new
 
 - **Pairings.** A report lists its pairings. The implementation under test
   paired with itself exercises both roles in each case. Paired with another
-  implementation, it runs in both orders: once on side `a`, and once on side
-  `b`. Edition 1 makes claims for both roles, client and server. A claim for a
-  single role needs selection rules that edition 1 does not define.
+  implementation, it should run in both orders: once on side `a`, and once on
+  side `b`. The claim rule ([8.4](#84-claim-rule)) requires only that the
+  pairings place it on each side at least once. Edition 1 makes claims for both
+  roles, client and server. A claim for a single role needs selection rules
+  that edition 1 does not define.
+- **Accepting connections.** A report declares whether the implementation under
+  test accepts connections. When it does not, the runner reads that
+  implementation's `hello` without `listen` ([4.1](#41-runner-ops)), so that
+  the other side listens where a runner op lets it.
 - **Transports.** Each claimed transport is a separate run with the testee
   configured for it. `url` values are opaque, and `conn.pipe` cases run in
   process under every transport.
@@ -946,7 +970,7 @@ toward or against a claim. Removing one from that list is a new
 | `pass` | Every step held. |
 | `fail` | A step's answer parted from the scenario: the op failed with no `expect_error`, the error was not the one expected, an error was expected and none came, `expect` did not hold, `bind` named a missing member, an `assert` failed, or a reference did not resolve. |
 | `unsupported` | A testee answered `unsupported`, a side lacks a derived need, or the runner could not arrange the pair. |
-| `skip` | The runner did not run the case: an optional diagnostic that was not requested, or a case that is not applicable ([8.2](#82-pairings-roles-and-transports)). The reason is recorded. |
+| `skip` | The runner did not run the case: an optional diagnostic that was not requested; a `tunnel` case under a core claim ("outside the claimed scope"); a case the run did not select ("not selected for this run"); or a case that is not applicable ([8.2](#82-pairings-roles-and-transports)). The reason is recorded. Only a skip as not applicable can leave a claim supported. |
 | `harness` | The exchange or the harness failed rather than the scenario's expectations: a dead testee ([3.8](#38-a-testee-that-fails-the-exchange)), a failed `reset`, a `hello` without driver 1, or a testee that could not be built or started. |
 
 ### 8.4 Claim rule
@@ -978,7 +1002,7 @@ requires, with these members:
 | `roles` | `["client", "server"]` in edition 1 |
 | `transports` | For each claimed transport: its name, how the testee was configured for it, and whether it negotiates subprotocols |
 | `configuration` | The implementation's configuration where it departs from the default bounds, or `"default"`. Whether it accepts connections (`listen`). |
-| `implementation` | The implementation under test: name, release or version, source revision, digests of the artifacts run, language and toolchain, and its `hello` answer |
+| `implementation` | The implementation under test: name, release or version, source revision, digests of the artifacts run, language and toolchain, the testee command as run (its argv, working directory and the environment it adds), and its `hello` answer |
 | `counterparts` | The same, for every other implementation in a pairing |
 | `pairings` | Each ordered pairing run |
 | `runner` | The runner's name, version and source revision |
@@ -997,10 +1021,14 @@ Each **case entry** records:
   `pass`.
 
 A `fail` or `harness` entry adds:
-- the failing step's index, `op` and side;
+- the failing step: its index in the scenario, and its position within the
+  runner op's expansion when the step came from one;
+- its `op` and side;
 - the substituted request;
 - the rendered answer;
 - both sides' stderr since the last reset [run.go:Failure].
+
+A harness failure at `reset` names no step; its reason names the testee.
 
 The time and platform of the run may be added.
 
@@ -1027,4 +1055,7 @@ with `"driver": 1`.
 | 12 | The Go runner reads member names in any capitalization and ignores trailing data | Exact names, nothing after the object ([3.3](#33-answers)) | Narrowing |
 | 13 | The layer and op-family rule is held in a test [scenario_test.go:allowedAcross]; scope, observer marking and excluded ops are not checked | Load checks ([5.5](#55-loading)) | Addition |
 | 14 | No notion of a defective scenario | `"optional": "defect"` for scenarios that over-specify, listed with reasons in `selection.json` ([8.1](#81-required-cases)) | Addition |
+| 15 | `DRIVER.md` lists `peer.await_close` codes 1000, 4011, 1006 and the remote's | Adds 1009 where the receiver refused a frame over its limit, which `SCOPE.md` binds ([4.3](#43-peer-peer-call-core)) | Clarification |
+| 16 | An argument named `id` or `op` overwrites the request's own member [driver.go:Testee.Request] | Refused at load; the runner's own members are sent ([3.2](#32-requests)) | Narrowing |
+| 17 | A binding may shadow a keyword and can then never be referenced | Refused at load ([6.5](#65-placeholders)) | Narrowing |
 | 15 | No applicability step, and no minimum pairings for a claim | Applicability before expansion ([7.1](#71-order)); both orders required ([8.4](#84-claim-rule)) | Addition |
