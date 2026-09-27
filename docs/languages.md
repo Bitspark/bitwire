@@ -28,7 +28,12 @@ recipes can be added without changing the access contract.
 All eight bindings distinguish `Wire.send(message)`, the complete
 `WireTree = DeixisNode<Wire>`, and `AddressedWire.send(path, message)`.
 Each tree supplies own, complete byte-keyed children, partial selection and
-decomposition, matching Bitstore's DataTree. Endpoint and return-address
+decomposition, matching bitstore's DataTree. bitstore's CI holds its Go and
+TypeScript DataTree to the 19 `structure` cases of
+[`conformance/wiretree/cases.json`](../conformance/wiretree/cases.json), pinned
+at `3b237aa` ([bitstore#7](https://github.com/Bitspark/bitstore/pull/7),
+[record](https://github.com/Bitspark/bitstore/blob/4220051/docs/TREES.md)); the
+bridge and carrier cases are Wire-specific. Endpoint and return-address
 surfaces remain addressed. See the [migration guide](migration-0.3.md).
 
 The immutable [v0.3.0 release](https://github.com/Bitspark/bitwire/releases/tag/v0.3.0)
