@@ -54,7 +54,8 @@ test('child order has no meaning, but child keys and owns do', () => {
 
 test('every historical case, gap and limitation is disposed against a current case', () => {
   const result = validateDisposition(disposition, fixture, read);
-  assert.deepEqual(result, { declared: 39, gaps: 4, gapCases: 19, limitations: 2, uncited: [] });
+  // carrier-keys-are-exact-bytes is coverage added after the disposition (#65), not a historical case.
+  assert.deepEqual(result, { declared: 39, gaps: 4, gapCases: 19, limitations: 2, uncited: ['carrier-keys-are-exact-bytes'] });
   const dropped = structuredClone(disposition);
   dropped.cases.pop();
   assert.throws(() => validateDisposition(dropped, fixture, read));

@@ -38,12 +38,15 @@ comparison and the disposition's coverage.
 | `["unreached"]` | The addressed bridge refused without invoking any primitive. |
 | `["error", code]` | Across a carrier, the request was answered with that `bitwire/1` error code. |
 | `partsExact` | Every construction returned exactly its own value and children. This held through `children()` and `decompose()`, and after the caller's input, keys and returned parts were altered. |
-| `unchanged` | Every delivered message kept its frame and its own return capability. |
+| `unchanged` | Every delivered message kept its frame and its own return capability, compared with an independent snapshot taken before sending, so a realization that changes the message in place cannot match itself. |
 | `sendOnly` | The bridge exposed no receive, close, own, children, selection or decomposition. |
 | `borrowedUsable` | After the dispatcher, the relay's forwarding and the addressed mount were all released, every carrier still delivered. |
 
 A driver records any other outcome under its own name, such as `fallback`,
-`refusedWithoutOwn` or `selectionDiffers`. That fails the case.
+`refusedWithoutOwn` or `selectionDiffers`. That fails the case. A derived send
+whose caller-visible outcome disagrees with its own primitive is recorded as
+`refusedAfterAdmission` (the primitive admitted, the send reported a refusal) or
+`refusalSwallowed` (the primitive refused, the send reported admission).
 
 ## Three kinds of evidence
 
@@ -51,7 +54,7 @@ A driver records any other outcome under its own name, such as `fallback`,
 | --- | --- | --- |
 | `structure`, 19 cases | Covers, among others: <ul><li>own capability identity;</li><li>exact byte keys: empty, binary, U+FFFD, the literal `a/b` and both spellings of é;</li><li>complete children, and missing versus a present node whose own refuses;</li><li>the selection law, including chains that fail part-way;</li><li>both reconstruction directions and complete cuts;</li><li>retained and reset primitive state, substitution and alteration;</li><li>an acyclic child implemented outside the runtime;</li><li>construction refusing duplicate keys, missing children and cycles.</li></ul> | No carrier |
 | `bridge`, 1 case | The explicit mapping to the unchanged carrier surface: <ul><li>the exact UTF-8 image;</li><li>refusal of an ill-formed segment before any primitive, including one that lossy decoding would turn into U+FFFD or the byte `ff`;</li><li>unreachable binary keys;</li><li>send-only access.</li></ul> | `AsAddressed`/`asAddressed`, no carrier |
-| `carrier`, 7 cases | Full trees composed across bitruntime carriers, as described in [the test model](#the-carrier-test-model) below | The local pair; real WebSockets with the client sending; real WebSockets with the server sending |
+| `carrier`, 8 cases | Full trees composed across bitruntime carriers, as described in [the test model](#the-carrier-test-model) below | The local pair; real WebSockets with the client sending; real WebSockets with the server sending |
 
 Two realizations run every case in Go and TypeScript:
 - **production** uses bitruntime's released `Compose`/`compose`,
@@ -139,6 +142,10 @@ requires each to fail the case aimed at it:
 | `latin1-bridge` | The bridge names byte key `ff` with `"ÿ"`. | `bridge-exact-utf8-image` |
 | `lossy-bridge` | The bridge encodes a lone surrogate as U+FFFD. | `bridge-exact-utf8-image` |
 | `incomplete-children` | `children()` omits the empty key. | `own-and-descendants` |
+| `corrupting-message` | Sending changes the message's payload in place. | `own-and-descendants` |
+| `replacing-return` | Sending replaces the message's return capability in place. | `own-and-descendants` |
+| `swallowing-refusal` | Sending hides the own primitive's refusal from the caller. | `refusing-versus-missing` |
+| `throwing-after-admission` | Sending reports a refusal after the own primitive admitted the message. | `own-and-descendants` |
 | `retargeting-serve` | The far side routes by the tree that is current at delivery. | `carrier-cancel-across-replacement` |
 
 ## Disposition of the declared cases

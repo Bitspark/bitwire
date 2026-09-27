@@ -52,7 +52,14 @@
       },
       "expect": {
         "kind": "text",
-        "text": "$regex:(?s)\"id\"\\s*:\\s*\"c:1\".*\"result\"|\"result\".*\"id\"\\s*:\\s*\"c:1\""
+        "text": {
+          "$json": {
+            "kind": "response",
+            "id": "c:1",
+            "result": "$any",
+            "error": "$absent"
+          }
+        }
       }
     },
     {
@@ -72,7 +79,16 @@
       },
       "expect": {
         "kind": "text",
-        "text": "$regex:(?s)\"id\"\\s*:\\s*\"c:2\".*\"code\"\\s*:\\s*\"method_not_found\"|\"code\"\\s*:\\s*\"method_not_found\".*\"id\"\\s*:\\s*\"c:2\""
+        "text": {
+          "$json": {
+            "kind": "response",
+            "id": "c:2",
+            "error": {
+              "code": "method_not_found"
+            },
+            "result": "$absent"
+          }
+        }
       }
     },
     {
@@ -92,7 +108,16 @@
       },
       "expect": {
         "kind": "text",
-        "text": "$regex:(?s)\"id\"\\s*:\\s*\"c:3\".*\"code\"\\s*:\\s*\"method_not_found\"|\"code\"\\s*:\\s*\"method_not_found\".*\"id\"\\s*:\\s*\"c:3\""
+        "text": {
+          "$json": {
+            "kind": "response",
+            "id": "c:3",
+            "error": {
+              "code": "method_not_found"
+            },
+            "result": "$absent"
+          }
+        }
       }
     },
     {
@@ -112,7 +137,16 @@
       },
       "expect": {
         "kind": "text",
-        "text": "$regex:(?s)\"id\"\\s*:\\s*\"c:4\".*\"code\"\\s*:\\s*\"method_not_found\"|\"code\"\\s*:\\s*\"method_not_found\".*\"id\"\\s*:\\s*\"c:4\""
+        "text": {
+          "$json": {
+            "kind": "response",
+            "id": "c:4",
+            "error": {
+              "code": "method_not_found"
+            },
+            "result": "$absent"
+          }
+        }
       }
     },
     {
@@ -132,7 +166,16 @@
       },
       "expect": {
         "kind": "text",
-        "text": "$regex:(?s)\"id\"\\s*:\\s*\"c:5\".*\"code\"\\s*:\\s*\"method_not_found\"|\"code\"\\s*:\\s*\"method_not_found\".*\"id\"\\s*:\\s*\"c:5\""
+        "text": {
+          "$json": {
+            "kind": "response",
+            "id": "c:5",
+            "error": {
+              "code": "method_not_found"
+            },
+            "result": "$absent"
+          }
+        }
       }
     },
     {
@@ -152,7 +195,14 @@
       },
       "expect": {
         "kind": "text",
-        "text": "$regex:(?s)\"id\"\\s*:\\s*\"c:6\".*\"result\"|\"result\".*\"id\"\\s*:\\s*\"c:6\""
+        "text": {
+          "$json": {
+            "kind": "response",
+            "id": "c:6",
+            "result": "$any",
+            "error": "$absent"
+          }
+        }
       }
     }
   ]

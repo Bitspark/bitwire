@@ -52,7 +52,16 @@
       },
       "expect": {
         "kind": "text",
-        "text": "$regex:(?s)\"id\"\\s*:\\s*\"c:1\".*\"code\"\\s*:\\s*\"method_not_found\"|\"code\"\\s*:\\s*\"method_not_found\".*\"id\"\\s*:\\s*\"c:1\""
+        "text": {
+          "$json": {
+            "kind": "response",
+            "id": "c:1",
+            "error": {
+              "code": "method_not_found"
+            },
+            "result": "$absent"
+          }
+        }
       }
     },
     {
@@ -82,7 +91,14 @@
       },
       "expect": {
         "kind": "text",
-        "text": "$regex:(?s)\"id\"\\s*:\\s*\"c:2\".*\"result\"|\"result\".*\"id\"\\s*:\\s*\"c:2\""
+        "text": {
+          "$json": {
+            "kind": "response",
+            "id": "c:2",
+            "result": "$any",
+            "error": "$absent"
+          }
+        }
       }
     },
     {

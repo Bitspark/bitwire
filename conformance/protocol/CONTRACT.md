@@ -808,6 +808,26 @@ consequences follow:
   name bound in the same expectation must therefore come later in that order.
   `{"a": "$bind:x", "b": "$x"}` works; `{"b": "$bind:x", "a": "$x"}` does not.
 
+### 6.8 Embedded JSON: `$json`
+
+A raw frame arrives as a string, such as the `text` of `conn.receive`. An
+expected object with a `$json` member expects a string that holds exactly one
+JSON value, and holds when that value, decoded as an answer is decoded
+([3.3](#33-answers)), holds against the member's expectation. Its other members
+are ignored. Nothing but JSON whitespace may follow the value. An object with both
+`$json` and `$contains` fails the step. Bindings and every other rule apply
+inside, so a frame's members are asserted structurally rather than by a pattern
+over its text.
+
+| Expected | Actual | Holds |
+| --- | --- | --- |
+| `{"$json": {"kind": "response", "id": "c:1"}}` | `"{\"id\":\"c:1\",\"kind\":\"response\",\"result\":{}}"` | yes |
+| `{"$json": {"kind": "response"}}` | `"{\"kind\":\"request\"}"` | no |
+| `{"$json": {"traceparent": "$string"}}` | `"{\"result\":{\"traceparent\":\"x\"}}"` | no, the member is nested |
+| `{"$json": {"id": "$bind:id"}}` | `"{\"id\":\"c:7\"}"` | yes, and binds `id` |
+| `{"$json": "$any"}` | `"not json"` | no |
+| `{"$json": "$any"}` | `5` | no, not a string |
+
 ## 7. Executing a case
 
 ### 7.1 Order
@@ -1074,3 +1094,4 @@ with `"driver": 1`.
 | 17 | An argument named `id` or `op` overwrites the request's own member [driver.go:Testee.Request] | Refused at load; the runner's own members are sent ([3.2](#32-requests)) | Narrowing |
 | 18 | A binding may shadow a keyword and can then never be referenced | Refused at load ([6.5](#65-placeholders)) | Narrowing |
 | 19 | `DRIVER.md` does not say whether an op's `method`, `event` or `name` is a plain name or a path; the upstream testees registered plain names | A one-segment path, carried canonically; a reserved vocabulary name stays plain ([4.3](#43-peer-peer-call-core)). One archived scenario that needs a plain name served is a known defect. | Clarification |
+| 20 | Raw frames are matched by patterns over their text | `$json` asserts a string's JSON value structurally ([6.8](#68-embedded-json-json)) | Addition |

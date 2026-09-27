@@ -6,7 +6,7 @@
     "normativeDigest": "7797682b0f05f86c508eafbd3be23c2084acd2f5cfc766922f9372b652dc416e"
   },
   "scope": "core",
-  "description": "Authored by bitwire from profile.md \"Trace context\", which SCOPE.md binds: \"a response carries its request's members byte for byte\", and \"a tracestate that arrived without a traceparent continues no trace and is carried back on the response\". It replaces the defective derivative peer/trace-members-verbatim, whose pattern assumed an order of envelope members. The tracestate keeps the optional whitespace W3C allows, so a peer that re-serializes it fails; its values use no character a JSON encoder escapes.",
+  "description": "Authored by bitwire from profile.md \"Trace context\", which SCOPE.md binds: \"a response carries its request's members byte for byte\", and \"a tracestate that arrived without a traceparent continues no trace and is carried back on the response\". It replaces the defective derivative peer/trace-members-verbatim, whose pattern assumed an order of envelope members. The response is asserted structurally ($json, CONTRACT.md §6.8): its kind, id and trace members at the envelope's top level. The tracestate keeps the optional whitespace W3C allows, so a peer that re-serializes it fails.",
   "needs": [
     "peer",
     "propagator",
@@ -56,9 +56,17 @@
       },
       "expect": {
         "kind": "text",
-        "text": "$regex:(?s)^\\s*\\{.*(?:\"id\"\\s*:\\s*\"c:1\".*\"traceparent\"\\s*:\\s*\"00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\".*\"tracestate\"\\s*:\\s*\"congo=t61rcWkgMzE, rojo=00f067aa0ba902b7\"|\"id\"\\s*:\\s*\"c:1\".*\"tracestate\"\\s*:\\s*\"congo=t61rcWkgMzE, rojo=00f067aa0ba902b7\".*\"traceparent\"\\s*:\\s*\"00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\"|\"traceparent\"\\s*:\\s*\"00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\".*\"id\"\\s*:\\s*\"c:1\".*\"tracestate\"\\s*:\\s*\"congo=t61rcWkgMzE, rojo=00f067aa0ba902b7\"|\"traceparent\"\\s*:\\s*\"00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\".*\"tracestate\"\\s*:\\s*\"congo=t61rcWkgMzE, rojo=00f067aa0ba902b7\".*\"id\"\\s*:\\s*\"c:1\"|\"tracestate\"\\s*:\\s*\"congo=t61rcWkgMzE, rojo=00f067aa0ba902b7\".*\"id\"\\s*:\\s*\"c:1\".*\"traceparent\"\\s*:\\s*\"00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\"|\"tracestate\"\\s*:\\s*\"congo=t61rcWkgMzE, rojo=00f067aa0ba902b7\".*\"traceparent\"\\s*:\\s*\"00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\".*\"id\"\\s*:\\s*\"c:1\")"
+        "text": {
+          "$json": {
+            "version": 1,
+            "kind": "response",
+            "id": "c:1",
+            "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+            "tracestate": "congo=t61rcWkgMzE, rojo=00f067aa0ba902b7"
+          }
+        }
       },
-      "note": "the response to c:1 carries its traceparent and tracestate byte for byte, wherever the envelope places them"
+      "note": "the response to c:1 carries its traceparent and tracestate as envelope members, byte for byte"
     },
     {
       "on": "a",
@@ -77,10 +85,15 @@
       },
       "expect": {
         "kind": "text",
-        "text": "$regex:(?s)^\\s*\\{.*(?:\"id\"\\s*:\\s*\"c:2\".*\"tracestate\"\\s*:\\s*\"congo=t61rcWkgMzE, rojo=00f067aa0ba902b7\"|\"tracestate\"\\s*:\\s*\"congo=t61rcWkgMzE, rojo=00f067aa0ba902b7\".*\"id\"\\s*:\\s*\"c:2\")"
-      },
-      "assert": {
-        "absent": "traceparent"
+        "text": {
+          "$json": {
+            "version": 1,
+            "kind": "response",
+            "id": "c:2",
+            "tracestate": "congo=t61rcWkgMzE, rojo=00f067aa0ba902b7",
+            "traceparent": "$absent"
+          }
+        }
       },
       "note": "a tracestate that arrived alone continues no trace and is carried back alone"
     }

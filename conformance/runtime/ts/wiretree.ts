@@ -27,7 +27,9 @@ const production: Trees = { compose, select, send, asAddressed };
 
 const hex = (key: Key): string => Buffer.from(key).toString('hex');
 const bytes = (text: string): Key => Uint8Array.from(Buffer.from(text, 'hex'));
-const utf8 = new TextDecoder('utf-8', { fatal: true });
+// Keys are exact bytes: a leading U+FEFF belongs to the key, so it is never
+// stripped as a byte order mark.
+const utf8 = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
 const encoder = new TextEncoder();
 
 /** Test-only interpreter of the contract: complete, exact, immutable, acyclic. */
@@ -107,6 +109,25 @@ const mutants: Record<string, Trees> = {
   'lossy-bridge': { ...reference, asAddressed: tree => ({ send(path: Path, message: Message) {
     reference.send(tree, path.map(segment => encoder.encode(segment)), message);
   } }) },
+  /** Sending changes the message's payload in place. */
+  'corrupting-message': { ...reference, send(tree, path, message) {
+    (message.frame as { data?: unknown }).data = 'corrupted';
+    reference.send(tree, path, message);
+  } },
+  /** Sending replaces the message's return capability in place. */
+  'replacing-return': { ...reference, send(tree, path, message) {
+    (message as { return?: unknown }).return = { wire: { send() {} } };
+    reference.send(tree, path, message);
+  } },
+  /** Sending hides a refusal from the caller. */
+  'swallowing-refusal': { ...reference, send(tree, path, message) {
+    try { reference.send(tree, path, message); } catch { /* the refusal is lost */ }
+  } },
+  /** Sending reports a refusal after the own primitive admitted the message. */
+  'throwing-after-admission': { ...reference, send(tree, path, message) {
+    reference.send(tree, path, message);
+    throw new Error('refused after admission');
+  } },
   /** children() omits the empty key, so the child map is incomplete. */
   'incomplete-children': { ...reference, compose: (own, children) => {
     const node = new Node(own, children);
@@ -150,7 +171,11 @@ class Harness {
   readonly trace: Trace = [];
   unchanged = true;
   partsExact = true;
-  expected?: Message;
+  /** A snapshot of the message a send must deliver: its frame, and its return capability's identity. */
+  expected?: { frame: Message['frame']; return: Message['return'] };
+  expect(message: Message): void {
+    this.expected = { frame: structuredClone(message.frame), return: message.return };
+  }
   readonly names = new Map<Wire, [string, number]>();
   readonly refusing = new Set<Wire>();
   readonly counts = new Map<Wire, number>();
@@ -314,10 +339,13 @@ function derived(h: Harness, base: WireTree | undefined, path: string[], message
   if (!base) { h.trace.push(['missing']); return; }
   const present = h.T.select(base, path.map(bytes)) !== undefined;
   const before = h.trace.length;
-  h.expected = message;
+  h.expect(message);
   let refused = false;
   try { h.T.send(base, path.map(bytes), message); } catch { refused = true; }
   const invoked = h.trace.length !== before;
+  const added = h.trace.slice(before);
+  if (added.some(entry => entry[0] === 'delivered') && refused) h.trace.push(['refusedAfterAdmission']);
+  if (added.some(entry => entry[0] === 'refused') && !refused) h.trace.push(['refusalSwallowed']);
   if (present && !invoked) h.trace.push([refused ? 'refusedWithoutOwn' : 'admittedWithoutOwn']);
   if (!present && invoked) h.trace.push(['fallback']);
   if (!present && !invoked) h.trace.push([refused ? 'missing' : 'missingAdmitted']);
@@ -363,7 +391,7 @@ function local(T: Trees, inputs: Inputs, test: Case): unknown {
         // The ill-formed segment comes from the fixture: UTF-16 code units here.
         const path = s.op === 'bridgeInvalid' ? [String.fromCharCode(...s.utf16!.map(unit => parseInt(unit, 16)))] : s.path!;
         const before = h.trace.length;
-        h.expected = message;
+        h.expect(message);
         let refused = false;
         try { bridge.send(path, message); } catch { refused = true; }
         // A refusal the bridge makes without reaching any primitive.
@@ -528,13 +556,13 @@ async function carrier(T: Trees, C: Carriage, inputs: Inputs, test: Case): Promi
           if (!target) { h.trace.push(['missing']); break; }
           if (s.op === 'cancel') {
             const cancel: Message = { frame: { version: 1, kind: 'cancel', id: (pending!.message.frame as { id: string }).id }, return: pending!.message.return };
-            h.expected = cancel;
+            h.expect(cancel);
             T.send(base, s.path!.map(bytes), cancel);
             await signals.take();
             break;
           }
           const call = request(label);
-          h.expected = call.message;
+          h.expect(call.message);
           if (s.op === 'hold') hold = true;
           try { T.send(base, s.path!.map(bytes), call.message); } catch { hold = false; h.trace.push(['refused']); break; }
           if (s.op === 'hold') { pending = call; await signals.take(); } else await outcome(call.replies);
@@ -542,7 +570,7 @@ async function carrier(T: Trees, C: Carriage, inputs: Inputs, test: Case): Promi
         }
         case 'sendAddressed': {
           const call = request(label);
-          h.expected = call.message;
+          h.expect(call.message);
           try { access.send(s.path!, call.message); } catch { h.trace.push(['refused']); break; }
           await outcome(call.replies);
           break;

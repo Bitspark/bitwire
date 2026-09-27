@@ -64,7 +64,13 @@
       },
       "expect": {
         "kind": "text",
-        "text": "$regex:\"result\"\\s*:\\s*\"text\""
+        "text": {
+          "$json": {
+            "kind": "response",
+            "id": "c:1",
+            "result": "text"
+          }
+        }
       }
     },
     {

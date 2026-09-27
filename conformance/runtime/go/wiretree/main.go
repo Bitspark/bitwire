@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"reflect"
 	"slices"
@@ -273,9 +274,39 @@ func (h *harness) length() int {
 	return len(h.trace)
 }
 func (h *harness) setExpected(m wire.Message) {
+	snapshot := m
+	snapshot.Frame = cloneFrame(m.Frame)
 	h.mu.Lock()
-	h.expected = &m
+	h.expected = &snapshot
 	h.mu.Unlock()
+}
+
+// cloneFrame copies every mutable part of a frame; nil stays nil.
+func cloneFrame(f wire.ProfileFrame) wire.ProfileFrame {
+	f.Params, f.Result, f.Data = bytes.Clone(f.Params), bytes.Clone(f.Result), bytes.Clone(f.Data)
+	if f.Error != nil {
+		e := *f.Error
+		e.Data = bytes.Clone(e.Data)
+		f.Error = &e
+	}
+	f.Meta = maps.Clone(f.Meta)
+	return f
+}
+
+// since reports whether the trace gained a delivery, or a refusal by a
+// primitive, after entry before.
+func (h *harness) since(before int) (delivered, refusedByOwn bool) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	for _, entry := range h.trace[before:] {
+		switch entry[0] {
+		case "delivered":
+			delivered = true
+		case "refused":
+			refusedByOwn = true
+		}
+	}
+	return delivered, refusedByOwn
 }
 func (h *harness) handle(p *primitive, message wire.Message) error {
 	h.mu.Lock()
@@ -575,6 +606,13 @@ func (h *harness) derived(base tree, ok bool, path []string, m wire.Message) {
 	h.setExpected(m)
 	refused := h.t.Send(base, keys(path), m) != nil
 	invoked := h.length() != before
+	delivered, refusedByOwn := h.since(before)
+	if delivered && refused {
+		h.push("refusedAfterAdmission")
+	}
+	if refusedByOwn && !refused {
+		h.push("refusalSwallowed")
+	}
 	switch {
 	case present && !invoked && refused:
 		h.push("refusedWithoutOwn")

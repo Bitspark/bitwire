@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Repair conformance evidence that could certify broken behavior (#65):
+  - The full-tree drivers hold each delivered message to an independent snapshot
+    taken before sending, and a derived send's caller-visible outcome to its own
+    primitive's, in Go and TypeScript. Four more unlawful realizations
+    (corrupting the message, replacing the return capability, swallowing a
+    refusal, throwing after admission) must each be rejected.
+  - The TypeScript driver keeps a key's leading U+FEFF, and the carrier case
+    `carrier-keys-are-exact-bytes` holds it as distinct from `"a"`.
+  - The `bitwire/1` matching language gains `$json` (CONTRACT.md §6.8), a
+    structural assertion on a string that holds JSON. The authored scenarios
+    assert response envelopes with it instead of patterns over raw text, which
+    had also matched an echoed request and nested trace members.
 - Add bitwire-authored `bitwire/1` scenarios under
   `conformance/protocol/scenarios`, written from `SCOPE.md`. Three replace
   known defects: the trace members of a response in any member order; a refused
@@ -38,7 +50,7 @@
   runner follow separately (#59).
 
 - Add the full-tree conformance family (`conformance/wiretree`) for decision
-  0012: 19 structural, 1 bridge and 7 carrier cases with independently authored
+  0012: 19 structural, 1 bridge and 8 carrier cases with independently authored
   expectations, run in Go and TypeScript against released bitruntime.
   Structural and bridge cases run without a carrier; carrier cases run on the
   local pair and on real WebSockets in both directions. The production
@@ -46,7 +58,7 @@
   bitruntime's public `Bind`/`bind` and `Serve`/`serve` (v0.3.0), with
   `Update`/`update` when the far tree is edited; the reference realization
   uses test-only adapters, which answer a refused request and drop a refused
-  event as `Serve` does. Eight deliberately unlawful TypeScript
+  event as `Serve` does. Twelve deliberately unlawful TypeScript
   realizations are each rejected by the case aimed at them. A disposition maps
   all 39 historical declared cases, their 19 recorded gaps and two limitations
   to current cases or explicit historical addressed limitations; the historical
