@@ -42,7 +42,7 @@ the case files' SHA-256s and every family's result in each language.
 | Declared, reference | The 39 [declared](declared/cases.json) cases through the test-only interpreter over bitruntime's carriers | the same three | 39/39 on each | 39/39 on each |
 | Declared, production | The same cases through bitruntime's child-only addressed mount, with its selection and forwarding | the same three | 20 conform; 19 match bitruntime's own [gap ledger](runtime/production-gaps.json) | the same |
 | Trees | The [0.3 observations](trees/expected.json) through bitruntime's tree construction, selection, sending and addressed bridge | none, structural | 14/14 | 14/14 |
-| Full trees | The [full-tree cases](wiretree/README.md): 19 structural, 1 bridge, 8 carrier; test-only reference and bitruntime's tree operations | none for structure and bridge; the three carriers for carrier cases, bound and served by bitruntime's `Bind` and `Serve` in production and by test-only adapters in the reference | 28/28 in each realization | 28/28 in each realization |
+| Full trees | The [full-tree cases](wiretree/README.md): 20 structural, 1 bridge, 8 carrier; test-only reference and bitruntime's tree operations | none for structure and bridge; the three carriers for carrier cases, bound and served by bitruntime's `Bind` and `Serve` in production and by test-only adapters in the reference | 29/29 in each realization | 29/29 in each realization |
 
 The Go drivers use `core.Invocation`, `core.NewPair`, the WebSocket engine,
 `dispatch` with `dispatch.Serve`, `core.At`, `core.Mount`, `core.Forward`,

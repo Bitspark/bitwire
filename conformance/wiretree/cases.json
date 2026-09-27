@@ -350,6 +350,34 @@
           }
         ]
       ]
+    },
+    "bomRoot": {
+      "own": [
+        "bomRoot",
+        1
+      ],
+      "children": [
+        [
+          "a",
+          {
+            "own": [
+              "plainA",
+              1
+            ],
+            "children": []
+          }
+        ],
+        [
+          "\ufeffa",
+          {
+            "own": [
+              "bomA",
+              1
+            ],
+            "children": []
+          }
+        ]
+      ]
     }
   },
   "cases": [
@@ -2269,6 +2297,63 @@
                 ]
               ]
             }
+          ]
+        ],
+        "partsExact": true,
+        "unchanged": true
+      }
+    },
+    {
+      "id": "keys-are-exact-bytes",
+      "family": "structure",
+      "root": "bomRoot",
+      "note": "A leading U+FEFF is part of a key (bytes ef bb bf 61), never a byte order mark: \"a\" and \"\ufeffa\" are distinct children of the constructed tree, each reached by its own path; the bytes ef bb bf alone name no child.",
+      "steps": [
+        {
+          "op": "structure",
+          "path": []
+        },
+        {
+          "op": "send",
+          "path": [
+            "a"
+          ]
+        },
+        {
+          "op": "send",
+          "path": [
+            "\ufeffa"
+          ]
+        },
+        {
+          "op": "send",
+          "path": [
+            {
+              "hex": "efbbbf"
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "trace": [
+          [
+            "structure",
+            {
+              "$render": "bomRoot"
+            }
+          ],
+          [
+            "delivered",
+            "plainA",
+            1
+          ],
+          [
+            "delivered",
+            "bomA",
+            1
+          ],
+          [
+            "missing"
           ]
         ],
         "partsExact": true,

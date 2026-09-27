@@ -8,12 +8,16 @@
     primitive's, in Go and TypeScript. Four more unlawful realizations
     (corrupting the message, replacing the return capability, swallowing a
     refusal, throwing after admission) must each be rejected.
-  - The TypeScript driver keeps a key's leading U+FEFF, and the carrier case
-    `carrier-keys-are-exact-bytes` holds it as distinct from `"a"`.
+  - The TypeScript driver keeps a key's leading U+FEFF. The cases
+    `keys-are-exact-bytes` (structure) and `carrier-keys-are-exact-bytes` hold
+    it as distinct from `"a"`, for any tree realization and across carriers.
   - The `bitwire/1` matching language gains `$json` (CONTRACT.md §6.8), a
     structural assertion on a string that holds JSON. The authored scenarios
     assert response envelopes with it instead of patterns over raw text, which
     had also matched an echoed request and nested trace members.
+  - The runner reads a `hello` without `listen` from both of its lists, refuses a
+    `foreach.as` that names a matcher keyword, counts mirrored variants in its
+    case-name uniqueness check, and refuses a repeated pairing or transport name.
 - Add bitwire-authored `bitwire/1` scenarios under
   `conformance/protocol/scenarios`, written from `SCOPE.md`. Three replace
   known defects: the trace members of a response in any member order; a refused
@@ -50,7 +54,7 @@
   runner follow separately (#59).
 
 - Add the full-tree conformance family (`conformance/wiretree`) for decision
-  0012: 19 structural, 1 bridge and 8 carrier cases with independently authored
+  0012: 20 structural, 1 bridge and 8 carrier cases with independently authored
   expectations, run in Go and TypeScript against released bitruntime.
   Structural and bridge cases run without a carrier; carrier cases run on the
   local pair and on real WebSockets in both directions. The production

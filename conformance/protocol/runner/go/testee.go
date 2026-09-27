@@ -48,13 +48,18 @@ func (h Hello) Has(need string) bool {
 // implementation under test when its report declares that it does not
 // accept connections (§8.2).
 func (h Hello) without(feature string) Hello {
-	out := h
-	out.Features = nil
-	for _, f := range h.Features {
-		if f != feature {
-			out.Features = append(out.Features, f)
+	drop := func(list []string) []string {
+		var out []string
+		for _, f := range list {
+			if f != feature {
+				out = append(out, f)
+			}
 		}
+		return out
 	}
+	out := h
+	// Has reads both lists (§3.5), so the feature leaves both.
+	out.Layers, out.Features = drop(h.Layers), drop(h.Features)
 	return out
 }
 

@@ -175,11 +175,13 @@ Every error answer except `unsupported` is judged by the step (see
   integer 1 [driver.go:Start]. That is a harness failure of every case the
   testee was to run. An absent or null `language`, `layers` or `features`
   reads as empty, as upstream read it; a member of another type is refused.
-  - `layers` names the op families it implements. Edition 1 reads `seam`,
-    `peer` and `tunnel` and ignores the others.
+  - `layers` names the op families it implements: `seam`, `peer` and `tunnel`.
   - `features` names any of `listen`, `pipe`, `lazy`, `propagator` and
     `observer`.
-  - A need is met when either list names it [driver.go:Hello.Has].
+  - A need is met when either list names it [driver.go:Hello.Has], so a name
+    in the wrong list still counts. Other names are ignored. Reading a
+    `hello` without `listen` ([8.2](#82-pairings-roles-and-transports))
+    removes it from both lists.
 - **`reset`** goes to each side before every case [run.go:Run]. The testee
   closes and forgets everything it holds: connections, listeners, peers,
   tunnels, channels and calls. It answers `{}` with nothing left running. An
@@ -410,6 +412,11 @@ subprotocol answers `unsupported`.
 - **1006** where a side aborted and sent nothing;
 - otherwise whatever the remote sent when it closed first.
 
+The side that ended the connection reports the code it closed with, whether
+or not the other side received it. The other side reports the code it observed:
+the same code, or 1006 when the close was lost to the transport's teardown
+(`SCOPE.md`, "The connection beneath").
+
 `clean` is `code == 1000`.
 
 **`options`**, on `peer.listen`, `peer.dial` and `peer.over`:
@@ -580,15 +587,16 @@ It then reports no claim from that set.
   - a runner step has no `expect`, `expect_error`, `assert` or `repeat`;
 - the observer repeat rule ([4.6](#46-optional-the-observer));
 - `foreach` selects at least one row ([5.7](#57-foreach-and-where));
-- no two expanded scenarios share a layer and name [scenario.go:Load];
+- no two cases share a layer and name, counting each expanded scenario and,
+  for a `mirror` scenario, its mirrored variant [scenario.go:Load];
 - the scope matches the layer: `seam` and `peer` scenarios are `core`, and
   `tunnel` scenarios are `tunnel`;
 - a scenario that needs `observer` is marked `"optional": "observer"`;
 - no step uses an excluded op ([4.5](#45-excluded-ops-and-arguments)), and only an
   optional scenario uses `peer.observed` or the `observe` option;
 - no step's `args` has a member named `id` or `op` ([3.2](#32-requests));
-- no step binds a keyword of the matching language, through `bind` or
-  `$bind:` ([6.5](#65-placeholders));
+- no scenario binds a keyword of the matching language, through `bind`,
+  `$bind:` or `foreach.as` ([6.5](#65-placeholders));
 - each op family a step uses belongs to the scenario's layer or one beneath it:
   `conn.*` everywhere, `peer.*` and `call.*` in `peer` and `tunnel`, and
   `tunnel.*` only in `tunnel`. Upstream held this in a test
@@ -973,7 +981,9 @@ toward or against a claim. Removing one from that list is a new
 
 ### 8.2 Pairings, roles and transports
 
-- **Pairings.** A report lists its pairings. The implementation under test
+- **Pairings.** A report lists its pairings, each once, and each transport
+  under its own nonempty name, so that a case's id, pairing and transport
+  identify it. The implementation under test
   paired with itself exercises both roles in each case. Paired with another
   implementation, it should run in both orders: once on side `a`, and once on
   side `b`. The claim rule ([8.4](#84-claim-rule)) requires only that the
