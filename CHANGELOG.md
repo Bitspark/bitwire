@@ -2,12 +2,16 @@
 
 ## Unreleased
 
-- Add five bitwire-authored `bitwire/1` scenarios under
-  `conformance/protocol/scenarios`, written from `SCOPE.md`. Two replace the
-  known defects: the trace members of a response in any member order, and a
-  refused channel open that names the family. Three hold what no archived
-  scenario asserted: the receiver's 1009 for an over-limit frame, and 4011 for
-  an empty method or event name. The evidence set is now 42 scenarios.
+- Add bitwire-authored `bitwire/1` scenarios under
+  `conformance/protocol/scenarios`, written from `SCOPE.md`. Three replace
+  known defects: the trace members of a response in any member order; a refused
+  channel open that names the family; and the binary-frame refusal with a
+  canonical handler name. The others hold what no archived scenario asserted:
+  1009 for an over-limit frame in each role, 4011 for an empty method or event
+  name, and the path encoding (plain names are not rejected; only canonical
+  names reach a path). CONTRACT.md §4.3 now fixes that a driver's method,
+  event or name is a one-segment path carried canonically. The evidence set is
+  now 46 scenarios.
 - Add the `bitwire/1` conformance contract, edition 1, as a draft, with its evidence set,
   under `conformance/protocol` (#60). `CONTRACT.md` defines the driver-1 exchange,
   the scenario format, the matching language, case execution, scopes, the claim

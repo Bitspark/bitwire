@@ -27,6 +27,10 @@
     {
       "path": "protocol/bitwire-1/source/conformance/scenarios/tunnel/declaration-digest.json",
       "reason": "It expects Nightseam Go's exact refusal message; the tunnel requires only that the message name the family."
+    },
+    {
+      "path": "protocol/bitwire-1/source/conformance/scenarios/peer/binary-frame-ends-the-connection.json",
+      "reason": "Its raw frames name the plain method echo, and it expects the request to be served. Serving a plain name needs a plain-name handler, which revision 1 does not require: a name nothing handles is answered method_not_found (SCOPE.md, Paths)."
     }
   ]
 }

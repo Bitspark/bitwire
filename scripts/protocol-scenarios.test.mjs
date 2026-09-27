@@ -25,9 +25,13 @@ test('authored scenarios name the identity, derive from nothing and replace each
   const authored = [...verify()].filter(([, scenario]) => !scenario.source);
   const paths = authored.map(([path]) => path).sort();
   assert.deepEqual(paths, [
+    'conformance/protocol/scenarios/peer/binary-frame-ends-the-connection-canonical.json',
     'conformance/protocol/scenarios/peer/empty-event-name-ends-with-4011.json',
     'conformance/protocol/scenarios/peer/empty-method-ends-with-4011.json',
+    'conformance/protocol/scenarios/peer/only-canonical-names-reach-a-path.json',
+    'conformance/protocol/scenarios/peer/over-limit-frame-ends-with-1009-client.json',
     'conformance/protocol/scenarios/peer/over-limit-frame-ends-with-1009.json',
+    'conformance/protocol/scenarios/peer/plain-names-are-not-rejected.json',
     'conformance/protocol/scenarios/peer/trace-members-any-order.json',
     'conformance/protocol/scenarios/tunnel/declaration-digest-names-the-family.json',
   ]);

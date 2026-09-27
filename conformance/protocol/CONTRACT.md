@@ -364,6 +364,20 @@ The transport of `conn.listen` and `conn.dial` is the testee's configured one
 | `peer.close` | **`on`** | `{}` |
 | `peer.await_close` | **`on`**, `within_ms` | `{"clean": bool, "code": int}` |
 
+**Names.** An op's `method` (`peer.handle`, `peer.call`, `peer.await_request`),
+`event` (`peer.emit`) and `name` (`peer.on_event`, `peer.await_event`) is a
+one-segment path. The testee handles, sends or waits for it at that path, which
+`bitwire/1` carries in its canonical encoding
+([`SCOPE.md`, Paths](../../protocol/bitwire-1/SCOPE.md#paths)): `echo` travels
+as `4:echo`. Answers report the driver's name, `echo`.
+- A name that begins with the reserved prefix of a layer edition 1 covers,
+  `channel.`, is that vocabulary's own plain name instead: the vocabulary is
+  plain names by definition.
+- A scenario's raw frames therefore name a driver's handler canonically.
+  Serving a plain name needs a plain-name handler, which revision 1 does not
+  require (a name nothing handles is answered `method_not_found`), so no
+  required case depends on one.
+
 **Calls.** `call.await` answers as the call ended:
 - the remote's `result`;
 - the remote's public error, with `code`, `message` and `data` verbatim;
@@ -1055,7 +1069,8 @@ with `"driver": 1`.
 | 12 | The Go runner reads member names in any capitalization and ignores trailing data | Exact names, nothing after the object ([3.3](#33-answers)) | Narrowing |
 | 13 | The layer and op-family rule is held in a test [scenario_test.go:allowedAcross]; scope, observer marking and excluded ops are not checked | Load checks ([5.5](#55-loading)) | Addition |
 | 14 | No notion of a defective scenario | `"optional": "defect"` for scenarios that over-specify, listed with reasons in `selection.json` ([8.1](#81-required-cases)) | Addition |
-| 15 | `DRIVER.md` lists `peer.await_close` codes 1000, 4011, 1006 and the remote's | Adds 1009 where the receiver refused a frame over its limit, which `SCOPE.md` binds ([4.3](#43-peer-peer-call-core)) | Clarification |
-| 16 | An argument named `id` or `op` overwrites the request's own member [driver.go:Testee.Request] | Refused at load; the runner's own members are sent ([3.2](#32-requests)) | Narrowing |
-| 17 | A binding may shadow a keyword and can then never be referenced | Refused at load ([6.5](#65-placeholders)) | Narrowing |
 | 15 | No applicability step, and no minimum pairings for a claim | Applicability before expansion ([7.1](#71-order)); both orders required ([8.4](#84-claim-rule)) | Addition |
+| 16 | `DRIVER.md` lists `peer.await_close` codes 1000, 4011, 1006 and the remote's | Adds 1009 where the receiver refused a frame over its limit, which `SCOPE.md` binds ([4.3](#43-peer-peer-call-core)) | Clarification |
+| 17 | An argument named `id` or `op` overwrites the request's own member [driver.go:Testee.Request] | Refused at load; the runner's own members are sent ([3.2](#32-requests)) | Narrowing |
+| 18 | A binding may shadow a keyword and can then never be referenced | Refused at load ([6.5](#65-placeholders)) | Narrowing |
+| 19 | `DRIVER.md` does not say whether an op's `method`, `event` or `name` is a plain name or a path; the upstream testees registered plain names | A one-segment path, carried canonically; a reserved vocabulary name stays plain ([4.3](#43-peer-peer-call-core)). One archived scenario that needs a plain name served is a known defect. | Clarification |

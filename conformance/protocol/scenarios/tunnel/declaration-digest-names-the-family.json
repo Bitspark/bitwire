@@ -6,7 +6,7 @@
     "normativeDigest": "7797682b0f05f86c508eafbd3be23c2084acd2f5cfc766922f9372b652dc416e"
   },
   "scope": "tunnel",
-  "description": "Authored by bitwire. It keeps every step of the defective derivative tunnel/declaration-digest, which expected Nightseam Go's exact refusal message, and requires only that the message name the family, as the tunnel does.",
+  "description": "Authored by bitwire from tunnel.md, which SCOPE.md adopts: \"Two nonempty digests that differ are refused contract_mismatch, naming the family.\" It keeps the steps of the defective derivative tunnel/declaration-digest, which expected Nightseam Go's exact refusal message. It reads the refusal on the wire, through a raw channel.open, and requires only that the family is named in the message or the data. The family \"quokka\" is a word no refusal would contain by accident.",
   "needs": [
     "peer",
     "tunnel"
@@ -31,7 +31,7 @@
         "options": {
           "accept_capacity": 1,
           "contracts": {
-            "same": "8666a8fbdacb02b4e8c807fc3b01d56d31bf2fef60626d163b896b0c939a84a6"
+            "quokka": "8666a8fbdacb02b4e8c807fc3b01d56d31bf2fef60626d163b896b0c939a84a6"
           }
         }
       },
@@ -50,21 +50,52 @@
       "op": "tunnel.open",
       "args": {
         "on": "$tb",
-        "family": "same",
+        "family": "quokka",
         "digest": "2652993925b416656e545667c44375ad6e07430586b4416433d0df4534a8303d"
       },
       "expect_error": {
-        "code": "contract_mismatch",
-        "message": "$regex:\\bsame\\b"
+        "code": "contract_mismatch"
       },
-      "note": "tables/digests.json's canonical full-declaration digests differ because the second record revision adds an optional member; the original value still fits both separately held validator descriptors"
+      "note": "two differing nonempty digests are refused; the driver fixes only the code of this answer"
+    },
+    {
+      "on": "b",
+      "op": "peer.call",
+      "args": {
+        "on": "$pb",
+        "method": "channel.open",
+        "params": {
+          "channel": 99,
+          "family": "quokka",
+          "digest": "2652993925b416656e545667c44375ad6e07430586b4416433d0df4534a8303d",
+          "window": 32
+        }
+      },
+      "bind": "raw",
+      "note": "the same open, sent as the tunnel vocabulary's own request, so that the refusal is read as the refusing side sent it"
+    },
+    {
+      "on": "b",
+      "op": "call.await",
+      "args": {
+        "on": "$raw"
+      },
+      "expect": {
+        "error": {
+          "code": "contract_mismatch"
+        }
+      },
+      "assert": {
+        "present": "quokka"
+      },
+      "note": "the refusal names the family, in its message or its data"
     },
     {
       "on": "b",
       "op": "tunnel.open",
       "args": {
         "on": "$tb",
-        "family": "same",
+        "family": "quokka",
         "digest": "8666a8fbdacb02b4e8c807fc3b01d56d31bf2fef60626d163b896b0c939a84a6"
       },
       "bind": {
@@ -80,7 +111,7 @@
       },
       "expect": {
         "id": "$opened",
-        "family": "same",
+        "family": "quokka",
         "digest": "8666a8fbdacb02b4e8c807fc3b01d56d31bf2fef60626d163b896b0c939a84a6"
       },
       "bind": {
@@ -146,7 +177,7 @@
       "op": "tunnel.open",
       "args": {
         "on": "$tb",
-        "family": "same"
+        "family": "quokka"
       },
       "bind": {
         "handle": "untyped"
@@ -159,7 +190,7 @@
         "on": "$ta"
       },
       "expect": {
-        "family": "same",
+        "family": "quokka",
         "digest": ""
       },
       "note": "absence is not a revision mismatch"
@@ -169,7 +200,7 @@
       "op": "tunnel.open",
       "args": {
         "on": "$ta",
-        "family": "same",
+        "family": "quokka",
         "digest": "8666a8fbdacb02b4e8c807fc3b01d56d31bf2fef60626d163b896b0c939a84a6"
       }
     },
@@ -180,7 +211,7 @@
         "on": "$tb"
       },
       "expect": {
-        "family": "same",
+        "family": "quokka",
         "digest": "8666a8fbdacb02b4e8c807fc3b01d56d31bf2fef60626d163b896b0c939a84a6"
       },
       "note": "a receiver carrying no expected digest also accepts"

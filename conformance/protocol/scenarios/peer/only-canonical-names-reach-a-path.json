@@ -1,0 +1,159 @@
+{
+  "name": "only a canonical name reaches the path it encodes; other names are dispatched by name",
+  "layer": "peer",
+  "protocol": {
+    "revision": "bitwire/1",
+    "normativeDigest": "7797682b0f05f86c508eafbd3be23c2084acd2f5cfc766922f9372b652dc416e"
+  },
+  "scope": "core",
+  "description": "Authored by bitwire from SCOPE.md, \"Paths\" (finding F3): a name is canonical when it decodes completely, each length has no leading zero, no length exceeds the remaining bytes, and every segment is valid UTF-8. \"A receiver's addressed surface interprets only canonical names as paths. Any other name is dispatched by that name.\" The driver's handler is the one-segment path [\"echo\"] (CONTRACT.md §4.3, Names).",
+  "needs": [
+    "peer",
+    "seam"
+  ],
+  "steps": [
+    {
+      "on": "runner",
+      "op": "pair.peer_and_conn",
+      "args": {
+        "peer": "b",
+        "role": "server"
+      },
+      "bind": {
+        "peer": "pb",
+        "conn": "ca"
+      }
+    },
+    {
+      "on": "b",
+      "op": "peer.handle",
+      "args": {
+        "on": "$pb",
+        "method": "echo",
+        "behavior": {
+          "kind": "echo"
+        }
+      }
+    },
+    {
+      "on": "a",
+      "op": "conn.send",
+      "args": {
+        "on": "$ca",
+        "kind": "text",
+        "text": "{\"version\":1,\"kind\":\"request\",\"id\":\"c:1\",\"method\":\"4:echo\",\"params\":{}}"
+      }
+    },
+    {
+      "on": "a",
+      "op": "conn.receive",
+      "args": {
+        "on": "$ca"
+      },
+      "expect": {
+        "kind": "text",
+        "text": "$regex:(?s)\"id\"\\s*:\\s*\"c:1\".*\"result\"|\"result\".*\"id\"\\s*:\\s*\"c:1\""
+      }
+    },
+    {
+      "on": "a",
+      "op": "conn.send",
+      "args": {
+        "on": "$ca",
+        "kind": "text",
+        "text": "{\"version\":1,\"kind\":\"request\",\"id\":\"c:2\",\"method\":\"04:echo\",\"params\":{}}"
+      }
+    },
+    {
+      "on": "a",
+      "op": "conn.receive",
+      "args": {
+        "on": "$ca"
+      },
+      "expect": {
+        "kind": "text",
+        "text": "$regex:(?s)\"id\"\\s*:\\s*\"c:2\".*\"code\"\\s*:\\s*\"method_not_found\"|\"code\"\\s*:\\s*\"method_not_found\".*\"id\"\\s*:\\s*\"c:2\""
+      }
+    },
+    {
+      "on": "a",
+      "op": "conn.send",
+      "args": {
+        "on": "$ca",
+        "kind": "text",
+        "text": "{\"version\":1,\"kind\":\"request\",\"id\":\"c:3\",\"method\":\"5:echo\",\"params\":{}}"
+      }
+    },
+    {
+      "on": "a",
+      "op": "conn.receive",
+      "args": {
+        "on": "$ca"
+      },
+      "expect": {
+        "kind": "text",
+        "text": "$regex:(?s)\"id\"\\s*:\\s*\"c:3\".*\"code\"\\s*:\\s*\"method_not_found\"|\"code\"\\s*:\\s*\"method_not_found\".*\"id\"\\s*:\\s*\"c:3\""
+      }
+    },
+    {
+      "on": "a",
+      "op": "conn.send",
+      "args": {
+        "on": "$ca",
+        "kind": "text",
+        "text": "{\"version\":1,\"kind\":\"request\",\"id\":\"c:4\",\"method\":\"4:echox\",\"params\":{}}"
+      }
+    },
+    {
+      "on": "a",
+      "op": "conn.receive",
+      "args": {
+        "on": "$ca"
+      },
+      "expect": {
+        "kind": "text",
+        "text": "$regex:(?s)\"id\"\\s*:\\s*\"c:4\".*\"code\"\\s*:\\s*\"method_not_found\"|\"code\"\\s*:\\s*\"method_not_found\".*\"id\"\\s*:\\s*\"c:4\""
+      }
+    },
+    {
+      "on": "a",
+      "op": "conn.send",
+      "args": {
+        "on": "$ca",
+        "kind": "text",
+        "text": "{\"version\":1,\"kind\":\"request\",\"id\":\"c:5\",\"method\":\"echo\",\"params\":{}}"
+      }
+    },
+    {
+      "on": "a",
+      "op": "conn.receive",
+      "args": {
+        "on": "$ca"
+      },
+      "expect": {
+        "kind": "text",
+        "text": "$regex:(?s)\"id\"\\s*:\\s*\"c:5\".*\"code\"\\s*:\\s*\"method_not_found\"|\"code\"\\s*:\\s*\"method_not_found\".*\"id\"\\s*:\\s*\"c:5\""
+      }
+    },
+    {
+      "on": "a",
+      "op": "conn.send",
+      "args": {
+        "on": "$ca",
+        "kind": "text",
+        "text": "{\"version\":1,\"kind\":\"request\",\"id\":\"c:6\",\"method\":\"4:echo\",\"params\":{}}"
+      }
+    },
+    {
+      "on": "a",
+      "op": "conn.receive",
+      "args": {
+        "on": "$ca"
+      },
+      "expect": {
+        "kind": "text",
+        "text": "$regex:(?s)\"id\"\\s*:\\s*\"c:6\".*\"result\"|\"result\".*\"id\"\\s*:\\s*\"c:6\""
+      }
+    }
+  ]
+}
