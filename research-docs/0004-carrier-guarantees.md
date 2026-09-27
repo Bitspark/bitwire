@@ -2,7 +2,7 @@
 
 **ID:** 0004
 **Date:** 27 September 2026
-**Status:** advised
+**Status:** applied
 **Run-ID:** run_0433aa85-2cb9-4776-aeb8-18070e987502
 **Document-ID:** doc_90198353-fd44-4d82-9e19-1eb08ee241de
 **Author:** Julian Matschinske <julian@matschinske.com>
@@ -871,3 +871,59 @@ need rules we can write down as contract text and byte vectors.
    requires, of the carriers claiming it, one of the behaviors `bitwire/1`
    permits. Is that a separate layer, or does it tighten the revision in place,
    which decision 0008 forbids?
+
+## Applied
+
+Advice: [`0004-carrier-guarantees.advice.md`](0004-carrier-guarantees.advice.md), run
+`run_0433aa85-2cb9-4776-aeb8-18070e987502`. It was verified with `consult verify --output`: exit 0, and
+the result's SHA-256 is `ea362d3a…`.
+
+Each recommendation below was checked on 27 September 2026 against bitwire `main` (`9f3af67`) and
+bitruntime v0.3.0 (`26d1138`):
+- **HOLDS:** true of the current code and contract, or a sound change to them.
+- **NEEDS ADAPTATION:** right, but the code or our draft must change first.
+- **STALE:** no longer applicable.
+
+"After adoption" marks work that waits for the maintainer to accept the carrier contract (#54). Until
+then the contract is a draft, and no implementation is held to it.
+
+| # | Recommendation | Verdict | Evidence and action |
+| --- | --- | --- | --- |
+| 1 | D1: a successful `Send` reports admission at that boundary; an error alone never establishes non-publication; evidence names one attempt at one declared boundary and is never inferred from a code, timeout, disconnection, cancellation, nested error or timing. | HOLDS | Our lean B, stated more exactly. It goes into the carrier draft's D1 text. |
+| 2 | Roots and local pairs give evidence for ordinary pre-admission refusals. | NEEDS ADAPTATION | Go's root and pair mark every synchronous refusal (`core/go/pair.go:153-189`). TypeScript's throw unmarked errors (`engine/ts/src/wire.ts`, `core/ts/src/pair.ts`). bitruntime issue after adoption. |
+| 3 | "Can never be forged" is too strong: an opaque evidence value prevents accidental manufacture, and trust rests on the contract and conformance. | HOLDS | Wording for the draft. |
+| 4 | A forwarder preserves evidence for the same boundary or derives it for its own, and never relabels inner evidence as outer. A transparent chain may declare a shared admission domain. | HOLDS | bitruntime's `Forward` already strips the proof (`core/go/forward.go:45`, `WithoutUnpublishedProof`). The rule goes into the draft. |
+| 5 | An attempt token: a second send of the same message never reuses the first attempt's evidence. | HOLDS | For the draft. bitruntime's marker wraps a per-call error, so it already complies. |
+| 6 | Two internal facts (completion; publication certificate), with a caller-facing summary of unpublished, answered or unknown. A synthesized `disconnected` is not an answer. A cancel's failure is never evidence about its request. | HOLDS | This refines our three-valued outcome. For the draft. |
+| 7 | The local `busy` needs evidence, not synchronous timing. Moving the quota check must preserve admission ordering. | HOLDS | This amends our D1 sub-question: evidence may come asynchronously. For the draft. |
+| 8 | Correct the helpers in both languages, adding evidence at TypeScript's admission boundary before removing the inference. | NEEDS ADAPTATION | Confirmed in both (`internal/request/go/request.go:189`, `dispatch/go/dispatch.go:73`; `core/ts/src/internal/request.ts:159`, `dispatch/ts/src/dispatch.ts:89`). bitruntime issue after adoption, sequenced as advised. |
+| 9 | D2: the caller keeps inputs stable during `Send`; before admission the carrier owns a stable representation and validates it; later mutation never changes admitted bytes; the return capability keeps its identity; the same at the seam. No copy at every layer. The snapshot follows the codec's value model, not `JSON.stringify`. | NEEDS ADAPTATION | This is our lean, refined. TypeScript's root and pair snapshot through JSON (`toJSON` runs), and its pipe aliases bytes. For the draft, then a bitruntime issue after adoption. |
+| 10 | D3: a *queued-work drain* with an admission barrier and a writer seal, covering everything admitted wherever it waits, including the root queue. | HOLDS | This amends our B, which named only the output queue. For the draft. |
+| 11 | What each kind of pending work is owed (the advice's table). "Exactly once" means local terminal settlement of a registered call. Terminal outcomes are atomic. `Closed` is final for its attachment. | HOLDS | For the draft. bitruntime already settles queued refusals and pending calls once (its port record). |
+| 12 | One absolute close deadline over the drain, current write, close write, reply wait and disposal. The endpoint API needs a construction-time close budget, never a library's hidden timeout. | NEEDS ADAPTATION | Go's WebSocket transport ignores the close context and uses its library's fixed 5 s + 5 s (`transports/websocket/go/websocket.go:132-137`). Draft first, then bitruntime. |
+| 13 | A received close interrupts the local drain: no new record, no third meaning of `busy`, receive processing continues. | HOLDS | For the draft. |
+| 14 | Keep revision 1's root-overflow termination. A full output queue does not inherit the root's immediate failure. | NEEDS ADAPTATION | Today a root handoff into a full output queue ends the carrier (`engine/go/peer.go:449-471`). Whether revision 1 binds that is to be read in the upstream `peer.md` against `profile.md`'s pacing clause. Recorded as an open reading for the draft. |
+| 15 | D4: separate numeric validity, adapter capability and protocol permission. Freeze the numeric set 1000–1003, 1007–1014, 3000–4999, and do not describe it as assigned. | HOLDS | It equals bitruntime's `Sendable`. For the draft, with the IANA distinction. |
+| 16 | An invalid close request has no side effect. An incapable adapter reports an unsupported capability and never substitutes, omits or silently aborts. The reason is validated. A repeated close joins the first; `Abort` is idempotent. | NEEDS ADAPTATION | Go's engine aborts on an observe-only code (`engine/go/peer.go:280`). TypeScript substitutes 1000 (`peer.ts:843`), and its adapter closes without a code (`transports/ts/src/index.ts:188-199`). Draft, then a bitruntime issue after adoption. |
+| 17 | Operational failures: keep 4011 and 1009; abort when the write path failed; under revision 1 prefer abort for writable operational failures too. A uniform code (for example 4012) only in a later revision or an explicit profile. Stop using 4011 as a catch-all in new implementations, without declaring it a revision-1 violation. | HOLDS | This **reverses our lean** (1011 or a private code now). Adopted for the draft. TypeScript's 4011 catch-all is noted for bitruntime, not as a violation. |
+| 18 | The browser WebSocket API can send only 1000 and 3000–4999 and has no abort, so publish a capability distinction. An adapter lacking a capability does not claim conformance for what needs it. | HOLDS | This bears on bitruntime#21: a TypeScript peer over the browser API cannot send 1009 at all. Comment added there. For the draft. |
+| 19 | One closed classification carrying a termination record: resource, cause, local close (code, reason, write status), peer close, observed code, drain and handshake completion. A local-only detail path; the public projection stays `disconnected`. A received public `disconnected` is never local closure. | HOLDS | For the draft. Both runtimes lose the cause for calls cut off through the root (review of this document); bitruntime issue after adoption. |
+| 20 | `Closed(code, reason)` reports the first valid peer close, and otherwise the transport's no-peer-close observation. The local close is available separately. | NEEDS ADAPTATION | Both runtimes report a constant `1001 "peer ended"` at the root (`engine/go/wire.go:198`, `engine/ts/src/wire.ts:145`). Draft, then bitruntime. |
+| 21 | Test actions and observations separately: the healthy path exactly, the interrupted path with an injected failure, and simultaneous close with each side reporting the other's code. | HOLDS | For the draft's conformance section. Our authored `peer/over-limit-frame-ends-with-1009` already holds only the receiver. |
+| 22 | A refusal during a write finishes the current record before sending 4011, if the deadline allows, and otherwise aborts; it never writes a close inside a record. Record both facts. | HOLDS | This settles Nightseam issue 456's rule. For the draft and a future case. |
+| 23 | The revision-1 tunnel needs a normative carve-out (a qualified claim or a scope exception), not only a findings entry. | HOLDS | This amends our "recorded exception". For the draft's tunnel clause. |
+| 24 | D5: the exact byte grammar (the advice's section 4). No delimiter after a body. Reject duplicate, reordered or extra headers, other letter case, tabs, extra spaces, bare LF, a BOM or a banner. The 128-byte cap stays, but no valid header exceeds 61 bytes. Compare the length before narrowing it. | HOLDS | For `bitwire-stream/1` in the draft. |
+| 25 | The framer is byte-oriented and keeps the text/binary tag. The `bitwire/1` binding decodes UTF-8 strictly (4011). A close reason must be valid UTF-8 (1002). No silent repair in TypeScript. | HOLDS | For the draft. TypeScript's seam carries text as `string`, so a stream transport must decode strictly (bitruntime#10). |
+| 26 | Dispositions of our gap table: EOF (confirm, qualified); partial write → abort (confirm); `Code:` (confirm); close body gets its own 123-byte control limit (amend); oversize → attempt 1009 without awaiting the body, with no delivery guarantee (replace); `Close` expiry fails and aborts, and 1006 only if no peer close arrived (amend); simultaneous close (confirm); refuse after the writer seal (strengthen); letter case and LF (confirm); stdio reads to pipe EOF, and exit status is not a close (qualify). | HOLDS | For the draft, replacing our tentative table. |
+| 27 | The oversize procedure: select 1009 from the header alone, schedule the close, discard exactly the remaining body only when trustworthy, never search a body, and stop on a deadline or discard budget. | HOLDS | For the draft. |
+| 28 | Writing: "whole" means no interleaving; short writes resume; a failure after handoff is possibly published; a cancelled send before handoff is unpublished; a partial write followed by cancellation aborts; input and output progress independently; half-close only after the final close record. | HOLDS | For the draft. |
+| 29 | Automatic close replies and framing-error closes use an empty reason. After the first valid peer close, no further data and no second reply. Cancelling a `Receive` wait preserves parser state. Timeouts are explicit configuration. | NEEDS ADAPTATION | For the draft. Go's WebSocket `Receive` cancellation destroys the socket today; the stream transports must not. |
+| 30 | Stdio: descriptor ownership in the transport binding; process supervision outside the carrier contract. | HOLDS | For the draft. |
+| 31 | The Language Server Protocol is precedent for the header form only. | HOLDS | Informative note. |
+| 32 | Vectors at two levels: framing vectors (hex bytes, limits, chunk schedules, EOF, delivered records, close actions), run whole, byte by byte and at every two-chunk split; and session scenarios for races. | HOLDS | For the draft's conformance section, and the next increment of #54. |
+| 33 | The advisor's "conformance pack" (88 framing vectors, 32 scenarios, a guide). | STALE | Not delivered: a sandbox link only the advisor could open. bitwire writes its own vectors from the draft. |
+| 34 | A governance clarification of decision 0008: a separately identified, versioned carrier contract may constrain the carriers claiming it to behaviors a named revision already permits, without changing that revision's conformance. Until it is accepted, disputed wire-visible policies stay recommendations. | HOLDS | **A maintainer decision**, presented with this advice. It governs recommendations 10, 11 and 17 where they touch the wire. |
+| 35 | "Happens in process" is not a sufficient layering test: classify by observable effect. | HOLDS | It corrects this document's "Which rules touch the network" paragraph. The draft classifies by effect. |
+| 36 | Publish the seam in bitwire's eight bindings, with language-neutral milestones (admission, ownership, writable progress, flush, peer close, final termination). Settle concurrency, receive cancellation, callback serialization, repeated close, buffer lifetime and resource ownership. | HOLDS | Confirms our intent. For the draft; the bindings follow adoption. |
+| 37 | Separate suites: the envelope codec, the carrier/API boundary, stream framing, and each transport binding. | HOLDS | It matches the existing split (`conformance/protocol` for `bitwire/1` over driver 1), and the framing vectors and F3 path vectors proposed on #59. |
+| 38 | The sequence: publish D4's local definitions and D5's format first, fix the documented deviations, then adopt D1–D3 with the additional claim named. | HOLDS | Adopted as the plan for #54. |
