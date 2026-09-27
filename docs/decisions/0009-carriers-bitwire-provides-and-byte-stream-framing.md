@@ -5,6 +5,11 @@ and 7 of [decision 0007](0007-using-bitwire-never-requires-nightseam.md). The
 draft [carrier specification](../wire/carriers.md) holds the details. Nothing is
 implemented yet.
 
+**Framing adopted** by [decision 0013](0013-carrier-contract-layering-and-adoption.md)
+on 2026-09-27. The [carrier specification](../wire/carriers.md) is now normative
+for close codes, the closed classification and `bitwire-stream/1`. Its
+publication, ownership and closing guarantees remain a draft.
+
 **Partly superseded** by [decision 0010](0010-bitwire-holds-the-contract-and-bitruntime-implements-it.md)
 on 2026-09-25: Bitwire specifies these carriers and the framing, and bitruntime
 implements them. Where this record says "Bitwire provides", read "bitruntime

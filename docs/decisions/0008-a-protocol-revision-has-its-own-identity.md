@@ -1,5 +1,10 @@
 # 0008: A protocol revision has its own identity
 
+**Clarified** by [decision 0013](0013-carrier-contract-layering-and-adoption.md)
+on 2026-09-27. A separately versioned carrier contract may constrain the
+carriers that claim it to behavior a revision already permits. That does not
+tighten the revision. The rule below stands unchanged.
+
 **Status:** accepted, 2026-09-25, on the user's decision after bitsystem3's
 carrier-stack research (its recommendations R15 and R16). Supersedes the
 compatibility section of [decision 0004](0004-return-origins-and-profile-revisions.md#compatibility-is-qualified-by-profile-revision);
