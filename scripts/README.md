@@ -38,7 +38,10 @@ independent cases against the pinned bitruntime Go module and TypeScript release
 package in its own CI job; see
 [bitruntime runtime conformance](../conformance/README.md#bitruntime-runtime-conformance).
 That job includes the [full-tree cases](../conformance/wiretree/README.md) and
-their deliberately unlawful realizations.
+their deliberately unlawful realizations. It also runs
+`node scripts/conformance-protocol-runtime.mjs`, the `bitwire/1` conformance
+runner against bitruntime's released testees; see
+[runs against released bitruntime](../conformance/protocol/README.md#runs-against-released-bitruntime).
 `node scripts/smoke-packed.mjs` installs npm
 and Go artifacts outside the checkout. These are separate from declaration checks.
 The [release procedure](../RELEASING.md) describes rehearsal and public registry

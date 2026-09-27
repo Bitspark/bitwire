@@ -145,11 +145,40 @@ The release follows the first runs against real testees, so that anything those
 runs expose can still enter edition 1. Until then every report says
 `"status": "draft"`.
 
+## Runs against released bitruntime
+
+`node scripts/conformance-protocol-runtime.mjs` runs this runner against
+bitruntime's released driver-1 testees, in the runtime-conformance CI job. The
+testees are pinned under [`testees`](testees/bitruntime.json), never taken from
+a checkout:
+- **Go.** The test-only module [`testees/go`](testees/go/go.mod) requires the
+  public bitruntime module at the pinned release, and its `go.sum` must hold the
+  pinned sums. The script builds `cmd/bitwire-testee/go` from it with
+  `GOWORK=off` and `-mod=readonly`, under the race detector (required in CI).
+- **TypeScript.** The private package [`testees/ts`](testees/ts/package.json)
+  depends on the release asset `@bitspark/bitruntime-testee`, which brings
+  `@bitspark/bitruntime` from the same release. The script downloads both
+  assets and checks their SHA-256 and integrity against the pins and the
+  lockfile, then installs with `npm ci` in scratch.
+
+It makes two claims, one per language. Each is core scope over WebSockets and
+covers the pairings of the language with itself and with the other language in
+both orders. The script requires both claims to be supported, and prints the
+identities each report records: the protocol, the contract edition and
+`contractDigest`, the `evidenceDigest`, the runner revision, the pinned
+release, and each claim's counts and toolchain.
+
+At bitruntime v0.4.2, and this evidence set, both claims are supported locally:
+345 required cases pass in each, and none fail, are unsupported, are skipped or
+end in a harness failure. These runs are the ones edition 1's release waits
+for ([§1](CONTRACT.md#1-identity-and-status)); the edition is still a draft.
+
 ## Not yet here
 
-- The testees that drive bitruntime's Go and TypeScript peers.
-- Reports against released implementations.
-- Evidence for the path encoding (finding F3).
+- The release of edition 1.
+- Deliberately invalid testees that a run must reject.
+- Path-encoding evidence beyond one segment (finding F3), which driver 1 cannot
+  reach.
 
 [#59](https://github.com/Bitspark/bitwire/issues/59) tracks each of these as a
 separate increment.

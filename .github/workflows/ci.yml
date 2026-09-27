@@ -64,6 +64,7 @@ jobs:
         with:
           node-version: 24
       - run: node scripts/conformance-runtime.mjs
+      - run: node scripts/conformance-protocol-runtime.mjs
 
   packages:
     runs-on: ubuntu-latest

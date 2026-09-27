@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Run the `bitwire/1` conformance runner against bitruntime's released
+  driver-1 testees (#59). `scripts/conformance-protocol-runtime.mjs` pins
+  bitruntime v0.4.2 under `conformance/protocol/testees`, builds the Go testee
+  from the public module and installs the TypeScript testee from its release
+  asset, both checked against the pins. It then makes one core claim per
+  language over WebSockets, in every pairing. Both claims are supported, with
+  345 required cases passing in each. The runtime-conformance CI job runs it.
 - Repair conformance evidence that could certify broken behavior (#65):
   - The full-tree drivers hold each delivered message to an independent snapshot
     taken before sending, and a derived send's caller-visible outcome to its own
