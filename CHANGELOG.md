@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+- Adopt the carrier contract's first part (decision 0013, #54), after research
+  0004:
+  - Decision 0013 clarifies decision 0008. A separately versioned carrier
+    contract may constrain the carriers that claim it to behavior a protocol
+    revision already permits, and changes no revision. It also sets the order
+    of adoption.
+  - `docs/wire/carriers.md` now defines close codes:
+    - the frozen valid set, 1000–1003, 1007–1014 and 3000–4999;
+    - adapter capabilities;
+    - validation of a close request before any state changes;
+    - one closed classification with a local termination record;
+    - operational failures under `bitwire/1`;
+    - the revision-1 tunnel's compatibility exception.
+  - It specifies `bitwire-stream/1` completely: an exact header grammar, a
+    separate 123-byte close-reason limit, 1009 from the header alone,
+    truncation, the close handshake with an empty-reason reply, half-close, one
+    close deadline, and stdio.
+  - Publication, ownership and the queued-work drain (D1 to D3) stay drafts
+    for the next step.
+  - `conformance/stream/vectors.json` holds 92 portable framing vectors, run by
+    `scripts/stream.test.mjs` under every read schedule against two test-only
+    reference receivers. Sixteen deliberately wrong receivers must each fail
+    one.
+  - Decisions 0008 and 0009 note the clarification and the adoption.
 - Run the `bitwire/1` conformance runner against bitruntime's released
   driver-1 testees (#59). `scripts/conformance-protocol-runtime.mjs` pins
   bitruntime v0.4.2 under `conformance/protocol/testees`, builds the Go testee

@@ -10,6 +10,12 @@ not establish the new structural contract. See
 test-only reference, bitruntime Go and TypeScript release evidence against the
 same cases, and a preserved historical 0.1.0 runtime baseline.**
 
+## Byte-stream framing
+
+[`stream/`](stream/README.md) holds the portable framing vectors for
+`bitwire-stream/1`, checked against two test-only reference receivers. No
+implementation claims them yet.
+
 ## bitruntime runtime conformance
 
 Run `node scripts/conformance-runtime.mjs`; `--language=go` or `--language=ts`
