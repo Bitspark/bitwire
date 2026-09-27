@@ -17,10 +17,10 @@
       "serverSha256": "72c9273c9f4a24feedce5ced66f59f1ac7fd0f40e799b023227db9ad0c13cd59",
       "runId": "run_0433aa85-2cb9-4776-aeb8-18070e987502",
       "submittedAt": "2026-09-27T15:27:59.692Z",
-      "state": "submitted",
+      "state": "completed",
       "failureCode": null,
-      "resultSha256": null,
-      "verify": null
+      "resultSha256": "ea362d3a63a8796b14570b4b07e6bd85351f99a1daa88a76a8d8160152c37fc7",
+      "verify": "consult verify --output: exit 0, all checks passed (warnings: 2 sandbox links, 17 citation markers without source URLs)"
     }
   ]
 }
