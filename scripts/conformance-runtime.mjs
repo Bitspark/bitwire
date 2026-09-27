@@ -69,6 +69,10 @@ const mutants = [
   ['latin1-bridge', 'local', 'bridge-exact-utf8-image'],
   ['lossy-bridge', 'local', 'bridge-exact-utf8-image'],
   ['incomplete-children', 'local', 'own-and-descendants'],
+  ['corrupting-message', 'local', 'own-and-descendants'],
+  ['replacing-return', 'local', 'own-and-descendants'],
+  ['swallowing-refusal', 'local', 'refusing-versus-missing'],
+  ['throwing-after-admission', 'local', 'own-and-descendants'],
   ['retargeting-serve', 'carrier', 'carrier-cancel-across-replacement'],
 ];
 const carriers = [['local', '0'], ['peer', '0'], ['peer', '1']];

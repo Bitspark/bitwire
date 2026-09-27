@@ -300,3 +300,21 @@ func TestMismatchLocation(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 }
+
+// §6.8 Embedded JSON.
+func TestJSONExamples(t *testing.T) {
+	runMatches(t, []matchCase{
+		{`{"$json": {"kind": "response", "id": "c:1"}}`, `"{\"id\":\"c:1\",\"kind\":\"response\",\"result\":{}}"`, ``, true},
+		{`{"$json": {"kind": "response"}}`, `"{\"kind\":\"request\"}"`, ``, false},
+		{`{"$json": {"traceparent": "$string"}}`, `"{\"result\":{\"traceparent\":\"x\"}}"`, ``, false},
+		{`{"$json": "$any"}`, `"not json"`, ``, false},
+		{`{"$json": "$any"}`, `5`, ``, false},
+		{`{"$json": 1, "$contains": [1]}`, `"1"`, ``, false},
+		{`{"$json": {"a": 1}}`, `"{\"a\":1} x"`, ``, false},
+		{`{"$json": {"a": 1000}}`, `"{\"a\":1e3}"`, ``, true},
+	})
+	b := Bindings{}
+	if err := match(value(t, `{"$json": {"id": "$bind:id"}}`), value(t, `"{\"id\":\"c:7\"}"`), b); err != nil || !equal(b["id"], "c:7") {
+		t.Errorf("$json binds: %v %v", err, b)
+	}
+}

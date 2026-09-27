@@ -131,6 +131,12 @@ func matchAt(path string, expected, actual any, b Bindings) error {
 		}
 		return nil
 	case map[string]any:
+		if inner, ok := e["$json"]; ok {
+			if _, both := e["$contains"]; both {
+				return fmt.Errorf("%s: an expectation has both $json and $contains", at(path))
+			}
+			return matchJSON(path, inner, actual, b)
+		}
 		if contains, ok := e["$contains"]; ok {
 			return matchContains(path, contains, e["$sequence_by"], actual, b)
 		}
@@ -275,6 +281,20 @@ func matchPlaceholder(path, placeholder string, actual any, b Bindings) error {
 		}
 	}
 	return nil
+}
+
+// matchJSON holds a string that carries one JSON value: the value, decoded
+// as an answer is (§3.3), holds against the inner expectation (§6.8).
+func matchJSON(path string, inner, actual any, b Bindings) error {
+	s, ok := actual.(string)
+	if !ok {
+		return fmt.Errorf("%s: expected a string holding JSON, got %s", at(path), render(actual))
+	}
+	value, err := decode([]byte(s))
+	if err != nil {
+		return fmt.Errorf("%s: expected a string holding one JSON value, got %s", at(path), render(s))
+	}
+	return matchAt(path+"$json", inner, value, b)
 }
 
 // matchContains holds an ordered subsequence, per lane when sequenceBy

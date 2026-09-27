@@ -265,3 +265,31 @@ func TestRowLabels(t *testing.T) {
 		}
 	}
 }
+
+// The trace scenario asserts the response envelope structurally: an echoed
+// request, or trace members nested inside result, do not hold (#65).
+func TestTraceScenarioIsStructural(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join(checkoutRoot(t), filepath.FromSlash(contractDir), "scenarios", "peer", "trace-members-any-order.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var file struct{ Steps []json.RawMessage }
+	if err := json.Unmarshal(data, &file); err != nil {
+		t.Fatal(err)
+	}
+	step := stepOf(t, string(file.Steps[3]))
+	frame := func(object string) any { return map[string]any{"kind": "text", "text": object} }
+	const tp = `"traceparent":"00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"`
+	const ts = `"tracestate":"congo=t61rcWkgMzE, rojo=00f067aa0ba902b7"`
+	for text, holds := range map[string]bool{
+		`{"version":1,"kind":"response","id":"c:1","result":{},` + tp + `,` + ts + `}`:                                             true,
+		"{\n  " + ts + ",\n  \"version\": 1, \"id\": \"c:1\", \"kind\": \"response\", \"result\": {},\n  " + tp + "\n}":            true,
+		`{"version":1,"kind":"request","id":"c:1","method":"4:echo","params":{},` + tp + `,` + ts + `}`:                            false,
+		`{"version":1,"kind":"response","id":"c:1","result":{` + tp + `,` + ts + `}}`:                                              false,
+		`{"version":1,"kind":"response","id":"c:1","result":{},` + tp + `,"tracestate":"congo=t61rcWkgMzE,rojo=00f067aa0ba902b7"}`: false,
+	} {
+		if err := match(step.Expect, frame(text), Bindings{}); (err == nil) != holds {
+			t.Errorf("%s: holds %v, want %v (%v)", text, err == nil, holds, err)
+		}
+	}
+}

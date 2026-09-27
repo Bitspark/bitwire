@@ -33,7 +33,7 @@ test('drivers receive inputs, never the oracle', () => {
 
 test('missing, extra, duplicate and incorrect observations fail the gate', () => {
   const families = ['structure', 'bridge'];
-  assert.equal(compareWiretree(fixture, conforming(families).reverse(), families, 'valid'), 20);
+  assert.equal(compareWiretree(fixture, conforming(families).reverse(), families, 'valid'), 21);
   assert.throws(() => compareWiretree(fixture, conforming(families).slice(1), families, 'missing'));
   assert.throws(() => compareWiretree(fixture, [...conforming(families), conforming(families)[0]], families, 'duplicate'));
   assert.throws(() => compareWiretree(fixture, [...conforming(families), conforming(['carrier'])[0]], families, 'extra'));
@@ -54,7 +54,8 @@ test('child order has no meaning, but child keys and owns do', () => {
 
 test('every historical case, gap and limitation is disposed against a current case', () => {
   const result = validateDisposition(disposition, fixture, read);
-  assert.deepEqual(result, { declared: 39, gaps: 4, gapCases: 19, limitations: 2, uncited: [] });
+  // The exact-bytes cases are coverage added after the disposition (#65), not historical cases.
+  assert.deepEqual(result, { declared: 39, gaps: 4, gapCases: 19, limitations: 2, uncited: ['keys-are-exact-bytes', 'carrier-keys-are-exact-bytes'] });
   const dropped = structuredClone(disposition);
   dropped.cases.pop();
   assert.throws(() => validateDisposition(dropped, fixture, read));

@@ -97,6 +97,21 @@ func ReadConfig(file string) (*Config, error) {
 	if len(c.Transports) == 0 {
 		return nil, fmt.Errorf("%s: a run claims at least one transport", file)
 	}
+	// A case is identified by its id, pairing and transport name (§9).
+	pairs := map[[2]string]bool{}
+	for _, pairing := range c.Pairings {
+		if pairs[pairing] {
+			return nil, fmt.Errorf("%s: the pairing %q is listed twice", file, pairing)
+		}
+		pairs[pairing] = true
+	}
+	names := map[string]bool{}
+	for _, t := range c.Transports {
+		if t.Name == "" || names[t.Name] {
+			return nil, fmt.Errorf("%s: each transport has its own nonempty name; %q is not", file, t.Name)
+		}
+		names[t.Name] = true
+	}
 	for _, kind := range c.Optional {
 		if kind != "observer" && kind != "defect" {
 			return nil, fmt.Errorf("%s: optional diagnostics are observer and defect", file)

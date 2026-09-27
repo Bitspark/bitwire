@@ -68,7 +68,13 @@
       },
       "expect": {
         "kind": "text",
-        "text": "$regex:\"id\"\\s*:\\s*\"c:1\""
+        "text": {
+          "$json": {
+            "kind": "response",
+            "id": "c:1",
+            "result": "$any"
+          }
+        }
       },
       "note": "a frame of exactly the limit is served"
     },

@@ -139,12 +139,19 @@ func Load(checkout string) (*Evidence, error) {
 		}
 		return scenarios[i].Name < scenarios[j].Name
 	})
+	// Case ids are unique: a mirrored variant's name counts (§5.8, §9).
 	seen := map[string]string{}
 	for _, s := range scenarios {
-		if other, dup := seen[s.ID()]; dup {
-			return nil, fmt.Errorf("%s: scenario %q is also declared in %s", s.File, s.ID(), other)
+		ids := []string{s.ID()}
+		if s.Mirror {
+			ids = append(ids, s.Mirrored().ID())
 		}
-		seen[s.ID()] = s.File
+		for _, id := range ids {
+			if other, dup := seen[id]; dup {
+				return nil, fmt.Errorf("%s: case %q is also declared in %s", s.File, id, other)
+			}
+			seen[id] = s.File
+		}
 	}
 	return &Evidence{Scenarios: scenarios, ContractDigest: contract, EvidenceDigest: evidence}, nil
 }
@@ -278,6 +285,9 @@ func parse(checkout, file string, data []byte, schema *jsonschema.Schema) ([]Sce
 	}
 	if sf.Foreach == nil {
 		return []Scenario{base}, nil
+	}
+	if keywords[sf.Foreach.As] {
+		return nil, fmt.Errorf("foreach binds %s, a keyword of the matching language", sf.Foreach.As)
 	}
 	where := map[string]any{}
 	if len(sf.Foreach.Where) != 0 {
