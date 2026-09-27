@@ -6,7 +6,7 @@
     "normativeDigest": "7797682b0f05f86c508eafbd3be23c2084acd2f5cfc766922f9372b652dc416e"
   },
   "scope": "core",
-  "description": "Authored by bitwire from SCOPE.md, \"The connection beneath\": \"A frame larger than the receiver's limit is refused before delivery. The receiver ends the connection with 1009.\" A frame of exactly the limit is served first, so the limit is the one configured; the over-limit request never reaches its handler. What the sender observes is the transport's, so its send may succeed or find the connection ended. The receiving peer holds the client role.",
+  "description": "Authored by bitwire from SCOPE.md, \"The connection beneath\": \"A frame larger than the receiver's limit is refused before delivery. The receiver ends the connection with 1009.\" A frame of exactly the limit is served first, so the limit is the one configured; the over-limit request never reaches its handler. The sender's send may succeed or find the connection ended, but it then reads 1009 off the wire, as the raw side of the malformed-frame scenario reads 4011. The receiving peer holds the client role.",
   "needs": [
     "peer",
     "seam"
@@ -103,6 +103,17 @@
         "clean": false
       },
       "note": "the receiving peer ends the connection with 1009"
+    },
+    {
+      "on": "b",
+      "op": "conn.await_close",
+      "args": {
+        "on": "$cb"
+      },
+      "expect": {
+        "code": 1009
+      },
+      "note": "and the sender reads that code off the wire, where an abort would have left it 1006"
     },
     {
       "on": "a",
