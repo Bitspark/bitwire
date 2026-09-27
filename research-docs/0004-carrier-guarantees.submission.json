@@ -1,0 +1,26 @@
+{
+  "doc": "research-docs/0004-carrier-guarantees.md",
+  "attempts": [
+    {
+      "attempt": 1,
+      "idempotencyKey": "bitwire-research-0004-7becf4e5-5943-4435-bc9c-966c890c0bc3",
+      "clientTag": "bitwire",
+      "collection": "bitwire-research",
+      "slug": "0004-carrier-guarantees",
+      "submittedPath": "research-docs/0004-carrier-guarantees.submitted.md",
+      "docSha256": "72c9273c9f4a24feedce5ced66f59f1ac7fd0f40e799b023227db9ad0c13cd59",
+      "docBytes": 51748,
+      "codeRevision": "9ae57d58bea0560a4c6f7c2c2be08bb343dffa16",
+      "cliBuild": "nightfall 0.1.0 (756ff6fe81df, bundle abb18eb3c861) built 2026-09-27T14:16:04.344Z",
+      "preparedAt": "2026-09-27T15:27:23.946Z",
+      "documentId": null,
+      "serverSha256": null,
+      "runId": null,
+      "submittedAt": null,
+      "state": null,
+      "failureCode": null,
+      "resultSha256": null,
+      "verify": null
+    }
+  ]
+}
