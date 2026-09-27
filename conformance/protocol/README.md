@@ -11,6 +11,7 @@ defines the separation, and nothing here changes a protocol requirement.
 | Protocol | (`bitwire/1`, `normativeDigest`) | [`protocol/bitwire-1`](../../protocol/bitwire-1/README.md) |
 | Conformance contract | Edition 1, compatible with driver 1 | [`CONTRACT.md`](CONTRACT.md), [`scenario.schema.json`](scenario.schema.json), [`selection.json`](selection.json) |
 | Evidence set | These files' content hashes | [`scenarios/`](scenarios) |
+| Runner | Its name, version and source revision | [`runner/go`](runner/go/main.go), test-only and never published |
 
 ## The evidence set
 
@@ -50,7 +51,8 @@ node scripts/protocol-scenarios.mjs generate   # rewrite them from the archive a
   cover the members and enums, the protocol identity, scope and layer, the
   observer marking, excluded ops and op families.
 
-It does not run a JSON Schema validator. The runner will.
+The runner applies every load rule, the schema included, whenever it loads the
+evidence set.
 
 ## Known evidence defects
 
@@ -68,12 +70,55 @@ They stay faithful to their archived sources and are marked
 `"optional": "defect"` through `selection.json`. They run and are reported,
 but under the claim rule ([CONTRACT.md §8.1](CONTRACT.md#81-required-cases))
 they count neither toward nor against a claim. Bitwire-authored replacements
-that test only what the revision requires follow with the runner
+that test only what the revision requires follow with the first testee runs
 ([#59](https://github.com/Bitspark/bitwire/issues/59)).
+
+## The runner
+
+[`runner/go`](runner/go/main.go) is bitwire's test-only implementation of the
+contract. It is its own Go module and depends only on a JSON Schema validator. It
+never speaks the protocol, and no implementation is its oracle. It verifies the
+protocol bundle it reads tables from against the manifest, and refuses the whole
+evidence set when any scenario fails a load rule
+([§5.5](CONTRACT.md#55-loading)). Then it drives two testees over driver 1 and
+writes a report ([section 9](CONTRACT.md#9-reports)).
+
+```console
+cd conformance/protocol/runner/go
+go run . run -config run.json -report report.json   # exit 0: the claim is supported
+go run . digests                                     # contractDigest, evidenceDigest, protocol
+go run . load                                        # the expanded cases
+```
+
+A run configuration names one claim run: the scope (`core`, or
+`core and tunnel`), the implementation under test and its counterparts, the
+ordered pairings, and the claimed transports. For each implementation it gives
+the release, source revision, language, toolchain, the artifacts whose digests
+the report records, its configuration against the default bounds, whether it
+accepts connections, and the testee command. A transport gives the environment
+that configures a testee for it, and whether it negotiates subprotocols.
+Optional diagnostics (`observer`, `defect`) run only when requested. In
+paths, `{config}` is the configuration's directory, `{checkout}` the checkout
+and `{exe}` `.exe` on Windows.
+
+`node scripts/conformance-protocol.mjs` (the `conformance` CI job) runs the
+runner's tests under the race detector. It also checks that the runner loads
+every scenario and computes the same `contractDigest` and `evidenceDigest`
+as `scripts/protocol-scenarios.mjs`. The tests hold the runner to:
+- every example in `CONTRACT.md`;
+- every load rule;
+- each expansion branch of the runner ops;
+- the exchange's failure modes, through a scripted fake testee;
+- `repeat`, judging, binding, applicability and the claim rule.
+
+**Edition 1 is still a draft.** This runner passes the contract's examples, which
+is the first condition for releasing it ([§1](CONTRACT.md#1-identity-and-status)).
+The release follows the first runs against real testees, so that anything those
+runs expose can still enter edition 1. Until then every report says
+`"status": "draft"`.
 
 ## Not yet here
 
-- The test-only runner that executes this contract.
 - The testees that drive bitruntime's Go and TypeScript peers.
 - Reports against released implementations.
 - Evidence for the path encoding (finding F3).

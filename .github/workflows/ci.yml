@@ -50,6 +50,7 @@ jobs:
       - run: node scripts/conformance-current.mjs
       - run: node scripts/conformance-production.mjs
       - run: node scripts/protocol.mjs verify --source
+      - run: node scripts/conformance-protocol.mjs
 
   runtime-conformance:
     runs-on: ubuntu-latest

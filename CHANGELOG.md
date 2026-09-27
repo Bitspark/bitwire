@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Add the `bitwire/1` conformance contract, edition 1, as a draft, with its evidence set,
+  under `conformance/protocol` (#60). `CONTRACT.md` defines the driver-1 exchange,
+  the scenario format, the matching language, case execution, scopes, the claim
+  rule and reports. The 37 scenarios derive from the archived upstream ones, and
+  each adds its protocol identity, scope and source. Add bitwire's test-only runner
+  for the contract, `conformance/protocol/runner/go`: it passes every example in
+  the contract and writes the report of section 9. `scripts/conformance-protocol.mjs`
+  tests it in CI and checks its digests against the tooling. The edition is released
+  after the first runs against real testees (#59).
 - Move the released-runtime conformance from bitruntime v0.2.0 to v0.3.0 (tag
   v0.3.0 at `26d1138e2d3bff4dc066d29b3d036550316363db`), in Go and TypeScript.
   Every family's results are unchanged. The runtime gap ledger names v0.3.0 and
