@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Release edition 1 of the `bitwire/1` conformance contract (#59), on 28
+  September 2026, with `contractDigest` `310daabd…`.
+  - `conformance/protocol/editions.json` records the release, outside the files
+    the digest covers.
+  - The runner reports `"status": "released"` for a recorded (edition,
+    `contractDigest`), and CONTRACT.md §1 and §9 say so.
+  - `scripts/check.mjs` fails when the contract files match no recorded digest,
+    so the edition cannot change in place.
 - Add deliberately invalid `bitwire/1` testees (#59).
   `conformance/protocol/mutants/go` wraps a valid driver-1 testee and changes
   one thing: an argument in the exchange, or a WebSocket frame, through a

@@ -1,8 +1,9 @@
 # bitwire/1 conformance contract, edition 1
 
-**Status: draft of edition 1, not yet released.** It is released once a runner
-implementing it passes the examples in this document and the release records
-the contract digest (see [Identity and status](#1-identity-and-status)).
+**Status: edition 1, released on 28 September 2026.** A runner implementing it
+passes the examples in this document, and [`editions.json`](editions.json)
+records the release's contract digest (see
+[Identity and status](#1-identity-and-status)).
 
 This document is normative for the conformance tooling of protocol revision
 `bitwire/1`. It defines:
@@ -47,8 +48,12 @@ to `conformance/protocol/`:
 - `evidenceDigest` covers every file under `scenarios/`, e.g.
   `scenarios/peer/public-error.json`.
 
-Neither digest is written into a file it covers. A release of the contract
-records `contractDigest`, and every report records both.
+Neither digest is written into a file it covers.
+- A release records its `contractDigest` in [`editions.json`](editions.json),
+  outside the files the digest covers.
+- Every report records both digests.
+- A report says `"status": "released"` when `editions.json` records its
+  (edition, `contractDigest`), and `"draft"` otherwise.
 
 **Identity.** The contract is identified by the pair (edition, `contractDigest`).
 The evidence set is identified by its `evidenceDigest`.
@@ -1050,7 +1055,7 @@ requires, with these members:
 | `counterparts` | The same, for every other implementation in a pairing |
 | `pairings` | Each ordered pairing run |
 | `runner` | The runner's name, version and source revision |
-| `contract` | `{"edition": 1, "contractDigest"}` |
+| `contract` | `{"edition": 1, "contractDigest", "status"}`, with `status` `"released"` or `"draft"` ([§1](#1-identity-and-status)) |
 | `evidence` | `{"evidenceDigest"}`, and whether optional diagnostics were requested |
 | `cases` | One entry per case (below) |
 | `claim` | `supported` or `not supported`, the counts per result kind over required cases, and the limitations named under [8.4](#84-claim-rule) |

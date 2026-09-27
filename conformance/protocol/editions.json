@@ -1,0 +1,16 @@
+{
+  "contract": "bitwire/1 conformance contract",
+  "editions": [
+    {
+      "edition": 1,
+      "released": "2026-09-28",
+      "contractDigest": "310daabd1527d7ba5372589920c46fa96da697ce27c4fd8d67fd420b2c670d83",
+      "driver": 1,
+      "protocol": {
+        "revision": "bitwire/1",
+        "normativeDigest": "7797682b0f05f86c508eafbd3be23c2084acd2f5cfc766922f9372b652dc416e"
+      },
+      "evidenceDigestAtRelease": "84f5051dafe248fbe96e8a373494798df0dfd2bcc72d04062fced2f8b169dc08"
+    }
+  ]
+}

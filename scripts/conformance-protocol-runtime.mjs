@@ -176,7 +176,7 @@ try {
     console.log('Deliberately invalid testees (the released Go testee behind conformance/protocol/mutants/go):');
     for (const verdict of verdicts) console.log(`  ${verdict}`);
   }
-  console.log('Released-runtime evidence for bitwire/1, core scope, over WebSockets. Edition 1 of the contract is a draft.');
+  console.log(`Released-runtime evidence for bitwire/1, core scope, over WebSockets, under edition ${first.contract.edition} of the contract (${first.contract.status}).`);
 } finally {
   if (process.argv.includes('--keep-scratch')) console.log(`Retained scratch: ${scratch}`);
   else {

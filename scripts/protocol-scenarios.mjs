@@ -151,5 +151,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const count = predicate => scenarios.filter(predicate).length;
   const { contractDigest, evidenceDigest } = digests();
   console.log(`bitwire/1 evidence: ${scenarios.length} scenarios (${count(s => s.scope === 'core' && !s.optional)} core, ${count(s => s.scope === 'tunnel' && !s.optional)} tunnel, ${count(s => s.optional === 'observer')} observer diagnostics, ${count(s => s.optional === 'defect')} known defects)`);
-  console.log(`contract edition 1: contractDigest ${contractDigest}; evidenceDigest ${evidenceDigest}`);
+  const released = JSON.parse(readFileSync(join(root, 'conformance/protocol/editions.json'), 'utf8')).editions
+    .find(entry => entry.edition === 1 && entry.contractDigest === contractDigest);
+  console.log(`contract edition 1: contractDigest ${contractDigest} (${released ? `released ${released.released}` : 'not a released edition'}); evidenceDigest ${evidenceDigest}`);
 }
