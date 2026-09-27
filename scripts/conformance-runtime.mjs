@@ -200,7 +200,7 @@ try {
       facilities = {
         lifecycle: 'core.Invocation', composition: 'NewPair/peers, dispatch, At, Mount and Forward',
         production: 'core.Mount/At/Forward', trees: 'core.Compose/Select/Send/AsAddressed',
-        carriers: 'NewPair/peers, dispatch.NewDispatcher, Forward, Mount and At',
+        carriers: 'NewPair/peers, dispatch.NewDispatcher, Forward, Mount and At', serving: 'core.Bind and dispatch.Serve',
       };
       toolchain.push(`${run('go', ['env', 'GOVERSION']).trim()}${race ? ' with race detector' : ' (race detector unavailable locally)'}`);
     } else {
@@ -211,7 +211,7 @@ try {
       facilities = {
         lifecycle: 'Invocation', composition: 'pair/Peer, createDispatcher, at, mount and forward',
         production: 'mount/at/forward', trees: 'compose/select/send/asAddressed',
-        carriers: 'pair/Peer, createDispatcher, forward, mount and at',
+        carriers: 'pair/Peer, createDispatcher, forward, mount and at', serving: 'bind and serve',
       };
       const typescript = run(process.execPath, [compiler, '--version'], {}, target).trim().replace(/^Version /, '');
       toolchain.push(`node ${process.version} with type stripping, checked by TypeScript ${typescript}`);
@@ -246,18 +246,19 @@ try {
     pass(`${language}/trees`, `${Object.keys(trees).length}/${Object.keys(trees).length} observations through ${facilities.trees}`);
 
     // Full trees: structural and bridge cases without a carrier, then carrier
-    // composition on each carrier. The reference is a test-only interpreter;
-    // production is bitruntime's tree operations. bind and serve are test-only
-    // adapters in both, because bitruntime has no public facility for them yet.
+    // composition on each carrier. The reference is a test-only interpreter
+    // that binds and serves through test-only adapters; production is
+    // bitruntime's tree operations, binding and serving.
     for (const realization of ['reference', 'production']) {
       const trees_ = realization === 'production' ? facilities.trees : 'the test-only interpreter';
+      const serving = realization === 'production' ? facilities.serving : 'test-only bind and serve';
       const label = `${language}/wiretree/${realization}`;
       const local = compareWiretree(wiretree, JSON.parse(driver('wiretree', [realization, 'local', wiretreeInput])), ['structure', 'bridge'], label);
       pass(label, `${local}/${local} structural and bridge cases through ${trees_}`);
       for (const [carrier, reverse] of carriers) {
         const at = `${label}/${carrier}/${reverse}`;
         const count = compareWiretree(wiretree, JSON.parse(driver('wiretree', [realization, 'carrier', wiretreeInput], carrierEnv(carrier, reverse))), ['carrier'], at);
-        pass(at, `${count}/${count} carrier cases through ${trees_} over ${facilities.carriers} (test-only bind and serve)`);
+        pass(at, `${count}/${count} carrier cases through ${trees_} over ${facilities.carriers}, bound and served by ${serving}`);
       }
     }
     if (language === 'ts') {
@@ -286,7 +287,7 @@ try {
   console.log('                    peer/1 = WebSocket server sends (Go engine/websocket; TypeScript engine Peer over ws)');
   for (const line of results) console.log(`    ${line}`);
   console.log('Historical 0.2 addressed evidence (lifecycle, declared, composition); 0.3 structural evidence (trees, wiretree structure/bridge);');
-  console.log('0.3 carrier composition evidence (wiretree carrier), with test-only bind and serve adapters.');
+  console.log('0.3 carrier composition evidence (wiretree carrier), bound and served by bitruntime in production.');
 } finally {
   if (args.includes('--keep-scratch')) console.log(`Retained scratch: ${scratch}`);
   else {

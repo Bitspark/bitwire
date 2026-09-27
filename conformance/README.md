@@ -7,8 +7,8 @@ not establish the new structural contract. See
 [decision 0012](https://github.com/Bitspark/bitwire/blob/main/docs/decisions/0012-explicit-data-and-wire-trees.md).
 
 **Status: current released 0.2 composition and scoped lifecycle evidence, a
-test-only reference, bitruntime Go candidate and TypeScript release evidence
-against the same cases, and a preserved historical 0.1.0 runtime baseline.**
+test-only reference, bitruntime Go and TypeScript release evidence against the
+same cases, and a preserved historical 0.1.0 runtime baseline.**
 
 ## bitruntime runtime conformance
 
@@ -22,15 +22,15 @@ driver receives its inputs with every expectation withheld, and one report gives
 the case files' SHA-256s and every family's result in each language.
 
 - **Go.** The test-only module [`runtime/go`](runtime/go/go.mod) requires the
-  public bitruntime module at a pinned pre-release revision. The runner refuses
+  public bitruntime module at its pinned release. The runner refuses
   any other module graph, revision or sum, and runs every driver with
   `GOWORK=off` under the race detector (required in CI).
 - **TypeScript.** The private, test-only package
-  [`runtime/ts`](runtime/ts/package.json) depends on bitruntime's v0.2.0
+  [`runtime/ts`](runtime/ts/package.json) depends on bitruntime's v0.3.0
   release asset, `@bitspark/bitwire` 0.3.0 and `ws` 8.21.3, and its
   `.npmrc` takes the `@bitspark` scope from the public npm registry. The
   runner downloads the release asset and checks its SHA-256 and integrity and
-  that tag v0.2.0 names the pinned revision. It refuses a lockfile entry that is
+  that tag v0.3.0 names the pinned revision. It refuses a lockfile entry that is
   not a public, integrity-pinned artifact or that names another bitruntime or
   bitwire, installs with `npm ci` in scratch, type-checks the drivers with
   TypeScript and runs them with Node 24's type stripping.
@@ -42,14 +42,14 @@ the case files' SHA-256s and every family's result in each language.
 | Declared, reference | The 39 [declared](declared/cases.json) cases through the test-only interpreter over bitruntime's carriers | the same three | 39/39 on each | 39/39 on each |
 | Declared, production | The same cases through bitruntime's child-only addressed mount, with its selection and forwarding | the same three | 20 conform; 19 match bitruntime's own [gap ledger](runtime/production-gaps.json) | the same |
 | Trees | The [0.3 observations](trees/expected.json) through bitruntime's tree construction, selection, sending and addressed bridge | none, structural | 14/14 | 14/14 |
-| Full trees | The [full-tree cases](wiretree/README.md): 19 structural, 1 bridge, 7 carrier; test-only reference and bitruntime's tree operations | none for structure and bridge; the three carriers for carrier cases, with test-only bind and serve adapters | 27/27 in each realization | 27/27 in each realization |
+| Full trees | The [full-tree cases](wiretree/README.md): 19 structural, 1 bridge, 7 carrier; test-only reference and bitruntime's tree operations | none for structure and bridge; the three carriers for carrier cases, bound and served by bitruntime's `Bind` and `Serve` in production and by test-only adapters in the reference | 27/27 in each realization | 27/27 in each realization |
 
 The Go drivers use `core.Invocation`, `core.NewPair`, the WebSocket engine,
-`dispatch`, `core.At`, `core.Mount`, `core.Forward`, `core.Compose`,
-`core.Select`, `core.Send` and `core.AsAddressed`. The TypeScript drivers
-use the same facilities from `@bitspark/bitruntime`: `Invocation`, `pair`,
-`at`, `mount`, `forward`, `compose`, `select`, `send` and
-`asAddressed` from `/core`, `createDispatcher` from `/dispatch`, and
+`dispatch` with `dispatch.Serve`, `core.At`, `core.Mount`, `core.Forward`,
+`core.Compose`, `core.Select`, `core.Send`, `core.AsAddressed` and
+`core.Bind`. The TypeScript drivers use the same facilities from `@bitspark/bitruntime`: `Invocation`, `pair`,
+`at`, `mount`, `forward`, `compose`, `select`, `send`, `asAddressed` and
+`bind` from `/core`, `createDispatcher` and `serve` from `/dispatch`, and
 `Peer` from `/engine` over `webSocketConnection` from `/transports`.
 
 As in the nightseam baseline, the two echoed `same-id` placeholders are

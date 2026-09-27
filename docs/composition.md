@@ -76,7 +76,8 @@ payloads or make an access handle proof of authorization.
 The [tree reference cases](../conformance/trees/README.md) exercise the new
 structural contract using test-only interpreters. The
 [full-tree cases](../conformance/wiretree/README.md) run it against released
-bitruntime, including across its carriers through test-only adapters; the
+bitruntime, including across its carriers, bound and served by bitruntime's
+`Bind` and `Serve` (the reference realization uses test-only adapters); the
 carrier model they describe is a test model, not part of this contract. The
 [declared composition evidence](../conformance/declared/README.md) and
 [runnable example catalogue](../examples/README.md) retain the older addressed

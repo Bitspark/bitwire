@@ -3,15 +3,16 @@
 // happened. Two realizations share one harness. "production" is bitruntime's
 // compose, select, send and asAddressed; "reference" is a test-only structural
 // interpreter that is never evidence about a runtime. Carrier cases always use
-// bitruntime's carriers, dispatcher, forward, at and mount. Two small adapters
-// below are test-only because bitruntime v0.2.0 has no public facility for them
-// (bitruntime#15): bind, a Wire sending at a fixed AddressedWire path, and serve,
-// which registers a tree's UTF-8 nodes on a dispatcher.
+// bitruntime's carriers, dispatcher, forward, at and mount. How a Wire is bound
+// to a carrier path and a tree served on a dispatcher follows the realization:
+// production uses bitruntime's bind and serve (v0.3.0, bitruntime#15); the
+// reference keeps small test-only adapters, so the oracle stays satisfiable
+// without them.
 import { readFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 import type { AddressedWire, Child, DeixisNode, Endpoint, Key, Message, Parts, Path, ReturnAddress, TreePath, Wire, WireTree } from '@bitspark/bitwire';
-import { asAddressed, at, compose, forward, mount, select, send } from '@bitspark/bitruntime/core';
-import { createDispatcher, type Dispatcher } from '@bitspark/bitruntime/dispatch';
+import { asAddressed, at, bind, compose, forward, mount, select, send } from '@bitspark/bitruntime/core';
+import { createDispatcher, serve, type Dispatcher, type Served } from '@bitspark/bitruntime/dispatch';
 import { CODE_NORMAL } from '@bitspark/bitruntime/transports';
 import { connected, kind } from './carrier.ts';
 
@@ -378,32 +379,64 @@ function local(T: Trees, inputs: Inputs, test: Case): unknown {
 }
 
 // ---- Carrier family ----
-/** Test-only: addressless send access at one fixed addressed path (bitruntime#15). */
-const bind = (access: AddressedWire, path: Path): Wire => Object.freeze({ send: (message: Message) => access.send(path, message) });
-
-/** Test-only: exact dispatcher routes for every node whose keys are all UTF-8, each bound to that node (bitruntime#15). */
-function serve(dispatcher: Dispatcher, tree: WireTree, prefix: string[], current?: () => WireTree): () => void {
-  if (current) {
-    // Unlawful on purpose: routes by the tree current at delivery, so a captured
-    // cancellation reaches whatever node replaced the one that admitted it.
-    const bridge = (path: Path, message: Message) => reference.asAddressed(current()).send(path.slice(prefix.length), message);
-    return dispatcher.registerPrefix(prefix, { message: bridge });
-  }
-  const detach: (() => void)[] = [];
-  const visit = (node: WireTree, path: string[]): void => {
-    const own = node.own();
-    detach.push(dispatcher.register([...prefix, ...path], { message: (_path, message) => own.send(message) }));
-    for (const [key, child] of node.children()) {
-      let segment: string;
-      try { segment = utf8.decode(key); } catch { continue; }
-      visit(child, [...path, segment]);
-    }
-  };
-  visit(tree, []);
-  return () => { for (const release of detach) release(); };
+/** How a realization binds a Wire to a carrier path and serves a tree. */
+interface Carriage {
+  bind(access: AddressedWire, path: Path): Wire;
+  serve(dispatcher: Dispatcher, prefix: Path, tree: WireTree): Pick<Served, 'update' | 'close'>;
 }
 
-async function carrier(T: Trees, inputs: Inputs, test: Case, retargeting = false): Promise<unknown> {
+/** bitruntime's public facilities (v0.3.0). */
+const published: Carriage = { bind, serve };
+
+/**
+ * Test-only adapters for the reference: exact dispatcher routes for every
+ * position whose keys are all UTF-8, each bound to that position's own. A
+ * refused event is dropped, as an event nothing handles is. update re-registers
+ * every route, which is not atomic; bitruntime's serve is.
+ */
+const testOnly: Carriage = {
+  bind: (access, path) => {
+    const fixed = [...path];
+    return Object.freeze({ send: (message: Message) => access.send([...fixed], message) });
+  },
+  serve(dispatcher, prefix, tree) {
+    let detach: (() => void)[] = [];
+    const install = (served: WireTree) => {
+      const visit = (node: WireTree, path: string[]): void => {
+        const own = node.own();
+        detach.push(dispatcher.register([...prefix, ...path], { message: (_path, message) => {
+          try { own.send(message); } catch (error) { if (message.frame.kind === 'request') throw error; }
+        } }));
+        for (const [key, child] of node.children()) {
+          let segment: string;
+          try { segment = utf8.decode(key); } catch { continue; }
+          visit(child, [...path, segment]);
+        }
+      };
+      visit(served, []);
+    };
+    const close = () => { for (const release of detach) release(); detach = []; };
+    install(tree);
+    return { update(next: WireTree) { close(); install(next); }, close };
+  },
+};
+
+/**
+ * Unlawful on purpose: one prefix route resolved against the tree current at
+ * delivery, so a captured cancellation reaches whatever node replaced the one
+ * that admitted it.
+ */
+const retargeting: Carriage = {
+  bind: testOnly.bind,
+  serve(dispatcher, prefix, tree) {
+    let current = tree;
+    const release = dispatcher.registerPrefix([...prefix], { message: (path: Path, message: Message) =>
+      reference.asAddressed(current).send(path.slice(prefix.length), message) });
+    return { update(next: WireTree) { current = next; }, close: release };
+  },
+};
+
+async function carrier(T: Trees, C: Carriage, inputs: Inputs, test: Case): Promise<unknown> {
   const cleanups: (() => void)[] = [];
   try {
     const [near, first] = await connected(release => cleanups.push(release));
@@ -452,9 +485,7 @@ async function carrier(T: Trees, inputs: Inputs, test: Case, retargeting = false
     });
     let farTree = h.build(test.root);
     let dispatcher: Dispatcher | undefined = createDispatcher(far);
-    const current = retargeting ? () => farTree : undefined;
-    let unserve = serve(dispatcher, farTree, inputs.servedAt, current);
-    const reserve = () => { unserve(); unserve = serve(dispatcher!, farTree, inputs.servedAt, current); };
+    let served: Pick<Served, 'update' | 'close'> | undefined = C.serve(dispatcher, inputs.servedAt, farTree);
 
     // The near side: the same declared structure, each own Wire bound to its far
     // carrier path. A carrier path names a far position, and addressed access
@@ -467,7 +498,7 @@ async function carrier(T: Trees, inputs: Inputs, test: Case, retargeting = false
         try { segment = utf8.decode(bytes(key)); } catch { continue; }
         children.push([bytes(key), mirror(child, [...path, segment])]);
       }
-      return T.compose(bind(access, [...inputs.servedAt, ...path]), children);
+      return T.compose(C.bind(access, [...inputs.servedAt, ...path]), children);
     };
     let nearTree = mirror(test.root, []);
     const segments = (path: string[]) => path.map(key => utf8.decode(bytes(key)));
@@ -528,11 +559,11 @@ async function carrier(T: Trees, inputs: Inputs, test: Case, retargeting = false
           break;
         }
         case 'direct': derived(h, farTree, s.path!, event(label)); break;
-        case 'teardown': unserve(); dispatcher!.close(); dispatcher = undefined; break;
+        case 'teardown': served!.close(); served = undefined; dispatcher!.close(); dispatcher = undefined; break;
         default:
           if (s.side === 'far') {
             farTree = h.edit(farTree, s, id => h.build(id));
-            reserve();
+            served!.update(farTree);
           } else {
             nearTree = h.edit(nearTree, s, id => mirror(id, segments(s.path!)));
           }
@@ -541,7 +572,7 @@ async function carrier(T: Trees, inputs: Inputs, test: Case, retargeting = false
 
     // Every borrowed endpoint outlives each composition over it: the dispatcher,
     // the relay's forwarding and the addressed mount.
-    unserve();
+    served?.close();
     dispatcher?.close();
     for (const release of compositions) release();
     let borrowedUsable = true;
@@ -566,6 +597,7 @@ if (!(['reference', 'production'].includes(realization) || (mutant && (mutant in
   throw new Error('Usage: wiretree.ts reference|production|mutant:<name> local|carrier inputs.json');
 }
 const T = realization === 'production' ? production : mutant && mutant in mutants ? mutants[mutant]! : reference;
+const C = realization === 'production' ? published : mutant === 'retargeting-serve' ? retargeting : testOnly;
 const inputs = JSON.parse(readFileSync(inputPath, 'utf8')) as Inputs;
 if (scope === 'carrier') kind();
 const output = [];
@@ -573,7 +605,7 @@ for (const test of inputs.cases) {
   if ((scope === 'carrier') !== (test.family === 'carrier')) continue;
   let observations: unknown;
   try {
-    observations = scope === 'carrier' ? await carrier(T, inputs, test, mutant === 'retargeting-serve') : local(T, inputs, test);
+    observations = scope === 'carrier' ? await carrier(T, C, inputs, test) : local(T, inputs, test);
   } catch (error) {
     if (!mutant) throw error;
     observations = { failed: String(error) }; // A mutant may break the harness; that is a failed case too.

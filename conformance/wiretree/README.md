@@ -55,7 +55,8 @@ A driver records any other outcome under its own name, such as `fallback`,
 
 Two realizations run every case in Go and TypeScript:
 - **production** uses bitruntime's released `Compose`/`compose`,
-  `Select`/`select`, `Send`/`send` and `AsAddressed`/`asAddressed`;
+  `Select`/`select`, `Send`/`send` and `AsAddressed`/`asAddressed`, and for
+  carrier cases `Bind`/`bind` and `Serve`/`serve`;
 - **reference** is a test-only interpreter that shows the oracle can be met. It
   is never evidence about a runtime.
 
@@ -65,26 +66,32 @@ Carriers, dispatchers, `Forward`, `Mount` and `At` are always bitruntime's.
 
 This section describes how the drivers compose trees across carriers. **It is a
 test model, not part of the contract.** Remote structural discovery is not
-specified, and bitruntime has no public facility yet for either adapter below.
+specified.
 
 The far side serves its tree through a bitruntime dispatcher that borrows the
-endpoint. There is one exact route for every node whose keys are UTF-8, and each
-route is bound to that node's own Wire. The near side declares the same
+endpoint. There is one exact route for every position whose keys are UTF-8, and
+each route is bound to that position's own Wire. The near side declares the same
 structure, and each of its own Wires sends at the corresponding far path. So the
 near tree's `own`, `children`, selection and reconstruction are local, and the
 carrier sees only paths.
 
-Two adapters in the drivers are **test-only**. Everything they call is public
-bitruntime API:
+Two facilities carry the model:
 
-- `bind`: an addressless `Wire` that sends at one fixed `AddressedWire` path;
-- `serve`: exact dispatcher registration of a tree's UTF-8 nodes, each bound to
-  its node.
+- **binding**: an addressless `Wire` that sends at one fixed `AddressedWire`
+  path, copied when bound;
+- **serving**: one exact dispatcher route for each position whose keys are
+  UTF-8, bound to that position's own. Serving is replaced when the far tree is
+  edited and released at teardown.
 
-[bitruntime#15](https://github.com/Bitspark/bitruntime/issues/15) tracks
-production facilities for both. The carrier results are therefore evidence that
-bitruntime's carriers, dispatcher and trees compose lawfully. They are not
-evidence of a shipped serving or binding API.
+The production realization uses bitruntime's public facilities, released in
+v0.3.0 for [bitruntime#15](https://github.com/Bitspark/bitruntime/issues/15):
+`core.Bind` and `dispatch.Serve` in Go, `bind` and `serve` in TypeScript,
+with `Update`/`update` for replacement and `Close`/`close` for teardown. The
+reference realization uses test-only adapters that call only public
+bitruntime API. Its replacement re-registers every route, which is not atomic;
+bitruntime's replaces the routes in one step. So the production carrier results
+are evidence that bitruntime's released binding and serving compose lawfully
+with its carriers, dispatcher and trees.
 
 The cases state what follows from this model:
 
@@ -101,10 +108,11 @@ The cases state what follows from this model:
     dispatcher. That is the profile's code for "no handler".
   - A far node whose own refuses records its refusal, and the request is
     answered `internal`. That is the profile's code for a handler that failed
-    with a non-public error. It arises because `serve` lets the refusal fail the
-    request: in TypeScript the error is thrown from the receiver and the carrier
-    answers it; in Go receivers return nothing, so `serve` answers through
-    `core.Respond`.
+    with a non-public error. It arises because serving answers a refused request
+    with its refusal. bitruntime's `Serve` answers through `core.Respond` /
+    `respond`, as `internal` for a plain error. The reference adapter does the
+    same in Go; in TypeScript it lets the error fail the receiver, and the
+    carrier answers it. (Both drop a refused event; no case sends one.)
   - A binary key cannot be named over the carrier at all.
 - **Captured cancellation survives replacement.**
   - The dispatcher captures each request's traversal on its invocation. After
@@ -160,8 +168,9 @@ Two of these cases have nothing else: `guard-around-composite` and
 **The 19 recorded gaps:**
 - The origin-bearing construction gap (16 cases) and the conflicting and
   missing-child gaps are met structurally by public `Compose`/`compose`. The
-  origin-bearing gap's carrier members are met through the test-only adapters
-  above.
+  origin-bearing gap's carrier members are met in production through
+  bitruntime's `Bind`/`bind` and `Serve`/`serve` (v0.3.0), and in the reference
+  through its test-only adapters.
 - The invalid-segment gap changed meaning: no tree key is invalid, and the bridge
   refuses ill-formed segments.
 - The ledger entries stay accurate about the addressed `Mount`, which is a
