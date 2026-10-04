@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Version to rehearse, such as v0.2.0. A manual run never publishes.'
+        description: 'Version to rehearse, such as v0.4.0. A manual run never publishes.'
         type: string
         required: true
       provenance:

@@ -33,3 +33,9 @@ checks both value and codec imports. The repeated isolated npm and Go consumers 
 Python wheel/sdist and isolated typed consumer passed. C++ local CMake could not compile even its toolchain probe, so C++ validation is delegated to the required clean CI runner along with Swift/Java/Haskell. Those native package checks are pending. No old release's
 conformance evidence is reused. Full integration review and actual release
 verification are required before claiming completion.
+
+Initial PR CI also passed Windows/Linux core, independent conformance, packages,
+Rust, Python, Swift and Java. C++ exposed a consumer pin still asking for minor
+0.3; Haskell exposed its consumer missing the direct bytestring dependency. Both
+consumer manifests now match the current byte-path API. Required native CI must
+pass on the updated commit before landing.
