@@ -46,6 +46,7 @@ test('capture refuses language serialization hooks; ownership and cost are expli
  assert.throws(()=>captureEnvelope({...e,get id(){throw new Error('getter invoked');}}),/accessor/);
  assert.throws(()=>captureEnvelope({...e,extra:1}),/unknown/);
  assert.throws(()=>captureEnvelope({...e,destination:['text']}),/atom/);
+ assert.throws(()=>decodeEnvelope(Buffer.from('01ffffff07','hex')),err=>err.code==='limit_exceeded');
  assert.throws(()=>encodeEnvelope(e,1),/limit/);
  assert.throws(()=>decodeEnvelope(encodeEnvelope(e),1),/limit/);
  assert.ok(!pathEqual([], [atom([])])); assert.ok(!pathEqual([atom([97,47,98])],[atom([97]),atom([98])]));

@@ -71,7 +71,9 @@ export function encodeEnvelope(e: Envelope, maxBytes = DEFAULT_MAX_ENVELOPE_BYTE
 export function decodeEnvelope(bytes: Uint8Array, maxBytes = DEFAULT_MAX_ENVELOPE_BYTES): Envelope {
   limit(maxBytes);
   if (bytes.byteLength > maxBytes) throw new RangeError('envelope byte limit');
-  const v = decode(bytes, { maxDepth: MAX_ENVELOPE_DEPTH, maxAtomBytes: maxBytes, maxTupleArity: maxBytes });
+  // Every child costs at least two encoded bytes. Impossible length claims
+  // must fail before a native decoder allocates a tuple from the prefix.
+  const v = decode(bytes, { maxDepth: MAX_ENVELOPE_DEPTH, maxAtomBytes: bytes.byteLength, maxTupleArity: Math.floor(bytes.byteLength / 2) });
   if (!(v instanceof Tuple) || v.length !== 6 || !version.equals(v.at(0)!)) throw new TypeError('envelope version or arity');
   const s = v.at(1)!, d = v.at(2)!, id = v.at(3)!, correlation = v.at(4)!;
   if (!(s instanceof Tuple) || !(d instanceof Tuple) || !(id instanceof Atom)

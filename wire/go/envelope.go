@@ -108,7 +108,7 @@ func DecodeEnvelope(bytes []byte, maxBytes int) (Envelope, error) {
 	if maxBytes <= 0 || len(bytes) > maxBytes {
 		return Envelope{}, errors.New("envelope byte limit")
 	}
-	v, err := codec.DecodeWithLimits(bytes, codec.Limits{MaxDepth: MaxEnvelopeDepth, MaxAtomBytes: maxBytes, MaxTupleArity: maxBytes})
+	v, err := codec.DecodeWithLimits(bytes, codec.Limits{MaxDepth: MaxEnvelopeDepth, MaxAtomBytes: len(bytes), MaxTupleArity: len(bytes) / 2})
 	if err != nil {
 		return Envelope{}, err
 	}

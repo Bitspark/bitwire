@@ -46,3 +46,8 @@ current wire declarations, codecs, pin checks, tests, packaging and delivery
 metadata all realize decision 0014; removed files implement only retired
 protocols/claims. Persistent cube state is outside this repository and unchanged.
 The remaining delivery obligation is immutable release and registry verification.
+
+The envelope decoder derives atom/tuple allocation bounds from the actual frame
+length (each child costs at least two bytes), rather than only the configured
+maximum. An impossible huge tuple prefix in a tiny frame is refused before
+native allocation. Valid canonical bytes and ontos source/pins are unchanged.

@@ -160,3 +160,12 @@ func TestExactPathsOwnershipAndBounds(t *testing.T) {
 		t.Fatal("nil payload accepted")
 	}
 }
+
+func TestImpossibleTupleLengthRefusedBeforeAllocation(t *testing.T) {
+	b, _ := hex.DecodeString("01ffffff07")
+	_, err := wire.DecodeEnvelope(b, wire.DefaultMaxEnvelopeBytes)
+	d, ok := err.(*codec.DecodeError)
+	if !ok || d.Code != "limit_exceeded" {
+		t.Fatalf("expected preallocation limit, got %v", err)
+	}
+}
