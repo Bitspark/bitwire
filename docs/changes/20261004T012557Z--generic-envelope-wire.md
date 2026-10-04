@@ -39,3 +39,10 @@ Rust, Python, Swift and Java. C++ exposed a consumer pin still asking for minor
 0.3; Haskell exposed its consumer missing the direct bytestring dependency. Both
 consumer manifests now match the current byte-path API. Required native CI must
 pass on the updated commit before landing.
+
+Updated PR 74 passed all required checks and all eight native presentations at
+01053883fe51784441fcc54af47088c70b8d7372. Full integration diff reviewed:
+current wire declarations, codecs, pin checks, tests, packaging and delivery
+metadata all realize decision 0014; removed files implement only retired
+protocols/claims. Persistent cube state is outside this repository and unchanged.
+The remaining delivery obligation is immutable release and registry verification.

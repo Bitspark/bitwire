@@ -11,8 +11,10 @@
 | Java | dev.bitspark:bitwire on Maven Central | JAR tests and fresh repository consumer |
 | Haskell | public tagged source/sdist | Cabal tests and isolated source consumer; Hackage deferred |
 
-These are intended gates for 0.4.0, pending the new release's actual run and
-registry verification. Declarations compiling do not establish endpoint behavior.
+PR 74 passed every current declaration/package lane, including the Windows and
+Linux core gates, independent fixtures, isolated npm/Go consumers and all six
+additional native bindings. Actual 0.4.0 registry installation remains a release
+verification obligation. Declarations compiling do not establish endpoint behavior.
 Only bitruntime's delivered Go and TypeScript endpoints claim runtime coverage,
 against independently owned bitwire observations. No old release's evidence is
 reused as evidence for this breaking replacement.
