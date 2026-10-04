@@ -26,9 +26,10 @@ is separately delivered and checked in bitruntime and system2.
 
 Evidence so far: model definition/vector/link/gate checks passed; TypeScript/Go
 contract/vector checks passed; Rust clippy, tests and an extracted crate consumer
-passed. The first unstaged Go package rehearsal correctly failed because the
-new mirror was absent from git's tracked package list; staging the complete new
-source before repeating the packaged consumer resolves that packaging precondition.
+passed. The Go package rehearsal caught an obsolete source filter that omitted the
+new mirror even after staging. The file-proxy rehearsal now packages the complete
+tracked module, matching the actual root-module distribution; its fresh consumer
+checks both value and codec imports. The repeated isolated npm and Go consumers passed with the complete tracked module.
 Python wheel/sdist and isolated typed consumer passed. C++ local CMake could not compile even its toolchain probe, so C++ validation is delegated to the required clean CI runner along with Swift/Java/Haskell. Those native package checks are pending. No old release's
 conformance evidence is reused. Full integration review and actual release
 verification are required before claiming completion.

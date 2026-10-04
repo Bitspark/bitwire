@@ -16,7 +16,7 @@ try {
   const escapedModule = moduleName.replace(/[A-Z]/g, letter => `!${letter.toLowerCase()}`);
   const versions = join(proxy, escapedModule, '@v');
   mkdirSync(versions, { recursive: true });
-  const files = output('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z']).split('\0').filter(file => file === 'go.mod' || file === 'LICENSE' || file === 'NOTICE' || /^wire\/go\/[^/]+\.go$/.test(file));
+  const files = output('git', ['ls-files', '--cached', '-z']).split('\0').filter(Boolean);
   const fileList = join(directory, 'files.json');
   writeJSON(fileList, files);
   const helper = join(directory, 'package.go');
