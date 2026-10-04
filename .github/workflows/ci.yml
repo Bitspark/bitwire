@@ -46,25 +46,9 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
       - run: node scripts/conformance.mjs
-      - run: node scripts/conformance-current.mjs
-      - run: node scripts/conformance-production.mjs
-      - run: node scripts/protocol.mjs verify --source
-      - run: node scripts/conformance-protocol.mjs
-
-  runtime-conformance:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-go@v7
-        with:
-          go-version-file: go.mod
-          cache: false
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-      - run: node scripts/conformance-runtime.mjs
-      - run: node scripts/conformance-protocol-runtime.mjs
 
   packages:
     runs-on: ubuntu-latest

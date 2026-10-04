@@ -1,11 +1,10 @@
 cabal-version:      3.0
 name:               bitspark-bitwire
-version:            0.3.0
-synopsis:           Addressless Wire and structural WireTree contracts
+version:            0.4.0
+synopsis:           Generic envelope wire and ontos values
 description:
-    Native Haskell types for Bitwire's addressless Wire, complete Deixis trees,
-    addressed compatibility boundary and logical message profile. Implementations supply dispatch, codecs and
-    carriers; this package supplies no endpoint runtime.
+    Generic duplex envelopes with exact byte paths and opaque ontos values.
+    Runtime implementations belong to bitruntime; this package declares the contract.
 category:           Network
 license:            Apache-2.0
 license-file:       LICENSE

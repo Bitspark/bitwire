@@ -1,121 +1,17 @@
-# Releases
+# Release process
 
-Version [0.3.0 is released](https://github.com/Bitspark/bitwire/releases/tag/v0.3.0)
-under [decision 0012](docs/decisions/0012-explicit-data-and-wire-trees.md).
-Go/npm/Rust/Python/Maven Central and Swift/C++/Haskell source consumers are
-verified. Hackage remains deferred. The
-[delivery table](docs/languages.md#version-030-delivery) records verified results.
-`0.1.0` and `0.2.0` remain immutable. A release identifies the shared contract revision,
-native bindings and independent cases. The [language matrix](docs/languages.md)
-records implementation, package validation, registry publication and consumer
-adoption separately. A source tag does not claim an upload to every registry.
+Use a reviewed green PR, squash to main, synchronize the primary checkout, and
+hold all eight package versions to the candidate. Run release-prepare, core
+checks, native packaged consumers and smoke-packed. Dispatch release.yml with
+tag v0.4.0 and provenance true on the exact main commit; this rehearsal never
+publishes. Only after success create the annotated immutable v0.4.0 tag and push
+it. The tag workflow requires the successful exact-commit rehearsal, publishes
+npm with provenance and the crate, verifies fresh public npm/Go installation,
+and creates the GitHub release. Existing tags are never edited.
 
-This release changes primitive/tree declarations. The public received-context
-evidence originally planned for 0.3.0 in decision 0007 remains pending work in
-the runtime/profile lane; the version number is not evidence it was delivered.
-
-## Compatibility and readiness
-
-Before 1.0, a breaking contract or native API change increments the minor version;
-a compatible correction increments the patch version. Published artifacts and
-tags are immutable. The network protocol is `bitwire/1` (formerly
-`nightseam.duplex/1`), an immutable bundle in `protocol/bitwire-1` identified by
-its `normativeDigest`; a package release states the revisions it implements and
-never changes one. A protocol change is a new revision. Published libraries do not depend on
-Nightseam; test-only drivers use the public revision in `conformance/nightseam.json`.
-
-The required core, behavioral, package and native-binding CI checks must pass.
-Independent cases report their explicit scope and remaining obligations.
-Package versions, licenses and provenance must agree. Consumers install prepared
-artifacts outside the checkout; registry checks repeat installation from the
-actual published versions. Merge the candidate and record the exact release SHA.
-
-## Go, npm and Rust handover
-
-The `release.yml` workflow rehearses on manual invocation and publishes only on
-a `v*` tag push. Publication requires a successful public provenance rehearsal
-of that exact commit and version.
-
-1. Run `pnpm install --frozen-lockfile`, `node scripts/check.mjs`,
-   `node scripts/conformance.mjs`, `node scripts/release-prepare.mjs v0.3.0`,
-   `node scripts/smoke-packed.mjs` and `node wire/rs/check-package.mjs`.
-2. Optionally rehearse the merged commit privately:
-   `gh workflow run release.yml --ref main -f tag=v0.3.0 -f provenance=false`.
-3. For the public launch, make the repository public and enable immutable
-   GitHub releases. The organization's release-tag rule already protects `v*`.
-   Run `gh workflow run release.yml --ref main -f tag=v0.3.0 -f provenance=true`.
-   Verify the successful run's SHA and stored rehearsal receipt. A source change
-   requires a new rehearsal; an earlier run does not validate a later commit.
-4. Tag that exact merged commit as `v0.3.0` and push the tag once. The workflow
-   repeats checks, publishes `@bitspark/bitwire` with provenance and the Rust
-   crate when present, verifies public npm/Go/Rust installation and creates the
-   GitHub release. Go's module `github.com/Bitspark/bitwire` is distributed by
-   the tag; import `github.com/Bitspark/bitwire/wire/go`.
-5. Send the verified version, source SHA and conformance invocation to
-   [Nightseam #421](https://github.com/Bitspark/nightseam/issues/421), which owns
-   imports/re-exports and post-adoption generated-adapter acceptance.
-
-Both npm's registry and the `@bitspark` scope are explicitly set to
-`https://registry.npmjs.org`; local GitHub Packages settings cannot redirect the
-upload. Initial publication uses `NPM_TOKEN`; later trusted publishing can replace
-it. Rust uses `CARGO_REGISTRY_TOKEN`. The npm workspace root remains private.
-
-## Additional registries
-
-Swift consumes the root SwiftPM package through the public Git URL and tag.
-C++ consumes tagged source and the installed CMake package. Haskell consumes the
-public Git release using Cabal's `source-repository-package`; see the
-[installation instructions](wire/hs/README.md#install-from-git). Run
-`node wire/hs/check-git.mjs --tag v0.3.0 --version 0.3.0` after publication to
-verify this release independently of the local library (prefer its full immutable
-commit SHA in place of the tag). Without arguments the command intentionally
-checks historical 0.1.0, which is not acceptance evidence for a new release.
-Hackage publication is deferred until uploader approval.
-After the immutable release exists, run
-`gh workflow run verify-source.yml --ref main -f tag=v0.3.0` to verify SwiftPM,
-C++ installed-package and Haskell Git consumers against the exact public release
-SHA. This workflow verifies only; it neither uploads nor changes a release.
-Additional registry
-workflows select an existing stable immutable public release and build its exact
-source. Account setup does not block the first Go/TypeScript handover.
-
-| Workflow | Distribution | Actions configuration |
-| --- | --- | --- |
-| `publish-python.yml` | PyPI `bitspark-bitwire` | Environment `pypi`; trusted publishing preferred, optional `PYPI_API_TOKEN` |
-| `publish-java.yml` | Maven Central `dev.bitspark:bitwire` | `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD`, `MAVEN_GPG_PRIVATE_KEY`, `MAVEN_GPG_PASSPHRASE` |
-| `publish-haskell.yml` | Hackage `bitspark-bitwire` | Environment `hackage`; `HACKAGE_AUTH_TOKEN` |
-
-Store credentials in repository Actions secrets for `Bitspark/bitwire`, never
-source files. Maven credentials are the generated Central Portal token pair,
-not a login password. Verify `dev.bitspark` through the `bitspark.dev` DNS
-challenge and supply a signing key satisfying Central's signature requirements.
-
-For a pending PyPI trusted publisher, use project `bitspark-bitwire`, owner
-`Bitspark`, repository `bitwire`, workflow `publish-python.yml`, environment
-`pypi`. This route needs no PyPI API token. The pending publisher does not reserve
-the package name until publication. Binding READMEs describe package checks.
-
-The verified 0.2.0 PyPI upload used the existing API-token route; trusted publishing
-is not yet configured. Until it is configured, invoke
-`gh workflow run publish-python.yml --ref main -f tag=v0.2.0 -f authentication=api-token`.
-An upload followed by an installation miss can reflect index propagation; rerun
-the failed verification job after checking publication, without re-uploading.
-
-Hackage also requires the token's account to belong to its Uploaders group.
-The first 0.1.0 upload was refused for that missing authorization; the server
-directs the account owner to `hackage-trustees@haskell.org` for approval. See
-[#11](https://github.com/Bitspark/bitwire/issues/11) before retrying. The operator
-will request that approval later; Git consumption is the current delivery path.
-Java 0.2.0 is published on Central with a verified public consumer; see
-[#10](https://github.com/Bitspark/bitwire/issues/10). The Java workflow's optional
-`diagnose` mode checks credential formatting, Maven substitution and a read-only
-Portal status request without uploading artifacts or displaying credentials.
-
-## Recovery
-
-If publication partially succeeds, preserve the tag and existing artifacts.
-Inspect registry state before retrying; npm compares existing integrity and Rust
-verifies existing packaged content. Never replace a published version with changed
-source. A failed consumer check after upload does not mean the upload failed.
-Record existing artifacts and remaining work, and report a registry as available
-only after its public installation check passes.
+The configured publish-python and publish-java workflows publish their packages
+from the immutable public release with installed-consumer checks. Haskell remains
+public tagged source and sdist, with Hackage deferred by the existing uploader
+policy. Swift/C++ are tagged source packages. Verify actual registry state and
+native consumer evidence before claiming delivery. The current envelope format
+is bitwire/envelope/1; no historical protocol is an active release gate.

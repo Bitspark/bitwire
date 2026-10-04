@@ -1,7 +1,7 @@
 {
   "name": "@bitspark/bitwire",
-  "version": "0.3.0",
-  "description": "Addressless interaction, full byte-keyed trees and addressed carrier contracts.",
+  "version": "0.4.0",
+  "description": "Generic duplex envelope wire with exact byte paths and opaque ontos values.",
   "license": "Apache-2.0",
   "type": "module",
   "repository": {
@@ -10,10 +10,39 @@
     "directory": "wire/ts"
   },
   "types": "./dist/index.d.ts",
-  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
-  "files": ["dist", "README.md", "LICENSE", "NOTICE"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./ontos": {
+      "types": "./dist/ontos/core.d.ts",
+      "import": "./dist/ontos/core.js"
+    },
+    "./ontos-codec": {
+      "types": "./dist/ontos/codec.d.ts",
+      "import": "./dist/ontos/codec.js"
+    },
+    "./ontos-data": {
+      "types": "./dist/ontos/data.d.ts",
+      "import": "./dist/ontos/data.js"
+    },
+    "./conformance": {
+      "types": "./dist/conformance.d.ts",
+      "import": "./dist/conformance.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
   "sideEffects": false,
-  "publishConfig": { "registry": "https://registry.npmjs.org", "access": "public" },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
+  },
   "scripts": {
     "check": "tsc -p tsconfig.check.json",
     "build": "tsc -p tsconfig.build.json"

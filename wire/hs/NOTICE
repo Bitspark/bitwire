@@ -1,10 +1,9 @@
-Bitwire
-Copyright 2026 Bitspark and the Bitwire contributors
+bitwire
+Copyright 2026 Bitspark and contributors
 
-This product includes software developed at Bitspark (https://github.com/Bitspark).
-
-The Haskell presentation was written from the shared Bitwire specification.
-That specification preserves the logical Wire boundary introduced in Nightseam,
-licensed under the Apache License, Version 2.0:
-Copyright 2026 Bitspark and the Nightseam contributors.
-Baseline source revision: 5217cc60fdf8dd8d6b88e7ebb15bfcc98bb1d515.
+This product includes software developed at Bitspark. The current generic wire
+contract is original work. It includes a checked consumer mirror of ontos v0.9.0
+from 5eed85de5697f53397407f9f82f3b310648827f7: frozen L0 values, canonical codec
+and optional data embeddings. ontos/manifest.json records exact source provenance
+and import adaptations. The prior declarations and drivers derived from nightseam
+were removed; their provenance and immutable releases remain in Git history.

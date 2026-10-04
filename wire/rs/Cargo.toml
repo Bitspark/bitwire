@@ -1,6 +1,6 @@
 [package]
 name = "bitspark-bitwire"
-description = "Addressless Wire primitives, full byte-keyed WireTree structure and addressed carrier contracts."
+description = "Generic duplex envelope wire with byte paths and ontos values."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -15,5 +15,3 @@ include = ["src/**", "examples/**", "tests/**", "README.md", "LICENSE", "NOTICE"
 name = "bitwire"
 
 [dependencies]
-serde.workspace = true
-serde_json.workspace = true

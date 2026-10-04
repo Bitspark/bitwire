@@ -1,16 +1,19 @@
-import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import assert from 'node:assert/strict';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { forbiddenDependencies } from './independence-lib.mjs';
-
-const root = fileURLToPath(new URL('../', import.meta.url));
-const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], {
-  cwd: root, encoding: 'utf8',
-}).split('\0').filter(Boolean);
-const found = forbiddenDependencies(files, path => readFileSync(join(root, path), 'utf8'));
-if (found.length) {
-  const lines = found.map(({ path, line, text }) => `${path}:${line}: ${text}`).join('\n');
-  throw new Error(`Published packages must not depend on Nightseam or bitruntime (decisions 0007 and 0010):\n${lines}`);
+function scan(path) {
+ for (const file of readdirSync(path, { withFileTypes: true })) {
+  const p=join(path,file.name);
+  if(file.isDirectory()) scan(p);
+  else if(/\.(?:ts|go|rs|py|java|swift|hpp|hs)$/.test(p)) {
+   const s=readFileSync(p,'utf8');
+   assert.doesNotMatch(s, /(?:from|import|require).*['"](?:@bitspark\/(?:bitruntime|nightseam)|github\.com\/Bitspark\/(?:bitruntime|nightseam))/);
+   assert.doesNotMatch(s, /\b(?:AddressedWire|ProfileFrame|ReturnAddress|ProfileKind|WireTree)\b/);
+  }
+ }
 }
-console.log('Published packages depend on neither Nightseam nor bitruntime.');
+scan('wire');
+const npm=JSON.parse(readFileSync('wire/ts/package.json','utf8'));
+assert.deepEqual(npm.dependencies ?? {}, {});
+assert.doesNotMatch(readFileSync('go.mod','utf8'), /^replace\s/m);
+console.log('Generic contract is independent of runtime, legacy profiles and private dependencies.');
