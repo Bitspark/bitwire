@@ -103,22 +103,18 @@ export function checkNpmConsumer(directory, dependency) {
   const actual = JSON.parse(readFileSync(join(installed, 'package.json'), 'utf8'));
   if (actual.version !== version) throw new Error(`Consumer installed ${actual.version}, expected ${version}.`);
   writeJSON(join(directory, 'tsconfig.json'), { compilerOptions: { target: 'ES2022', module: 'NodeNext', strict: true, skipLibCheck: false, outDir: 'dist' }, include: ['index.ts'] });
-  writeFileSync(join(directory, 'index.ts'), `import type { Wire, WireTree, AddressedWire, Endpoint, Path, Message, Receiver, ProfileFrame, ProfileKind, ProfileError, ReturnAddress } from '@bitspark/bitwire';
-const frame: ProfileFrame = { version: 1, kind: 'event', data: null };
-const path: Path = ['example', ''];
-const message: Message = { frame };
-const receiver: Receiver = { message: (_path, _message) => {} };
-const kind: ProfileKind = frame.kind;
-const error: ProfileError = { code: 'example', message: 'example' };
-const access: AddressedWire = { send: (_path, _message) => {} };
-const primitive: Wire = { send: (_message) => {} };
-function sendTree(tree: WireTree): void { tree.at([])?.own().send(message); }
-void [primitive, sendTree];
-function consume(wire: AddressedWire): ReturnAddress { wire.send(path, message); return { wire }; }
-function attach(endpoint: Endpoint): void { const detach = endpoint.receive(receiver); detach(); endpoint.close(); }
-void [kind, error, consume(access), attach];
-await import('@bitspark/bitwire');
-console.log('Installed Bitwire declarations and runtime entry point loaded.');
+  writeFileSync(join(directory, 'index.ts'), `import { atom, tuple, encodeEnvelope, decodeEnvelope } from '@bitspark/bitwire';
+import type { Wire, Envelope, Path, DeixisNode } from '@bitspark/bitwire';
+import { Atom } from '@bitspark/bitwire/ontos';
+import { encodeText } from '@bitspark/bitwire/ontos-data';
+import { encode } from '@bitspark/bitwire/ontos-codec';
+const path: Path = [atom([0,255])];
+const e: Envelope = { source: [], destination: path, id: atom([]), correlation: atom([]), payload: tuple([encodeText('unknown')]) };
+if (!(path[0] instanceof Atom)) throw new Error('duplicate value family');
+if (!decodeEnvelope(encodeEnvelope(e)).payload.equals(e.payload)) throw new Error('envelope mismatch');
+function consume(wire: Wire, tree: DeixisNode<Wire>): void { const detach=wire.receive(()=>{}); detach(); void wire.send(e); void wire.close(); void wire.closed; void tree.at([]); }
+void [consume, encode(e.payload)];
+console.log('Installed generic wire and shared ontos value family loaded.');
 `);
   run(process.execPath, [join(directory, 'node_modules/typescript/bin/tsc'), '-p', join(directory, 'tsconfig.json')], { cwd: directory });
   run(process.execPath, ['dist/index.js'], { cwd: directory });
@@ -132,27 +128,15 @@ export function checkGoConsumer(directory, requiredVersion, environment = {}) {
 import (
   "fmt"
   wire "github.com/Bitspark/bitwire/wire/go"
+  core "github.com/Bitspark/bitwire/ontos/go/core"
 )
 func main() {
-  frame := wire.ProfileFrame{Version: 1, Kind: wire.ProfileEvent}
-  message := wire.Message{Frame: frame}
-  receiver := wire.Receiver{Message: func(path []string, message wire.Message) {}}
-  var endpoint wire.Endpoint
-  _ = wire.ReturnAddress{Wire: endpoint}
-  _ = wire.ProfileError{Code: "example", Message: "example"}
-  _ = wire.Code(0)
-  access := sendOnly{}
-  var _ wire.AddressedWire = access
-  var _ wire.Wire = primitive{}
-  var tree wire.WireTree
-  _ = tree
-  _ = access.Send([]string{"example"}, message)
-  fmt.Println("Installed Bitwire Go declarations loaded.", message.Frame.Version, receiver.Message != nil)
+  e:=wire.Envelope{Source:wire.Path{},Destination:wire.Path{core.NewAtom([]byte{0,255})},ID:core.NewAtom(nil),Payload:core.NewTuple()}
+  b,err:=wire.EncodeEnvelope(e,wire.DefaultMaxEnvelopeBytes);if err!=nil {panic(err)}
+  d,err:=wire.DecodeEnvelope(b,wire.DefaultMaxEnvelopeBytes);if err!=nil || !d.Payload.Equal(e.Payload) {panic("mismatch")}
+  var access wire.Wire;var tree wire.DeixisNode[wire.Wire];_ = access;_ = tree
+  fmt.Println("Installed generic Go wire and shared ontos values loaded.")
 }
-type primitive struct{}
-func (primitive) Send(message wire.Message) error { return nil }
-type sendOnly struct{}
-func (sendOnly) Send(path []string, message wire.Message) error { return nil }
 `);
   const env = { ...process.env, GOENV: 'off', GOWORK: 'off', GOPRIVATE: '', GONOPROXY: 'none', GONOSUMDB: 'none', GOFLAGS: '-modcacherw', GOMODCACHE: join(directory, 'module-cache'), ...environment };
   run('go', ['mod', 'download', moduleName], { cwd: directory, env });

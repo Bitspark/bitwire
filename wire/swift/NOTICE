@@ -1,15 +1,9 @@
-Bitwire Swift binding
-Copyright 2026 Bitspark and the Bitwire contributors
+bitwire
+Copyright 2026 Bitspark and contributors
 
-This binding includes declarations and supporting values adapted from Nightseam:
-Copyright 2026 Bitspark and the Nightseam contributors.
-Licensed under the Apache License, Version 2.0.
-Source revision: 1c63f1c4d7e4b5987d4bd32e294177645c92ed8f.
-Source files:
-duplex/swift/NightseamDuplex/Sources/NightseamDuplex/Wire.swift
-duplex/swift/NightseamDuplex/Sources/NightseamDuplex/Metadata.swift
-
-The initial extraction retained the addressed Wire protocol and supporting values;
-0.3 names that interface AddressedWire and adds addressless Wire and full WireTree
-contract declarations. Endpoint dispatch,
-routing, selection, mounting, codecs and carriers remain with implementations.
+This product includes software developed at Bitspark. The current generic wire
+contract is original work. It includes a checked consumer mirror of ontos v0.9.0
+from 5eed85de5697f53397407f9f82f3b310648827f7: frozen L0 values, canonical codec
+and optional data embeddings. ontos/manifest.json records exact source provenance
+and import adaptations. The prior declarations and drivers derived from nightseam
+were removed; their provenance and immutable releases remain in Git history.

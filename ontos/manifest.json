@@ -1,0 +1,75 @@
+{
+  "repository": "https://github.com/Bitspark/ontos",
+  "release": "v0.9.0",
+  "commit": "5eed85de5697f53397407f9f82f3b310648827f7",
+  "codec": "ontos-codec-v1",
+  "files": {
+    "wire/ts/src/ontos/core.ts": {
+      "source": "core/ts/src/index.ts",
+      "upstreamSha256": "e6450cae847d79ccfa27dacb31bcf65fe7e54276699b39bee4e0ef75357d1340",
+      "localSha256": "e6450cae847d79ccfa27dacb31bcf65fe7e54276699b39bee4e0ef75357d1340",
+      "replacements": {}
+    },
+    "wire/ts/src/ontos/codec.ts": {
+      "source": "codec/ts/src/index.ts",
+      "upstreamSha256": "8e318a99257bf406dad943520e429af6c153852a8f699cb0f2539d257d1e4c9b",
+      "localSha256": "2ab96bbb2854edb38197ac63e742c2233e95e1d778440fd5fd1ec466663cebf1",
+      "replacements": {
+        "\"@bitspark/ontos-core\"": "\"./core.js\""
+      }
+    },
+    "wire/ts/src/ontos/data.ts": {
+      "source": "data/ts/src/index.ts",
+      "upstreamSha256": "f5fcb611f8d3bd6593e61f1eb69cdc2a507eeb18d69200cfc3d08e223986512f",
+      "localSha256": "ece2cbb562491cc023c0a665fb6382cad8a1fd9cb0fdfb2642e16db9daf44fd1",
+      "replacements": {
+        "\"@bitspark/ontos-core\"": "\"./core.js\"",
+        "\"@bitspark/ontos-codec\"": "\"./codec.js\""
+      }
+    },
+    "ontos/go/core/value.go": {
+      "source": "core/go/value.go",
+      "upstreamSha256": "9ee624dd66d2bd54e06270cb8153ddd95e9c471e92e061fd7c8d5580901fd902",
+      "localSha256": "9ee624dd66d2bd54e06270cb8153ddd95e9c471e92e061fd7c8d5580901fd902",
+      "replacements": {}
+    },
+    "ontos/go/codec/codec.go": {
+      "source": "codec/go/codec.go",
+      "upstreamSha256": "62d3dde10118a25cce720b5a788a1ae1488ec46dc7e6d4b1cf26f5253c305676",
+      "localSha256": "e5c9cfb9d29f5f6cacb02a9a173b783d11391f06e954f2b044cac205eb4d089e",
+      "replacements": {
+        "\"github.com/bitspark/ontos/core/go\"": "\"github.com/Bitspark/bitwire/ontos/go/core\""
+      }
+    },
+    "wire/rs/src/ontos.rs": {
+      "source": "core/rs/src/lib.rs",
+      "upstreamSha256": "fb524393ae89a164e8ee49e41cb52264ecafce94fd95dd47a7eed3564658e88d",
+      "localSha256": "fb524393ae89a164e8ee49e41cb52264ecafce94fd95dd47a7eed3564658e88d",
+      "replacements": {}
+    },
+    "wire/py/src/bitwire/ontos.py": {
+      "source": "core/py/ontos_core/__init__.py",
+      "upstreamSha256": "251a2f592e65db882138aa110773afe64b134a04ef136cbae66972b6f089efa1",
+      "localSha256": "251a2f592e65db882138aa110773afe64b134a04ef136cbae66972b6f089efa1",
+      "replacements": {}
+    },
+    "ontos/vectors/identity.json": {
+      "source": "vectors/identity.json",
+      "upstreamSha256": "a59580fc99863d6f1e800f8b93b10c4419171aae6f21d3fa9b59389c906a2ab2",
+      "localSha256": "a59580fc99863d6f1e800f8b93b10c4419171aae6f21d3fa9b59389c906a2ab2",
+      "replacements": {}
+    },
+    "ontos/vectors/codec.json": {
+      "source": "vectors/codec.json",
+      "upstreamSha256": "544a4fe16852eed65ec59126e9bd7f89b8ddd7575fb790aa6305037570e3c90e",
+      "localSha256": "544a4fe16852eed65ec59126e9bd7f89b8ddd7575fb790aa6305037570e3c90e",
+      "replacements": {}
+    },
+    "ontos/vectors/data.json": {
+      "source": "vectors/data.json",
+      "upstreamSha256": "4b6769a59454db3d7ebd483096b85f714e0a715d76917960d8fd7e835f74bd4f",
+      "localSha256": "4b6769a59454db3d7ebd483096b85f714e0a715d76917960d8fd7e835f74bd4f",
+      "replacements": {}
+    }
+  }
+}

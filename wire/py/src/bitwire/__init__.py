@@ -1,192 +1,42 @@
-"""Addressless Wire, complete WireTree structure, and addressed compatibility.
-
-Adapted from Nightseam's duplex/py/nightseam/duplex/wire.py at
-1c63f1c4d7e4b5987d4bd32e294177645c92ed8f under Apache-2.0.
-Dispatch, path encoding, carriers and composition helpers belong to implementations.
-"""
-
+"""Generic envelope wire declarations; runtime implementations belong to bitruntime."""
 from __future__ import annotations
-
-from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Literal, NotRequired, Protocol, TypeAlias, TypeVar, TypedDict, runtime_checkable
-
-__all__ = [
-    "Path",
-    "ProfileKind",
-    "ProfileError",
-    "RequestFrame",
-    "ResultFrame",
-    "ErrorFrame",
-    "EventFrame",
-    "CancelFrame",
-    "ProfileFrame",
-    "ReturnAddress",
-    "Message",
-    "Receiver",
-    "AddressedWire",
-    "Wire",
-    "Key",
-    "TreePath",
-    "DeixisNode",
-    "WireTree",
-    "Endpoint",
-]
-
-# Opaque Unicode-scalar segments: [] != [""] != ["a/b"] != ["a", "b"].
-Path = Sequence[str]
-# Structural keys admit every byte string, without Unicode conversion.
-Key = bytes
-TreePath = Sequence[Key]
-T_co = TypeVar("T_co", covariant=True)
-ProfileKind = Literal["request", "response", "event", "cancel"]
-
-
-class ProfileError(TypedDict):
-    """Public error data, independent of any runtime exception class."""
-
-    code: str
-    message: str
-    data: NotRequired[object]
-
-
-class _TracedFrame(TypedDict):
-    version: Literal[1]
-    traceparent: NotRequired[str]
-    tracestate: NotRequired[str]
-
-
-class RequestFrame(_TracedFrame):
-    """The send path supplies the method name; params follow the JSON profile."""
-
-    kind: Literal["request"]
-    id: str
-    params: object
-    meta: NotRequired[Mapping[str, str]]
-
-
-class ResultFrame(_TracedFrame):
-    kind: Literal["response"]
-    id: str
-    result: object
-
-
-class ErrorFrame(_TracedFrame):
-    kind: Literal["response"]
-    id: str
-    error: ProfileError
-
-
-class EventFrame(_TracedFrame):
-    """The send path supplies the event name; data follow the JSON profile."""
-
-    kind: Literal["event"]
-    data: object
-    meta: NotRequired[Mapping[str, str]]
-
-
-class CancelFrame(_TracedFrame):
-    kind: Literal["cancel"]
-    id: str
-
-
-ProfileFrame = RequestFrame | ResultFrame | ErrorFrame | EventFrame | CancelFrame
-
-
-@dataclass(frozen=True, eq=False)
-class ReturnAddress:
-    """Local capability with identity equality, never a network-envelope member.
-
-    Different addresses stay distinct even when they hold the same AddressedWire. The
-    wrapped implementation need not support equality or hashing. Routing must
-    preserve this address object, rather than construct an equivalent wrapper.
-    Runtime-owned received context associated with this identity must survive
-    routing; application payloads are not evidence of verified context.
-    """
-
-    wire: AddressedWire
-
-
+from typing import Callable, Protocol, TypeVar, Generic
+from .ontos import Atom, Tuple, Value, atom, tuple_, equals
+Path = tuple[Atom, ...]
 @dataclass(frozen=True)
-class Message:
-    """A profile frame plus optional local return access.
-
-    Only frame data belongs to the serialized profile. Payloads typed as object
-    must still satisfy the JSON profile; arbitrary Python objects are not implied.
-    """
-
-    frame: ProfileFrame
-    return_address: ReturnAddress | None = None
-
-
+class Envelope:
+    source: Path
+    destination: Path
+    id: Atom
+    payload: Value
+    correlation: Atom | None = None
+    def __post_init__(self) -> None:
+        object.__setattr__(self, 'source', tuple(self.source))
+        object.__setattr__(self, 'destination', tuple(self.destination))
+        if any(not isinstance(key, Atom) for key in self.source + self.destination):
+            raise TypeError('path keys must be atoms')
+        if not isinstance(self.id, Atom) or (self.correlation is not None and not isinstance(self.correlation, Atom)):
+            raise TypeError('IDs must be atoms')
+        if not isinstance(self.payload, (Atom, Tuple)):
+            raise TypeError('payload must be a ground value')
 @dataclass(frozen=True)
-class Receiver:
-    """Callbacks receive every path relative to their attached endpoint.
-
-    A receiver may be synchronous or awaitable; endpoints own dispatch.
-    """
-
-    message: Callable[[Path, Message], None | Awaitable[None]] | None = None
-    closed: Callable[[int, str], None] | None = None
-
-
-@runtime_checkable
+class Termination:
+    kind: str
+    message: str | None = None
 class Wire(Protocol):
-    """Addressless send access: admission or refusal, never handler completion.
-
-    No path, receive attachment or closure authority belongs to this primitive.
-    Tree selection followed by own().send(message) supplies structured interaction.
-    """
-
-    def send(self, message: Message) -> None: ...
-
-
-class DeixisNode(Protocol[T_co]):
-    """A complete finite acyclic structure with an own value at every node.
-
-    Children contain every unique exact byte key, including empty keys. An empty
-    path selects this node; a missing child returns None, never the parent's own
-    value. Decomposition retains the same own value and complete children.
-    Implementations preserve structure and payload identity. Constructors and
-    derived operations belong to runtimes, not this declaration package.
-    """
-
-    def own(self) -> T_co: ...
-
-    def children(self) -> Sequence[tuple[Key, DeixisNode[T_co]]]: ...
-
-    def at(self, path: TreePath) -> DeixisNode[T_co] | None: ...
-
-    def decompose(self) -> tuple[T_co, Sequence[tuple[Key, DeixisNode[T_co]]]]: ...
-
-
-WireTree: TypeAlias = DeixisNode[Wire]
-
-
-@runtime_checkable
-class AddressedWire(Protocol):
-    """Compatibility access for the unchanged addressed bitwire/1 profile.
-
-    send returns on acceptance or raises on refusal, without running destination
-    application code on the sender's stack. It grants no receiving or closure
-    authority. Structural protocol matching alone does not prove these laws.
-    """
-
-    def send(self, path: Path, message: Message) -> None: ...
-
-
-@runtime_checkable
-class Endpoint(AddressedWire, Protocol):
-    """Owning endpoint access with one receive attachment and endpoint closure.
-
-    receive refuses a second active attachment or a closed endpoint and returns
-    an idempotent detach. A stale detach cannot remove a later attachment. Callbacks receive the complete
-    message and its relative path; routing policy belongs above this boundary.
-    Detach preserves captured return access and does not close the endpoint.
-    Closing notifies the active receiver once; detached receivers are not notified.
-    Closing twice has no additional effect and does not release live bindings.
-    """
-
-    def receive(self, receiver: Receiver) -> Callable[[], None]: ...
-
-    def close(self, code: int = 1000, reason: str = "") -> None: ...
+    async def send(self, envelope: Envelope) -> None: ...
+    def receive(self, handler: Callable[[Envelope], None]) -> Callable[[], None]: ...
+    async def closed(self) -> Termination: ...
+    async def close(self) -> None: ...
+T = TypeVar('T')
+@dataclass(frozen=True)
+class Parts(Generic[T]):
+    own: T
+    children: tuple[tuple[Atom, DeixisNode[T]], ...]
+class DeixisNode(Protocol[T]):
+    def own(self) -> T: ...
+    def children(self) -> tuple[tuple[Atom, DeixisNode[T]], ...]: ...
+    def at(self, path: Path) -> DeixisNode[T] | None: ...
+    def decompose(self) -> Parts[T]: ...
+__all__ = ['Atom', 'Tuple', 'Value', 'atom', 'tuple_', 'equals', 'Path', 'Envelope', 'Termination', 'Wire', 'Parts', 'DeixisNode']

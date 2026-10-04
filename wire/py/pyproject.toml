@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bitspark-bitwire"
-version = "0.3.0"
-description = "Addressless Wire primitives, full WireTree structure and addressed carrier contracts for Python"
+version = "0.4.0"
+description = "Generic duplex envelope wire with byte paths and ontos values"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"

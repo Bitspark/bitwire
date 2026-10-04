@@ -1,24 +1,9 @@
-Bitwire
-Copyright 2026 Bitspark and the Bitwire contributors
+bitwire
+Copyright 2026 Bitspark and contributors
 
-This product includes software developed at Bitspark (https://github.com/Bitspark).
-
-The initial Wire declarations are adapted from Nightseam, licensed under the
-Apache License, Version 2.0:
-Copyright 2026 Bitspark and the Nightseam contributors.
-Source revision: 5217cc60fdf8dd8d6b88e7ebb15bfcc98bb1d515.
-The adapted declarations live in wire/go/wire.go and wire/ts/src/index.ts.
-
-The Python, Rust, Swift, C++ and Java contract presentations are also derived
-from Nightseam's native Wire surfaces at revision
-1c63f1c4d7e4b5987d4bd32e294177645c92ed8f. Their package NOTICE files identify
-the source files and extraction changes. The Haskell presentation is derived
-from the common Bitwire specification.
-
-The test-only bitruntime composition drivers
-conformance/runtime/go/composition/main.go and
-conformance/runtime/ts/composition.ts are adapted from nightseam's
-conformance/bitwire/go/main.go and conformance/ts/src/bitwire.ts at v0.6.0,
-revision 5cc9723a24646c40ed1861f892b2b23eb6d785d7, licensed under the Apache
-License, Version 2.0: Copyright 2026 Bitspark and the Nightseam contributors.
-Each nightseam facility is replaced by the bitruntime facility its port records.
+This product includes software developed at Bitspark. The current generic wire
+contract is original work. It includes a checked consumer mirror of ontos v0.9.0
+from 5eed85de5697f53397407f9f82f3b310648827f7: frozen L0 values, canonical codec
+and optional data embeddings. ontos/manifest.json records exact source provenance
+and import adaptations. The prior declarations and drivers derived from nightseam
+were removed; their provenance and immutable releases remain in Git history.
