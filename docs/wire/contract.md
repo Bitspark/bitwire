@@ -100,6 +100,13 @@ is operational identity; repeated prefix binding agrees with concatenation.
 These operations do not prove remote membership or stable participant identity.
 All paths through one addressed endpoint retain its underlying admission order.
 
+Each addressed endpoint declares a stable local path root for its connection
+lifetime. receive delivers the peer's full path relative to that root. under and
+bind return send-only views: neither has receive, strips incoming prefixes nor
+rewrites opaque reply names. Services that carry reply paths must define them
+relative to the stable endpoint root, or specify an explicit mapping at a higher
+layer. The sending prefix does not change the root of the original receiver.
+
 ## Complete structure and derived sending
 
 A complete DeixisNode is finite and well founded with an own opaque value and a
@@ -119,7 +126,9 @@ Effectful comparisons use corresponding initial states and operation schedules.
 
 A receiver handler tree is another legal DeixisNode instance. Its dispatch helper
 returns false only for structural absence and otherwise calls the selected handler
-once. This does not turn receive handlers into the definition of WireTree.
+once. A handler presented through Wire.send realizes a local sending capability;
+a tree of those Wire values is a WireTree. A bare native function tree remains
+its own generic instantiation; language declarations need no implicit conversion.
 Neither an opaque addressed facade nor a transport endpoint implies discovery.
 
 ## Authority and evidence
