@@ -4,7 +4,7 @@
 deixis, bitwire and bitruntime together. This is the implementation agent's
 reasoned decision, not a retrospective claim that each detail received separate
 owner approval. It supersedes decision 0014's collapsed sending surface and
-mandatory generic envelope. Its RPC removal, Ontos value semantics, runtime
+mandatory generic envelope. Its RPC removal, ontos value semantics, runtime
 ownership and clean replacement policy remain.
 
 ## Reason
@@ -13,11 +13,11 @@ The September separation had a concrete purpose: transports implement one
 addressless abstraction, and addressing is implemented once above it. Removing
 JSON/RPC, serialized return addresses and duplicate service transports did not
 require removing that layer. October's single envelope mixed carrier-independent
-delivery with routing and exchange metadata. Deixis then adopted that consumer
+delivery with routing and exchange metadata. deixis then adopted that consumer
 choice as a fixed premise, although its generic tree laws did not require it.
 
 Restore the structural distinction without restoring old protocol machinery.
-An addressless send needs a ground Ontos value, not source/destination paths,
+An addressless send needs a ground ontos value, not source/destination paths,
 message IDs or correlation fields. Consumers can carry any of those in their
 message convention. Choosing raw Value also permits a plain atom as a complete
 message; an otherwise useful envelope is not universal vocabulary.

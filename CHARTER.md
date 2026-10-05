@@ -6,7 +6,7 @@ usable without any particular carrier, runtime, service or invocation protocol.
 
 The defining boundaries are:
 
-- **W1 — Addressless sending.** Wire sends one ground Ontos Value. No path, ID,
+- **W1 — Addressless sending.** Wire sends one ground ontos Value. No path, ID,
   reply address, RPC kind or deadline is mandatory in that value.
 - **W2 — Addressed access.** AddressedWire adds a separate exact byte-path
   argument. Its representation is an ordinary value carried by W1. It must be
@@ -24,7 +24,7 @@ The defining boundaries are:
 
 [Decision 0015](docs/decisions/0015-addressless-wires-and-addressed-access.md)
 records the reconsideration; [the contract](docs/wire/contract.md) states the
-current laws. Deixis's generic structure permits sender and receiver instances
+current laws. deixis's generic structure permits sender and receiver instances
 equally and is not amended by a bitwire implementation choice.
 
 Changes to these boundaries need an explicit decision identifying the affected

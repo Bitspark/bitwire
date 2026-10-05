@@ -6,7 +6,7 @@ above it. No JSON, legacy selection, autodetection or fallback decoder exists.
 
 ## Addressless carrier
 
-One message is one complete ground Ontos value, encoded with `ontos-codec-v1`.
+One message is one complete ground ontos value, encoded with `ontos-codec-v1`.
 No envelope is required around it. Reject noncanonical varints, unknown tags,
 truncation, trailing bytes and configured size/depth violations. Validate cost
 before allocating output; count every occurrence of shared immutable values.

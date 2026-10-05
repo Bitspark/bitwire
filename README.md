@@ -14,7 +14,7 @@ import type { Wire, Endpoint, AddressedWire, AddressedEndpoint, WireTree } from 
 // WireTree: complete DeixisNode<Wire>, including own values and all children.
 ```
 
-A message is any immutable ground Ontos Value. Paths preserve exact bytes and
+A message is any immutable ground ontos Value. Paths preserve exact bytes and
 segment boundaries. Empty self differs from an empty-key child. The foundation
 requires no source, identifier, correlation, RPC kind or request deadline.
 Send success means local admission, not operation execution. Complete structure
@@ -27,7 +27,7 @@ bitwire.ontos.v2. The optional addressed layer carries bitwire/addressed/1 as an
 ordinary Value. It can be implemented once over every carrier. There is no legacy
 protocol, fallback decoder or compatibility alias.
 
-The [checked Ontos mirror](ontos/README.md) pins v0.9.0 with reversible import
+The [checked ontos mirror](ontos/README.md) pins v0.9.0 with reversible import
 adaptations, hashes and vectors. TypeScript /ontos, /ontos-codec and /ontos-data
 share one value family; optional data embeddings do not restrict raw messages.
 Eight native presentations live in wire/{go,ts,py,rs,swift,cpp,java,hs}.

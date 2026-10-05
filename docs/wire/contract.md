@@ -7,7 +7,7 @@ present one meaning, with language-native asynchronous and failure forms.
 ## Values, capabilities and paths
 
 `Value = Atom(Bytes) | Tuple(Value*)` is the finite immutable, well-founded,
-structurally compared ground Ontos domain. Atoms are exact octets with no intrinsic
+structurally compared ground ontos domain. Atoms are exact octets with no intrinsic
 text, identifier or authority meaning. Every ground value, including a bare atom
 and an unfamiliar tuple, is a legal message. Live capabilities are not Values.
 
@@ -72,7 +72,7 @@ Endpoints declare positive finite message-byte, queue-byte, queue-count and deco
 depth bounds. Defaults: 16 MiB per encoded message, 64 MiB queued encoded bytes,
 1024 queued messages per direction, depth 4096. Size counts the complete canonical
 value and every occurrence, including repeated immutable subvalues. These are
-operational limits, not Ontos identity rules or bounds on application-held data.
+operational limits, not ontos identity rules or bounds on application-held data.
 
 Outgoing size/depth violations reject before admission or partial output. Incoming
 overflow fails the endpoint. A local pair's overflow fails both ends and refuses
