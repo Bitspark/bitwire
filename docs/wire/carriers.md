@@ -1,50 +1,55 @@
-# Current envelope carrier format
+# Carrier and addressed message formats
 
-**Decided for the clean replacement.** One format, without historical profile
-negotiation. The logical boundary is [the generic wire](contract.md).
+**Current:** [decision 0015](../decisions/0015-addressless-wires-and-addressed-access.md).
+There is one addressless carrier format and one addressed representation layered
+above it. No JSON, legacy selection, autodetection or fallback decoder exists.
 
-## Canonical bytes
+## Addressless carrier
 
-Encode this six-element ontos tuple using `ontos-codec-v1`:
+One message is one complete ground Ontos value, encoded with `ontos-codec-v1`.
+No envelope is required around it. Reject noncanonical varints, unknown tags,
+truncation, trailing bytes and configured size/depth violations. Validate cost
+before allocating output; count every occurrence of shared immutable values.
+Bound decoder allocation by input length before honoring tuple length claims.
+
+WebSocket negotiates exactly `bitwire.ontos.v2`; one binary message carries one
+complete encoded Value. WebSocket supplies fragmentation. Text, malformed bytes,
+over-limit input and wrong/missing negotiation fail the connection. Reference
+compression is disabled. The old `bitwire.ontos.v1` envelope protocol is not
+negotiated. An old envelope-shaped tuple sent as data under v2 is just opaque data,
+not an implicitly supported old protocol.
+
+Normal TLS verification applies. Establishment has a finite timeout separate from
+service execution. An attached server owns accepted endpoints and its upgrade
+handler, leaving a supplied HTTP/HTTPS server open. A convenience listener owns
+its server. Establishment policy may authenticate peers; payload fields do not.
+
+Close ends admission, drops queues and initiates shutdown. Reference carriers
+allow five seconds for the handshake before forcing release. Terminal observation
+follows actual release. A later socket-write failure cannot turn an earlier local
+admission into proof that the peer received nothing.
+
+## Addressed representation
+
+The reusable addressed layer sends this ordinary Value through an Endpoint:
 
 ```text
-Tuple(Atom(UTF8("bitwire/envelope/1")),
-      Tuple(source atoms), Tuple(destination atoms), id atom,
-      Tuple() | Tuple(correlation atom), payload value)
+Tuple(Atom(UTF8("bitwire/addressed/1")), Tuple(path atoms), message value)
 ```
 
-The version is exact ASCII bytes, not a registered text embedding. Paths are raw
-tuples of atoms. Correlation has arity zero or one. Reject other field counts,
-versions, header constructors or correlation arities. Payloads stay opaque;
-unknown shapes are valid. Reject overlong/overflowing varints, unknown tags,
-truncation and trailing bytes. No JSON or legacy fallback exists.
-Check cost/depth before allocating outgoing bytes. Count every occurrence,
-including repeated immutable values. Native limits do not change value identity.
+The version is exact ASCII. Arity is exactly three, the path is a tuple of atoms,
+and the final field is any ground Value. No source, identifier, correlation,
+request/response kind or deadline is implied. Reject other constructors, versions
+or field counts at the addressed decoder. Packing and unpacking preserve exact
+paths and messages; path capture prevents later array edits from changing a send.
 
-## WebSocket
+This representation is independent of WebSocket and can be nested as opaque data.
+Applying another addressed layer is explicit. The entire nested value, headers
+included, counts against the carrier bounds. An addressed layer does not flatten
+nested payloads or automatically follow an embedded path.
 
-Negotiate exactly `bitwire.ontos.v1`. Each binary message carries one complete
-canonical envelope. WebSocket handles fragmentation. Text, malformed bytes,
-over-limit messages and missing/wrong negotiated protocol fail the connection.
-Reference Node compression is disabled. No service names or RPC timers enter
-this carrier. ws/wss dialing uses normal host TLS verification. Cancellation and
-finite handshake timeout belong to establishment, not service execution.
-
-A server may attach to caller-owned HTTP/HTTPS, owning only its upgrade handler
-and accepted endpoints. A convenience listener owns its server and releases the
-listening handle on shutdown. Establishment policy authenticates/authorizes peers;
-source paths still do not authenticate an envelope's sender.
-
-Close refuses admissions, drops queues and starts carrier shutdown. The reference
-carrier allows at most five seconds for a closing handshake, then forces release.
-Terminal observation follows actual release. Send callback failure terminates;
-it cannot retroactively turn an admitted operation into one never admitted.
-
-## Other carriers and checks
-
-Local pairs use the same logical envelopes/limits; no API-to-API bridge is needed.
-Canonical encoding supplies their cost accounting. Stream framing is outside
-this release's delivered carriers. Fixed independently calculated envelope vectors
-and pinned ontos vectors check byte interoperability. Runtime cases additionally
-check negotiation, malformed traffic, detach/close, limits, native peers and
-actual socket release.
+Local pairs and WebSocket endpoints expose the same raw message boundary. One
+runtime facade implements addressed access for both. Stream framing for other
+carriers and logical-wire allocation/multiplexing are separate contracts, not
+implicit features of this format. Fixed independent bytes and behavioral cases
+check both levels; no runtime implementation is the reference oracle.

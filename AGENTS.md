@@ -1,10 +1,13 @@
 # Working here
 
-Read [the generic contract](docs/wire/contract.md), [carrier format](docs/wire/carriers.md)
-and [decision 0014](docs/decisions/0014-generic-envelope-wire.md).
-There is one duplex envelope Wire. Ground ontos values and exact byte paths
-are generic; invocation protocols belong to consumers. Full Deixis structure
-is independent of opaque routing access. No legacy aliases or profile fallback.
+Read [CHARTER.md](CHARTER.md), [the contract](docs/wire/contract.md),
+[carrier format](docs/wire/carriers.md) and [decision 0015](docs/decisions/0015-addressless-wires-and-addressed-access.md).
+Wire is addressless sending. Endpoint owns receiving/closure. AddressedWire adds
+an exact byte-path argument; WireTree adds complete Deixis structure. Carriers
+implement addressless endpoints; one addressed layer works over all carriers.
+Invocation protocols belong to consumers. No legacy aliases or profile fallback.
+Changes to these boundaries must name the charter invariant and amend the
+contract explicitly; consumer implementations do not amend deixis by implication.
 
 Keep published contracts independent of bitruntime and generators. Runtime Wire
 implementations belong in bitruntime. Preserve the pinned ontos consumer mirror;

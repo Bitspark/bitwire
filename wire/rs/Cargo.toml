@@ -1,6 +1,6 @@
 [package]
 name = "bitspark-bitwire"
-description = "Generic duplex envelope wire with byte paths and ontos values."
+description = "Addressless wires and addressed access over ontos values."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

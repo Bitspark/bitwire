@@ -42,21 +42,24 @@ func path(keys []string) wire.Path {
 	}
 	return out
 }
-func TestIndependentEnvelopeVectors(t *testing.T) {
+func TestIndependentMessageVectors(t *testing.T) {
 	var vectors struct {
 		Encode []struct {
-			Name     string
-			Hex      string
-			Envelope struct {
-				Source, Destination []string
-				ID                  string
-				Correlation         *string
-				Payload             map[string]json.RawMessage
-			}
+			Name, Hex string
+			Value     map[string]json.RawMessage
 		}
-		Reject []struct{ Name, Hex string }
+		Addressed []struct {
+			Name, Hex string
+			Path      []string
+			Message   map[string]json.RawMessage
+		}
+		Reject          []struct{ Name, Hex string }
+		RejectAddressed []struct {
+			Name  string
+			Value map[string]json.RawMessage
+		}
 	}
-	b, err := os.ReadFile("../../conformance/envelope-vectors.json")
+	b, err := os.ReadFile("../../conformance/message-vectors.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,35 +68,54 @@ func TestIndependentEnvelopeVectors(t *testing.T) {
 	}
 	for _, c := range vectors.Encode {
 		t.Run(c.Name, func(t *testing.T) {
-			e := wire.Envelope{Source: path(c.Envelope.Source), Destination: path(c.Envelope.Destination), ID: atom(c.Envelope.ID), Payload: value(c.Envelope.Payload)}
-			if c.Envelope.Correlation != nil {
-				a := atom(*c.Envelope.Correlation)
-				e.Correlation = &a
+			v := value(c.Value)
+			b, err := wire.EncodeMessage(v, wire.DefaultMaxMessageBytes)
+			if err != nil || hex.EncodeToString(b) != c.Hex {
+				t.Fatalf("independent bytes: %x %v", b, err)
 			}
-			b, err := wire.EncodeEnvelope(e, wire.DefaultMaxEnvelopeBytes)
+			d, err := wire.DecodeMessage(b, wire.DefaultMaxMessageBytes)
+			if err != nil || !v.Equal(d) {
+				t.Fatal("message changed", err)
+			}
+		})
+	}
+	for _, c := range vectors.Addressed {
+		t.Run(c.Name, func(t *testing.T) {
+			p, m := path(c.Path), value(c.Message)
+			v, err := wire.PackAddressed(p, m)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if hex.EncodeToString(b) != c.Hex {
-				t.Fatal("independent byte mismatch")
+			b, err := wire.EncodeMessage(v, wire.DefaultMaxMessageBytes)
+			if err != nil || hex.EncodeToString(b) != c.Hex {
+				t.Fatalf("independent addressed bytes: %x %v", b, err)
 			}
-			d, err := wire.DecodeEnvelope(b, wire.DefaultMaxEnvelopeBytes)
+			d, err := wire.DecodeMessage(b, wire.DefaultMaxMessageBytes)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !wire.PathEqual(e.Source, d.Source) || !wire.PathEqual(e.Destination, d.Destination) || !e.ID.Equal(d.ID) || !e.Payload.Equal(d.Payload) || (e.Correlation == nil) != (d.Correlation == nil) {
-				t.Fatal("envelope changed")
-			}
-			if e.Correlation != nil && !e.Correlation.Equal(*d.Correlation) {
-				t.Fatal("correlation changed")
+			q, n, err := wire.UnpackAddressed(d)
+			if err != nil || !wire.PathEqual(p, q) || !m.Equal(n) {
+				t.Fatal("addressed message changed", err)
 			}
 		})
 	}
 	for _, c := range vectors.Reject {
 		t.Run(c.Name, func(t *testing.T) {
 			b, _ := hex.DecodeString(c.Hex)
-			if _, err := wire.DecodeEnvelope(b, wire.DefaultMaxEnvelopeBytes); err == nil {
-				t.Fatal("malformed envelope accepted")
+			if _, err := wire.DecodeMessage(b, wire.DefaultMaxMessageBytes); err == nil {
+				t.Fatal("invalid bytes accepted")
+			}
+		})
+	}
+	for _, c := range vectors.RejectAddressed {
+		t.Run(c.Name, func(t *testing.T) {
+			v := value(c.Value)
+			if _, err := wire.EncodeMessage(v, wire.DefaultMaxMessageBytes); err != nil {
+				t.Fatal("raw value refused", err)
+			}
+			if _, _, err := wire.UnpackAddressed(v); err == nil {
+				t.Fatal("invalid addressed value accepted")
 			}
 		})
 	}
@@ -144,26 +166,31 @@ func TestExactPathsOwnershipAndBounds(t *testing.T) {
 	if wire.PathEqual(wire.Path{atom("612f62")}, wire.Path{atom("61"), atom("62")}) {
 		t.Fatal("slash parsed")
 	}
-	e := wire.Envelope{Source: wire.Path{atom("ff")}, Payload: core.NewTuple()}
-	c, err := wire.CaptureEnvelope(e)
+	keys := wire.Path{atom("ff")}
+	v, err := wire.PackAddressed(keys, core.NewTuple())
 	if err != nil {
 		t.Fatal(err)
 	}
-	e.Source[0] = atom("")
-	if c.Source[0].Len() != 1 {
-		t.Fatal("capture aliased")
+	keys[0] = atom("")
+	p, _, err := wire.UnpackAddressed(v)
+	if err != nil || p[0].Len() != 1 {
+		t.Fatal("path capture aliased")
 	}
-	if _, err = wire.EncodeEnvelope(c, 1); err == nil {
+	if _, err = wire.EncodeMessage(v, 1); err == nil {
 		t.Fatal("limit not enforced")
 	}
-	if _, err = wire.CaptureEnvelope(wire.Envelope{}); err == nil {
-		t.Fatal("nil payload accepted")
+	if _, err = wire.EncodeMessage(nil, 100); err == nil {
+		t.Fatal("nil message accepted")
+	}
+	var invalid *core.Atom
+	if _, err = wire.EncodeMessage(invalid, 100); err == nil {
+		t.Fatal("typed nil accepted")
 	}
 }
 
 func TestImpossibleTupleLengthRefusedBeforeAllocation(t *testing.T) {
 	b, _ := hex.DecodeString("01ffffff07")
-	_, err := wire.DecodeEnvelope(b, wire.DefaultMaxEnvelopeBytes)
+	_, err := wire.DecodeMessage(b, wire.DefaultMaxMessageBytes)
 	d, ok := err.(*codec.DecodeError)
 	if !ok || d.Code != "limit_exceeded" {
 		t.Fatalf("expected preallocation limit, got %v", err)

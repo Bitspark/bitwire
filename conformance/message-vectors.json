@@ -1,0 +1,27 @@
+{
+  "basis": "Decision 0015. Hand-derived from ontos-codec-v1: Atom=00 length bytes, Tuple=01 arity items. Addressed header is the 19 ASCII octets bitwire/addressed/1. Expectations precede the replacement implementation.",
+  "encode": [
+    {"name":"bare empty atom", "value":{"atom":""}, "hex":"0000"},
+    {"name":"bare empty tuple", "value":{"tuple":[]}, "hex":"0100"},
+    {"name":"binary atom", "value":{"atom":"2fff00"}, "hex":"00032fff00"},
+    {"name":"unfamiliar nested shape", "value":{"tuple":[{"atom":"ff"},{"tuple":[]}]}, "hex":"01020001ff0100"}
+  ],
+  "addressed": [
+    {"name":"self", "path":[], "message":{"atom":""}, "hex":"01030013626974776972652f6164647265737365642f3101000000"},
+    {"name":"empty child", "path":[""], "message":{"atom":"ff"}, "hex":"01030013626974776972652f6164647265737365642f31010100000001ff"},
+    {"name":"binary segments and opaque message", "path":["ff2f","00"], "message":{"tuple":[{"atom":"80"},{"tuple":[]}]}, "hex":"01030013626974776972652f6164647265737365642f3101020002ff2f00010001020001800100"}
+  ],
+  "reject": [
+    {"name":"unknown constructor", "hex":"0200"},
+    {"name":"noncanonical length", "hex":"008000"},
+    {"name":"trailing bytes", "hex":"000000"},
+    {"name":"missing tuple item", "hex":"0101"}
+  ],
+  "rejectAddressed": [
+    {"name":"bare atom is not addressed", "value":{"atom":""}},
+    {"name":"wrong arity", "value":{"tuple":[]}},
+    {"name":"unknown version", "value":{"tuple":[{"atom":""},{"tuple":[]},{"atom":""}]}},
+    {"name":"path must be a tuple", "value":{"tuple":[{"atom":"626974776972652f6164647265737365642f31"},{"atom":""},{"atom":""}]}},
+    {"name":"key must be an atom", "value":{"tuple":[{"atom":"626974776972652f6164647265737365642f31"},{"tuple":[{"tuple":[]}]},{"atom":""}]}}
+  ]
+}

@@ -1,10 +1,6 @@
-# Checks and release
+# Validation scripts
 
-check.mjs checks links, independence, TypeScript declarations/build, the pinned
-ontos mirror and vectors, envelope counterexamples, and Go format/vet/tests.
-conformance.mjs runs independent fixtures, not a legacy RPC implementation.
-smoke-packed.mjs checks the packed npm package and a file-proxy Go module outside
-the checkout. release-prepare/publish/crates and smoke-registry retain immutable
-release, exact-commit rehearsal and public-install requirements. publish-extra
-supports the existing Python/Haskell delivery workflows. Native language checks
-are in wire/<lang> and the bindings workflow.
+check.mjs validates links, contract independence, the pinned Ontos mirror and
+vectors, independent raw/addressed message cases, TypeScript declarations and
+Go formatting/vet/tests. Native package and release scripts retain the separate
+installed-consumer and exact-revision publication gates.

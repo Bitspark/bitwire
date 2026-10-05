@@ -1,98 +1,136 @@
-# Generic envelope wire
+# Wire contract
 
-**Decided for the clean replacement.** See [decision 0014](../decisions/0014-generic-envelope-wire.md).
-Native declarations present these laws, not independent protocols.
+**Decided:** [decision 0015](../decisions/0015-addressless-wires-and-addressed-access.md).
+The [charter](../../CHARTER.md) identifies the boundaries. Native declarations
+present one meaning, with language-native asynchronous and failure forms.
 
-## Values and paths
+## Values, capabilities and paths
 
-`Bytes` is a finite octet sequence. ontos L0 is `Value = Atom(Bytes) | Tuple(Value*)`:
-finite, immutable, well founded, structurally compared and uninterpreted. Atoms
-have no intrinsic text, number, identifier, reference or authority meaning.
-Unknown ground embeddings are valid payloads. JSON is no identity rule.
+`Value = Atom(Bytes) | Tuple(Value*)` is the finite immutable, well-founded,
+structurally compared ground Ontos domain. Atoms are exact octets with no intrinsic
+text, identifier or authority meaning. Every ground value, including a bare atom
+and an unfamiliar tuple, is a legal message. Live capabilities are not Values.
 
-`Path = Atom*` is an ordered sequence of exact byte keys. Empty path selects self;
-a path containing the empty atom selects the empty-key child. Bytes, segment
-boundaries, order and multiplicity matter. Slash bytes are ordinary key bytes.
-No parsing, case folding, Unicode normalization, ancestor fallback or implicit
-child creation. Addresses are scoped to the connection's routing domain.
+`Path = Atom*` retains exact bytes, segment boundaries, order and multiplicity.
+Empty self differs from an empty-key child. Slash bytes, invalid UTF-8 and distinct
+Unicode byte spellings remain distinct. No parsing, normalization, ancestor
+fallback, implicit mount or child creation is performed.
 
-## Envelope and interface
-
-```typescript
-type Path = readonly Atom[];
-interface Envelope {
-  readonly source: Path;
-  readonly destination: Path;
-  readonly id: Atom;
-  readonly correlation?: Atom;
-  readonly payload: Value;
+```ts
+interface Wire { send(message: Value): Promise<void> }
+interface Endpoint extends Wire {
+  receive(handler: (message: Value) => void): () => void;
+  readonly closed: Promise<Termination>;
+  close(): Promise<void>;
 }
-interface Wire {
-  send(envelope: Envelope): Promise<void>;
-  receive(handler: (envelope: Envelope) => void): () => void;
+interface AddressedWire { send(path: Path, message: Value): Promise<void> }
+interface AddressedEndpoint extends AddressedWire {
+  receive(handler: (path: Path, message: Value) => void): () => void;
   readonly closed: Promise<Termination>;
   close(): Promise<void>;
 }
 interface Termination { readonly kind: 'closed' | 'failed'; readonly message?: string }
+type WireTree = DeixisNode<Wire>;
 ```
 
-Every field except correlation is required. Empty IDs are valid. Missing
-correlation differs from an empty correlation atom. The wire imposes no UUID,
-text, monotonicity, uniqueness or deduplication requirement on IDs. An exchange
-protocol can define these for its own messages. There is no implicit invocation
-table. Source and correlation do not authenticate a sender or grant authority.
+Wire grants sending. Endpoint additionally grants ownership of receiving and
+closure at one end of a duplex connection. AddressedWire adds a relative path in
+a declared routing domain. AddressedEndpoint applies this layer to an Endpoint.
+It uses the same connection and lifecycle; it creates neither another endpoint
+lifetime nor permission to use a concurrently attached raw receive handler.
 
-## Admission and ownership
+## Admission, ordering and termination
 
-Send captures header arrays before admission. Ground values are immutable;
-later edits to caller arrays/records cannot affect delivery. Success means local
-admission, not delivery, execution or response. Rejection means not admitted,
-including invalid input, limits and termination. Later failure may leave an
-admitted envelope's outcome unknown; replay needs a separate exchange contract.
+A successful send means local admission, never delivery, execution or response.
+A rejected send was not admitted, including invalid input, limits and termination.
+Later failure can leave an admitted operation's outcome unknown. IDs, correlation,
+deduplication, replay, deadlines and service failures belong to consumer protocols.
+Repeated identical Values remain distinct admissions.
 
-Successful admissions have a linear local order. Each direction dispatches
-whole envelopes once in that order, with no merging or splitting. Both endpoints
-may originate messages. Same-ID messages are distinct admissions, both delivered.
+Each direction admits messages in a linear local order and starts dispatch of
+whole messages in that order, at most once. Healthy attached endpoints eventually
+dispatch queued messages under a progressing scheduler. Closure may discard the
+remaining suffix. Opposite directions have no shared order. Asynchronous work
+started by handlers is not awaited and can finish out of order.
 
-## Receiving and termination
+Exactly one receive handler may be attached; a second attachment fails
+synchronously. Detach is idempotent and affects only its attachment. Detached
+messages wait in a bounded queue. Send and attachment never invoke a handler
+inline. A synchronous handler exception fails the endpoint; consumer-level
+refusal should be handled inside its protocol when the connection must survive.
 
-At most one handler is attached. A second attachment fails synchronously. Detach
-is idempotent and removes only its own handler. Incoming envelopes wait in a
-bounded queue while detached. Neither attachment nor send invokes a handler
-inline. Dispatch starts in order; asynchronous handler work is not awaited and
-may finish out of order. A synchronous handler exception fails the endpoint.
-Native presentations document equivalent exception handling.
+Terminal observation fulfills once, never rejects, after owned carrier resources
+are released. It reports normal closure or failure; diagnostic text is not a
+protocol token. Close is idempotent, ends admission, discards undelivered queues
+and awaits resource release. It does not cancel already dispatched application
+work. Carrier closure eventually ends the peer; diagnostics may differ. Closing
+one local-pair endpoint terminates both.
 
-Terminal observation fulfills exactly once, never rejects, after release of
-owned carrier/listeners/timers. It reports normal closure or failure; messages
-are diagnostic, not stable authority/protocol tokens. Close is idempotent, ends
-admission, discards undelivered queues and awaits release. It promises no graceful
-delivery and does not cancel already-dispatched service work. Carrier closure
-eventually terminates the peer, whose diagnostic classification may differ.
-Local pair closure terminates both endpoints immediately.
+## Limits
 
-## Bounds and structure
+Endpoints declare positive finite message-byte, queue-byte, queue-count and decode
+depth bounds. Defaults: 16 MiB per encoded message, 64 MiB queued encoded bytes,
+1024 queued messages per direction, depth 4096. Size counts the complete canonical
+value and every occurrence, including repeated immutable subvalues. These are
+operational limits, not Ontos identity rules or bounds on application-held data.
 
-Endpoints declare finite envelope, queued-byte, queued-count and decode-depth
-limits. Queue overflow fails the receiving endpoint and ends the connection.
-An outgoing limit violation refuses admission without partial bytes. Reference
-defaults: 16 MiB envelope, 64 MiB queued bytes, 1024 queued envelopes, depth 4096.
-These are operational limits, not ontos identity rules. They do not bound work
-or values retained by applications after dispatch. No ID registry is required.
+Outgoing size/depth violations reject before admission or partial output. Incoming
+overflow fails the endpoint. A local pair's overflow fails both ends and refuses
+the overflowing send. Carrier output queue exhaustion refuses local admission.
+No address or ID registry is needed for the raw endpoint.
 
-A complete `DeixisNode<T>` is finite and acyclic, with an own value and complete
-ordered child map keyed by unique atoms. `own`, `children`, `at(Path)` and
-`decompose` agree. Empty selection returns self; missing selection is absent.
-Decomposition reconstructs own values and exact child structure. Construction
-rejects duplicate keys and cycles. Child order is presentation order, not key
-identity. Opaque route access does not imply complete discovery.
+## Addressed layer
 
-## Independent expected observations
+Packing captures the path array into immutable data before sending. Unpacking
+produces the exact path and opaque message. The complete addressed value counts
+against the underlying endpoint's bounds. The layer has no independent queue,
+retry, deadline, ID table, discovery exchange or ownership transfer.
 
-Before runtime code: empty self differs from empty child; binary/slash keys and
-distinct Unicode byte spellings stay distinct; mutation after send cannot change
-delivery; unknown payloads survive; duplicate IDs are both delivered; missing
-routes do not select ancestors; a second handler fails; detach retains order;
-handler throws terminate; oversized sends reject before admission; queue overflow
-ends the connection; close drops queues and releases owned resources without
-claiming execution cancellation. Compile-only evidence does not prove these laws.
+The runtime's addressed endpoint facade attaches its decoder only when `receive`
+is called; construction alone performs no I/O or receive attachment. Detach removes
+that attachment. Close and terminal observation delegate to the underlying
+endpoint. The raw owner must not use raw receiving concurrently with the facade.
+A malformed addressed value fails the owning endpoint through handler failure;
+there is no guessing another protocol. The raw endpoint itself accepts that same
+ground value without interpreting it.
+
+For a captured prefix `p`, `under(A,p).send(q,m) = A.send(p++q,m)`. Empty prefix
+is operational identity; repeated prefix binding agrees with concatenation.
+`bind(A,p)` exposes only `send(m) = A.send(p,m)`, without receive or close rights.
+These operations do not prove remote membership or stable participant identity.
+All paths through one addressed endpoint retain its underlying admission order.
+
+## Complete structure and derived sending
+
+A complete DeixisNode is finite and well founded with an own opaque value and a
+complete finite child map keyed by unique exact atoms. `own`, `children`, `at` and
+`decompose` agree. Child order is presentation, not identity. Empty selection is
+self; missing selection is absent. Both reconstruction directions preserve own
+values and complete child subtrees. Shared acyclic subtrees are permitted;
+duplicate keys and cycles are not. Supplied foreign nodes must continue to obey
+these laws.
+
+For a WireTree, derived addressed sending selects first, then invokes the chosen
+Wire once. Missing selection rejects with the runtime's distinct missing-path
+error and invokes nothing. Refusal by a present Wire propagates as its own failure.
+Selection and reconstruction do not bind, invoke, clone or close any capability.
+Selecting with `p` and then `q` agrees with selecting `p++q`, including definedness.
+Effectful comparisons use corresponding initial states and operation schedules.
+
+A receiver handler tree is another legal DeixisNode instance. Its dispatch helper
+returns false only for structural absence and otherwise calls the selected handler
+once. This does not turn receive handlers into the definition of WireTree.
+Neither an opaque addressed facade nor a transport endpoint implies discovery.
+
+## Authority and evidence
+
+Paths designate; they do not authenticate or authorize. Establishment identity is
+runtime context. Service message fields cannot manufacture that context. Portable
+names, authorization, reference restoration and wire multiplexing require their
+own higher-level protocols.
+
+Independent cases cover bare/unknown messages, repeated admissions, exact byte
+paths and prefix cuts, structural noninterference, missing-versus-refused dispatch,
+ordering, detach, handler failures, limits and actual resource release. The same
+addressed cases must run over local pairs and WebSocket. Compilation alone is not
+runtime conformance; structural laws alone do not establish transport guarantees.

@@ -1,5 +1,11 @@
 # One generic envelope wire
 
+**Superseded in part, 5 October 2026:** [decision 0015](0015-addressless-wires-and-addressed-access.md)
+restores addressless sending, addressed access and endpoint ownership as distinct
+layers. This historical record remains evidence of the October change. Its RPC
+removal and clean replacement policy stand; its collapsed interface and mandatory
+envelope are not the current contract.
+
 **Decided, 4 October 2026.** The owner requested a clean replacement without
 historical profiles, compatibility exports or redundant wire adapters. This
 supersedes the active interface/protocol choices in 0001–0013. Published releases
