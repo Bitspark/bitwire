@@ -2,7 +2,7 @@
 
 Addressless Wire sends a ground ontos value. Endpoint adds receive ownership and
 closure. AddressedWire adds an exact byte-path argument; AddressedEndpoint carries
-that layer over one endpoint. WireTree is the complete deixis structure over Wire
+that layer over one endpoint. WireNode is the complete deixis structure over Wire
 values (a nominal interface in Java), not opaque route access.
 
 See the repository's docs/wire/contract.md and docs/wire/carriers.md. Version 0.5.0

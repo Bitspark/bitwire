@@ -11,7 +11,7 @@ The defining boundaries are:
 - **W2 — Addressed access.** AddressedWire adds a separate exact byte-path
   argument. Its representation is an ordinary value carried by W1. It must be
   realizable once above every conforming carrier.
-- **W3 — Complete structure.** WireTree is the complete DeixisNode of Wire own
+- **W3 — Complete structure.** WireNode is the complete DeixisNode of Wire own
   values. Opaque addressed access is not a tree or a discovery guarantee.
 - **W4 — Ownership.** Endpoint adds one receive owner and connection lifecycle.
   A send capability alone grants neither. Structural selection/reconstruction

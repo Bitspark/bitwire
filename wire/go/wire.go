@@ -31,7 +31,7 @@ type AddressedEndpoint interface {
 	Termination() Termination
 	Close() error
 }
-type WireTree = DeixisNode[Wire]
+type WireNode = DeixisNode[Wire]
 type Child[T any] struct {
 	Key  core.Atom
 	Node DeixisNode[T]

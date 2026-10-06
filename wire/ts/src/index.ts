@@ -22,7 +22,7 @@ export interface AddressedEndpoint extends AddressedWire {
   readonly closed: Promise<Termination>;
   close(): Promise<void>;
 }
-export type WireTree = DeixisNode<Wire>;
+export type WireNode = DeixisNode<Wire>;
 export type Children<T> = ReadonlyArray<readonly [Atom, DeixisNode<T>]>;
 export interface DeixisNode<T> {
   own(): T;

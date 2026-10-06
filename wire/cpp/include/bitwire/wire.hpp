@@ -55,6 +55,6 @@ public:
   virtual std::shared_ptr<DeixisNode<T>> at(const Path&) const = 0;
   virtual Parts<T> decompose() const = 0;
 };
-using WireTree = DeixisNode<std::shared_ptr<Wire>>;
+using WireNode = DeixisNode<std::shared_ptr<Wire>>;
 inline constexpr auto version = "0.5.0";
 }

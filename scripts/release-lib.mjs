@@ -82,7 +82,11 @@ export async function npmInstallReady(name, requiredVersion, readJSON = publicJS
 
 export function pack(directory) {
   mkdirSync(directory, { recursive: true });
-  const [artifact] = npmJSON(['pack', '--json', '--ignore-scripts', '--pack-destination', directory], { cwd: packageDir });
+  const packed = npmJSON(['pack', '--json', '--ignore-scripts', '--pack-destination', directory], { cwd: packageDir });
+  // npm 12 keys results by package name; Node's bundled npm returns an array.
+  const artifacts = Array.isArray(packed) ? packed : Object.values(packed);
+  if (artifacts.length !== 1) throw new Error('Expected one packed package.');
+  const [artifact] = artifacts;
   for (const path of ['package.json', 'dist/index.js', 'dist/index.d.ts', 'README.md', 'LICENSE', 'NOTICE']) {
     if (!artifact.files.some(file => file.path === path)) throw new Error(`npm package omits ${path}.`);
   }
@@ -104,7 +108,7 @@ export function checkNpmConsumer(directory, dependency) {
   if (actual.version !== version) throw new Error(`Consumer installed ${actual.version}, expected ${version}.`);
   writeJSON(join(directory, 'tsconfig.json'), { compilerOptions: { target: 'ES2022', module: 'NodeNext', strict: true, skipLibCheck: false, outDir: 'dist' }, include: ['index.ts'] });
   writeFileSync(join(directory, 'index.ts'), `import { atom, tuple, encodeMessage, decodeMessage, packAddressed, unpackAddressed } from '@bitspark/bitwire';
-import type { Wire, Endpoint, AddressedEndpoint, WireTree, Path } from '@bitspark/bitwire';
+import type { Wire, Endpoint, AddressedEndpoint, WireNode, Path } from '@bitspark/bitwire';
 import { Atom } from '@bitspark/bitwire/ontos';
 import { encodeText } from '@bitspark/bitwire/ontos-data';
 import { encode } from '@bitspark/bitwire/ontos-codec';
@@ -113,7 +117,7 @@ const message = tuple([encodeText('unknown')]);
 const framed = packAddressed(path, message);
 if (!(path[0] instanceof Atom)) throw new Error('duplicate value family');
 if (!unpackAddressed(decodeMessage(encodeMessage(framed))).message.equals(message)) throw new Error('message mismatch');
-function consume(wire: Wire, endpoint: Endpoint, addressed: AddressedEndpoint, tree: WireTree): void { const detach=endpoint.receive(()=>{}); detach(); void wire.send(message); void addressed.send(path,message); void endpoint.close(); void endpoint.closed; void tree.at([]); }
+function consume(wire: Wire, endpoint: Endpoint, addressed: AddressedEndpoint, tree: WireNode): void { const detach=endpoint.receive(()=>{}); detach(); void wire.send(message); void addressed.send(path,message); void endpoint.close(); void endpoint.closed; void tree.at([]); }
 void [consume, encode(message)];
 console.log('Installed generic wire and shared ontos value family loaded.');
 `);

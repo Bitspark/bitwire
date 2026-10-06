@@ -6,12 +6,12 @@ bitwire owns declarations, canonical message formats and independent conformance
 observations. bitruntime supplies implementations.
 
 ```typescript
-import type { Wire, Endpoint, AddressedWire, AddressedEndpoint, WireTree } from '@bitspark/bitwire';
+import type { Wire, Endpoint, AddressedWire, AddressedEndpoint, WireNode } from '@bitspark/bitwire';
 // Wire: send(Value).
 // Endpoint: Wire + receive(Value), closed, close().
 // AddressedWire: send(Path, Value).
 // AddressedEndpoint: addressed send/receive with the same endpoint lifetime.
-// WireTree: complete DeixisNode<Wire>, including own values and all children.
+// WireNode: complete DeixisNode<Wire>, including own values and all children.
 ```
 
 A message is any immutable ground ontos Value. Paths preserve exact bytes and

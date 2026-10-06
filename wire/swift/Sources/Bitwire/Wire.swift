@@ -33,4 +33,4 @@ public protocol DeixisNode<T> {
     func decompose() -> Parts<T>
 }
 
-public typealias WireTree = any DeixisNode<any Wire>
+public typealias WireNode = any DeixisNode<any Wire>

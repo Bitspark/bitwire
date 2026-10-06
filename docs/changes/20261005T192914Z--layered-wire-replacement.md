@@ -7,7 +7,7 @@ runtime changes, with independent message byte fixtures and expected observation
 
 The 0.5.0 candidate updates all eight native presentations. Wire sends a ground
 Value; Endpoint adds receive/close ownership; AddressedWire takes a separate path;
-AddressedEndpoint shares the underlying lifecycle; WireTree has complete deixis
+AddressedEndpoint shares the underlying lifecycle; WireNode has complete deixis
 structure. Raw and addressed formats replace the mandatory generic envelope.
 Service metadata moves to consumer protocols. The pinned ontos mirror is unchanged.
 

@@ -30,7 +30,7 @@ interface AddressedEndpoint extends AddressedWire {
   close(): Promise<void>;
 }
 interface Termination { readonly kind: 'closed' | 'failed'; readonly message?: string }
-type WireTree = DeixisNode<Wire>;
+type WireNode = DeixisNode<Wire>;
 ```
 
 Wire grants sending. Endpoint additionally grants ownership of receiving and
@@ -117,7 +117,7 @@ values and complete child subtrees. Shared acyclic subtrees are permitted;
 duplicate keys and cycles are not. Supplied foreign nodes must continue to obey
 these laws.
 
-For a WireTree, derived addressed sending selects first, then invokes the chosen
+For a WireNode, derived addressed sending selects first, then invokes the chosen
 Wire once. Missing selection rejects with the runtime's distinct missing-path
 error and invokes nothing. Refusal by a present Wire propagates as its own failure.
 Selection and reconstruction do not bind, invoke, clone or close any capability.
@@ -127,7 +127,7 @@ Effectful comparisons use corresponding initial states and operation schedules.
 A receiver handler tree is another legal DeixisNode instance. Its dispatch helper
 returns false only for structural absence and otherwise calls the selected handler
 once. A handler presented through Wire.send realizes a local sending capability;
-a tree of those Wire values is a WireTree. A bare native function tree remains
+a tree of those Wire values is a WireNode. A bare native function tree remains
 its own generic instantiation; language declarations need no implicit conversion.
 Neither an opaque addressed facade nor a transport endpoint implies discovery.
 

@@ -41,4 +41,4 @@ pub trait DeixisNode<T>: Send + Sync {
     fn at(&self, path: &[Atom]) -> Option<Arc<dyn DeixisNode<T>>>;
     fn decompose(&self) -> Parts<T>;
 }
-pub type WireTree = dyn DeixisNode<Arc<dyn Wire>>;
+pub type WireNode = dyn DeixisNode<Arc<dyn Wire>>;

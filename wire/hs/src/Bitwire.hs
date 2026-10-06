@@ -1,6 +1,6 @@
 module Bitwire
   ( Value(..), Path, Termination(..), Wire(..), Endpoint(..), AddressedWire(..)
-  , AddressedEndpoint(..), WireTree, DeixisNode(..), Parts(..) ) where
+  , AddressedEndpoint(..), WireNode, DeixisNode(..), Parts(..) ) where
 import Data.ByteString (ByteString)
 data Value = Atom ByteString | Tuple [Value] deriving (Eq, Show)
 type Path = [ByteString]
@@ -17,4 +17,4 @@ data DeixisNode a = DeixisNode
   { own :: a, children :: [(ByteString, DeixisNode a)]
   , at :: Path -> Maybe (DeixisNode a), decompose :: Parts a }
 data Parts a = Parts { partOwn :: a, partChildren :: [(ByteString, DeixisNode a)] }
-type WireTree = DeixisNode Wire
+type WireNode = DeixisNode Wire
