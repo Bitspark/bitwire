@@ -1,10 +1,12 @@
-# Independent contract observations
+# Conformance
 
-The envelope-vectors.json bytes are calculated from the published grammar by
-an independent Python LEB128 encoder. Test JSON is authoring notation, not the
-wire encoding. contract.test.mjs checks them and the pinned ontos vectors against
-the packaged TypeScript presentation. Go replays the same envelope observations.
-The packaged /conformance cases accept a consumer-supplied local-pair factory
-and exercise delivery/ownership/termination without depending on bitruntime.
-These cases are expectations, not a reference runtime. Native declarations and
-published installation are different claims from behavioral conformance.
+message-vectors.json contains hand-derived raw and addressed bytes from the
+written grammar, established before the replacement code. Go and TypeScript
+replay the same independent cases. Pinned upstream ontos vectors additionally
+check value identity and encoding without changing their judgments.
+
+The packaged checkWirePair observes consumer-supplied raw endpoints: arbitrary
+values, repeated admissions, ownership, detached order, duplex closure, failure
+and bounds. Runtime tests must additionally exercise the addressed layer and
+complete tree laws on local and WebSocket carriers. Native package compilation
+checks interface availability, not endpoint behavior or independent derivation.

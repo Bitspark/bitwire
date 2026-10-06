@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bitspark-bitwire"
-version = "0.4.0"
-description = "Generic duplex envelope wire with byte paths and ontos values"
+version = "0.5.0"
+description = "Addressless wires and addressed access over ontos values"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"

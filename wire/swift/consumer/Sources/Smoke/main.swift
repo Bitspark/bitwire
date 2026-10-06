@@ -1,4 +1,6 @@
 import Bitwire
-let e = Envelope(source: [], destination: [Atom([255])], id: Atom(), payload: .tuple([]))
-precondition(e.destination != e.source)
+let path: Path = [Atom([255])]
+let message: Value = .atom(Atom())
+precondition(path != [])
+precondition(message != .tuple([]))
 print(BitwireMetadata.version)

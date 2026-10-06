@@ -8,7 +8,7 @@ function scan(path) {
   else if(/\.(?:ts|go|rs|py|java|swift|hpp|hs)$/.test(p)) {
    const s=readFileSync(p,'utf8');
    assert.doesNotMatch(s, /(?:from|import|require).*['"](?:@bitspark\/(?:bitruntime|nightseam)|github\.com\/Bitspark\/(?:bitruntime|nightseam))/);
-   assert.doesNotMatch(s, /\b(?:AddressedWire|ProfileFrame|ReturnAddress|ProfileKind|WireTree)\b/);
+   assert.doesNotMatch(s, /\b(?:ProfileFrame|ReturnAddress|ProfileKind)\b/);
   }
  }
 }

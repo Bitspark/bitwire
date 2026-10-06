@@ -21,13 +21,26 @@ public:
   bool operator==(const Value&) const = default;
 };
 using Path = std::vector<Atom>;
-struct Envelope { Path source; Path destination; Atom id; std::optional<Atom> correlation; Value payload; };
 struct Termination { enum class Kind { closed, failed }; Kind kind; std::string message; };
 class Wire {
 public:
   virtual ~Wire() = default;
-  virtual std::future<void> send(Envelope envelope) = 0;
-  virtual std::function<void()> receive(std::function<void(Envelope)> handler) = 0;
+  virtual std::future<void> send(Value message) = 0;
+};
+class Endpoint : public Wire {
+public:
+  virtual std::function<void()> receive(std::function<void(Value)> handler) = 0;
+  virtual std::shared_future<Termination> closed() const = 0;
+  virtual std::future<void> close() = 0;
+};
+class AddressedWire {
+public:
+  virtual ~AddressedWire() = default;
+  virtual std::future<void> send(Path path, Value message) = 0;
+};
+class AddressedEndpoint : public AddressedWire {
+public:
+  virtual std::function<void()> receive(std::function<void(Path, Value)> handler) = 0;
   virtual std::shared_future<Termination> closed() const = 0;
   virtual std::future<void> close() = 0;
 };
@@ -42,5 +55,6 @@ public:
   virtual std::shared_ptr<DeixisNode<T>> at(const Path&) const = 0;
   virtual Parts<T> decompose() const = 0;
 };
-inline constexpr auto version = "0.4.0";
+using WireNode = DeixisNode<std::shared_ptr<Wire>>;
+inline constexpr auto version = "0.5.0";
 }

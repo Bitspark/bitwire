@@ -82,7 +82,11 @@ export async function npmInstallReady(name, requiredVersion, readJSON = publicJS
 
 export function pack(directory) {
   mkdirSync(directory, { recursive: true });
-  const [artifact] = npmJSON(['pack', '--json', '--ignore-scripts', '--pack-destination', directory], { cwd: packageDir });
+  const packed = npmJSON(['pack', '--json', '--ignore-scripts', '--pack-destination', directory], { cwd: packageDir });
+  // npm 12 keys results by package name; Node's bundled npm returns an array.
+  const artifacts = Array.isArray(packed) ? packed : Object.values(packed);
+  if (artifacts.length !== 1) throw new Error('Expected one packed package.');
+  const [artifact] = artifacts;
   for (const path of ['package.json', 'dist/index.js', 'dist/index.d.ts', 'README.md', 'LICENSE', 'NOTICE']) {
     if (!artifact.files.some(file => file.path === path)) throw new Error(`npm package omits ${path}.`);
   }
@@ -103,17 +107,18 @@ export function checkNpmConsumer(directory, dependency) {
   const actual = JSON.parse(readFileSync(join(installed, 'package.json'), 'utf8'));
   if (actual.version !== version) throw new Error(`Consumer installed ${actual.version}, expected ${version}.`);
   writeJSON(join(directory, 'tsconfig.json'), { compilerOptions: { target: 'ES2022', module: 'NodeNext', strict: true, skipLibCheck: false, outDir: 'dist' }, include: ['index.ts'] });
-  writeFileSync(join(directory, 'index.ts'), `import { atom, tuple, encodeEnvelope, decodeEnvelope } from '@bitspark/bitwire';
-import type { Wire, Envelope, Path, DeixisNode } from '@bitspark/bitwire';
+  writeFileSync(join(directory, 'index.ts'), `import { atom, tuple, encodeMessage, decodeMessage, packAddressed, unpackAddressed } from '@bitspark/bitwire';
+import type { Wire, Endpoint, AddressedEndpoint, WireNode, Path } from '@bitspark/bitwire';
 import { Atom } from '@bitspark/bitwire/ontos';
 import { encodeText } from '@bitspark/bitwire/ontos-data';
 import { encode } from '@bitspark/bitwire/ontos-codec';
 const path: Path = [atom([0,255])];
-const e: Envelope = { source: [], destination: path, id: atom([]), correlation: atom([]), payload: tuple([encodeText('unknown')]) };
+const message = tuple([encodeText('unknown')]);
+const framed = packAddressed(path, message);
 if (!(path[0] instanceof Atom)) throw new Error('duplicate value family');
-if (!decodeEnvelope(encodeEnvelope(e)).payload.equals(e.payload)) throw new Error('envelope mismatch');
-function consume(wire: Wire, tree: DeixisNode<Wire>): void { const detach=wire.receive(()=>{}); detach(); void wire.send(e); void wire.close(); void wire.closed; void tree.at([]); }
-void [consume, encode(e.payload)];
+if (!unpackAddressed(decodeMessage(encodeMessage(framed))).message.equals(message)) throw new Error('message mismatch');
+function consume(wire: Wire, endpoint: Endpoint, addressed: AddressedEndpoint, tree: WireNode): void { const detach=endpoint.receive(()=>{}); detach(); void wire.send(message); void addressed.send(path,message); void endpoint.close(); void endpoint.closed; void tree.at([]); }
+void [consume, encode(message)];
 console.log('Installed generic wire and shared ontos value family loaded.');
 `);
   run(process.execPath, [join(directory, 'node_modules/typescript/bin/tsc'), '-p', join(directory, 'tsconfig.json')], { cwd: directory });
@@ -131,9 +136,9 @@ import (
   core "github.com/Bitspark/bitwire/ontos/go/core"
 )
 func main() {
-  e:=wire.Envelope{Source:wire.Path{},Destination:wire.Path{core.NewAtom([]byte{0,255})},ID:core.NewAtom(nil),Payload:core.NewTuple()}
-  b,err:=wire.EncodeEnvelope(e,wire.DefaultMaxEnvelopeBytes);if err!=nil {panic(err)}
-  d,err:=wire.DecodeEnvelope(b,wire.DefaultMaxEnvelopeBytes);if err!=nil || !d.Payload.Equal(e.Payload) {panic("mismatch")}
+  message:=core.NewTuple(); e,err:=wire.PackAddressed(wire.Path{core.NewAtom([]byte{0,255})},message);if err!=nil {panic(err)}
+  b,err:=wire.EncodeMessage(e,wire.DefaultMaxMessageBytes);if err!=nil {panic(err)}
+  d,err:=wire.DecodeMessage(b,wire.DefaultMaxMessageBytes);if err!=nil || !d.Equal(e) {panic("mismatch")}
   var access wire.Wire;var tree wire.DeixisNode[wire.Wire];_ = access;_ = tree
   fmt.Println("Installed generic Go wire and shared ontos values loaded.")
 }

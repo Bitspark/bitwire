@@ -1,20 +1,18 @@
-use bitwire::{Atom, Envelope, Value};
+use bitwire::{Atom, Completion, Value, Wire};
+struct SendOnly;
+impl Wire for SendOnly {
+    fn send(&self, _message: Value) -> Completion<'_, Result<(), String>> {
+        Box::pin(async { Ok(()) })
+    }
+}
 #[test]
-fn byte_paths_and_unknown_values() {
+fn addressless_sender_and_exact_paths() {
     let self_path: Vec<Atom> = vec![];
-    let empty_child = vec![Atom::new(Vec::new())];
-    assert_ne!(self_path, empty_child);
+    assert_ne!(self_path, vec![Atom::new(Vec::new())]);
     assert_ne!(
         vec![Atom::new(b"a/b".to_vec())],
         vec![Atom::new(b"a".to_vec()), Atom::new(b"b".to_vec())]
     );
-    let e = Envelope {
-        source: self_path,
-        destination: empty_child,
-        id: Atom::new(vec![255]),
-        correlation: Some(Atom::new(Vec::new())),
-        payload: Value::tuple([Value::atom(vec![0, 255])]),
-    };
-    assert_ne!(e.correlation, None);
-    assert_eq!(e.clone(), e);
+    let sender: &dyn Wire = &SendOnly;
+    drop(sender.send(Value::atom(vec![0, 255])));
 }

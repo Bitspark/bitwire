@@ -1,16 +1,6 @@
-use bitwire::{Envelope, Path, Value};
+use bitwire::{Atom, Path, Value};
 fn main() {
-    let path: Path = vec![empty_atom()];
-    let e = Envelope {
-        source: vec![],
-        destination: path,
-        id: empty_atom(),
-        correlation: None,
-        payload: Value::tuple([]),
-    };
-    assert_ne!(e.source, e.destination);
-    assert!(e.payload.is_tuple());
-}
-fn empty_atom() -> bitwire::Atom {
-    bitwire::Atom::new(Vec::new())
+    let path: Path = vec![Atom::new(Vec::new())];
+    assert_ne!(path, Vec::<Atom>::new());
+    assert_ne!(Value::atom(Vec::new()), Value::tuple([]));
 }

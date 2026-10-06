@@ -1,7 +1,10 @@
-# swift envelope wire presentation
+# swift wire presentation
 
-One generic duplex Wire with byte paths, opaque ground ontos values and explicit
-admission/receive/termination laws. No RPC profile or legacy aliases. Runtime
-implementations belong to bitruntime. See the repository contract and current
-carrier format. Version 0.4.0 is a deliberate breaking replacement; compilation,
-package installation and endpoint conformance are separately reported.
+Addressless Wire sends a ground ontos value. Endpoint adds receive ownership and
+closure. AddressedWire adds an exact byte-path argument; AddressedEndpoint carries
+that layer over one endpoint. WireNode is the complete deixis structure over Wire
+values (a nominal interface in Java), not opaque route access.
+
+See the repository's docs/wire/contract.md and docs/wire/carriers.md. Version 0.5.0
+is a clean breaking replacement; compilation and packaged consumers check the
+native surface, while bitruntime supplies independently tested implementations.

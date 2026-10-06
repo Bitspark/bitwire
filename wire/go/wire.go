@@ -1,16 +1,9 @@
-// Package wire declares the generic envelope wire. Implementations live in bitruntime.
+// Package wire declares addressless interaction and addressed access.
 package wire
 
 import core "github.com/Bitspark/bitwire/ontos/go/core"
 
 type Path []core.Atom
-type Envelope struct {
-	Source      Path
-	Destination Path
-	ID          core.Atom
-	Correlation *core.Atom
-	Payload     core.Value
-}
 type Termination struct {
 	Kind    string
 	Message string
@@ -19,12 +12,26 @@ type Termination struct {
 // Closed broadcasts resource release. Termination is stable after Closed closes.
 // Send returns local admission only. Receive has one detachable owner.
 type Wire interface {
-	Send(Envelope) error
-	Receive(func(Envelope)) (func(), error)
+	Send(core.Value) error
+}
+type Endpoint interface {
+	Wire
+	Receive(func(core.Value)) (func(), error)
 	Closed() <-chan struct{}
 	Termination() Termination
 	Close() error
 }
+type AddressedWire interface {
+	Send(Path, core.Value) error
+}
+type AddressedEndpoint interface {
+	AddressedWire
+	Receive(func(Path, core.Value)) (func(), error)
+	Closed() <-chan struct{}
+	Termination() Termination
+	Close() error
+}
+type WireNode = DeixisNode[Wire]
 type Child[T any] struct {
 	Key  core.Atom
 	Node DeixisNode[T]
