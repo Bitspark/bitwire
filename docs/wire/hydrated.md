@@ -237,6 +237,16 @@ does not certify that. Protocol validation and failure remain required. These
 examples assume an explicitly supplied communication scope is already captured
 by the adapter; they do not introduce an implicit global registry or lifetime.
 
+The captured environment must also identify who owns each materialized local
+wire and when its service lifetime ends. If the chosen profile requires an
+owned endpoint, `toWire` returns that endpoint's sending face and its owner
+retains the close responsibility. Receiving the face grants no close authority.
+The domain convention determines the service's end event; shared runtime
+machinery performs the resulting reference cleanup. Repeated `toWire` calls
+must not silently create unbounded retained endpoints. The signatures below
+omit this ownership plumbing, so the equations alone are not a complete
+resource-lifetime design.
+
 ### Cell example
 
 Cell both returns and accepts its parameter. Its lifting converts on each call:
