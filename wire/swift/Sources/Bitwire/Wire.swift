@@ -34,3 +34,19 @@ public protocol DeixisNode<T> {
 }
 
 public typealias WireNode = any DeixisNode<any Wire>
+
+// Runtime construction/recognition enforces canonical ground tuples and send-only leaves.
+public typealias ReceivedContext = any Sendable
+public indirect enum HydratedValue: Sendable {
+    case ground(Value)
+    case tuple(any HydratedTuple)
+    case wire(any HydratedWire)
+}
+public protocol HydratedTuple: Sendable { func items() -> [HydratedValue] }
+public protocol HydratedWire: Sendable { func send(_ message: HydratedValue) async throws }
+public protocol HydratedEndpoint: HydratedWire {
+    var wire: any HydratedWire { get }
+    func receive(_ handler: @escaping @Sendable (HydratedValue, ReceivedContext) -> Void) throws -> @Sendable () -> Void
+    func closed() async -> Termination
+    func close() async
+}

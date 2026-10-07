@@ -30,6 +30,9 @@ equally and is not amended by a bitwire implementation choice.
 The [composition architecture](docs/wire/composition.md) applies W1-W6 to future
 distributed routing, multiplexing and live-wire export. It is a target and a set
 of implementation obligations, not a claim that those protocols already exist.
+The [hydrated native contracts](docs/wire/hydrated-native.md) and accepted
+[decision 0019](docs/decisions/0019-hydrated-wire-protocol.md) now define the
+recursive live-value boundary above W1 without changing its ground domain.
 Their live realizations belong in bitruntime; executable topology policy and
 durable service allocations remain with their consumers.
 

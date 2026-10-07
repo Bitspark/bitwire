@@ -12,3 +12,15 @@ async def consume(endpoint: Endpoint, addressed: AddressedEndpoint) -> None:
     await addressed.closed()
     await endpoint.close()
     await endpoint.closed()
+
+from bitwire import HydratedWire, HydratedEndpoint, HydratedValue, ReceivedContext
+async def hydrated_surface(owner: HydratedEndpoint, sender: HydratedWire) -> None:
+    value: HydratedValue = Tuple((Atom(),))
+    def receiver(message: HydratedValue, context: ReceivedContext) -> None:
+        pass
+    detach = owner.receive(receiver)
+    await sender.send(value)
+    await sender.send(owner.wire)
+    detach()
+    await owner.close()
+    await owner.closed()

@@ -1,17 +1,14 @@
-# Hydrated wire proposal
+# Hydrated wire composition
 
-**Status: proposal, 7 October 2026.** This proposes a shared messaging layer in
-which messages can contain live wires. bitwire would define its value domain,
-interfaces, ground representation and behavioral laws; bitruntime would implement
-hydration, export registries and proxies; bitnode would assemble those mechanisms
-within its routing network. Domain adapters would use the hydrated interface.
+**Protocol accepted, 7 October 2026.** This layer lets messages contain live
+wires. bitwire owns the [native contracts](hydrated-native.md), ground format and
+independent cases; bitruntime implements stateful hydration and proxies; bitnode
+assembles the mechanisms in its routing network. Domain adapters interpret
+messages at the hydrated boundary.
 
-The current releases, bitwire 0.5.0 and bitruntime 0.6.0, provide the ground-value
-substrate. The interfaces and encoding below are proposed additions, not released
-APIs or a completed transport protocol. The reference and lifetime choices in
-[Protocol decisions](#protocol-decisions) must be settled before implementation;
-[decision 0019](../decisions/0019-hydrated-wire-protocol.md), accepted 7 October
-2026, decides them for a first edition within one namespace.
+[Decision 0019](../decisions/0019-hydrated-wire-protocol.md) settles the first
+edition within one namespace. The public declarations extend the contract;
+package release and runtime qualification remain separate delivery evidence.
 
 ## Purpose
 
@@ -96,11 +93,11 @@ for live capabilities, imported proxies or whole hydrated values containing them
 is implied. Repeated references to the same export must preserve its target and
 authority, but imports need not have the same language-level object identity.
 
-## Proposed TypeScript surface
+## TypeScript surface
 
-These declarations use bitwire's existing Atom and Termination types. The names
-are proposed; a release must provide corresponding declarations and observations
-across the supported language presentations.
+These declarations use bitwire's existing Atom and Termination types. The
+[native contract](hydrated-native.md) records every presentation. Tuple
+construction and capability recognition are supplied by the runtime.
 
 ```typescript
 export type HydratedValue = Atom | HydratedTuple | HydratedWire;
@@ -112,15 +109,13 @@ export interface HydratedTuple {
   at(index: number): HydratedValue | undefined;
 }
 
-export declare function hydratedTuple(
-  items: readonly HydratedValue[],
-): HydratedTuple;
-
 export interface HydratedWire {
+  readonly kind: "wire";
   send(message: HydratedValue): Promise<void>;
 }
 
 export interface HydratedEndpoint extends HydratedWire {
+  readonly wire: HydratedWire;
   receive(
     handler: (message: HydratedValue, context: ReceivedContext) => void,
   ): () => void;
@@ -454,8 +449,9 @@ references also need valid bindings along the return path. Releasing or losing a
 an explicit result; automatic reconnection, durable restoration and replay are
 outside this initial target.
 
-Hydrated send success means local admission. Rejection before admission must
-leave no orphaned provisional exports from that attempt. Failure after admission
+Hydrated send success means local admission. Whole-value validation and export registration are atomic before lower admission.
+A lower admission rejection may leave committed exports bounded by their owner
+lifetime, as decision 0019 specifies. Failure after admission
 can leave delivery or application outcome unknown. No new guarantee of remote
 existence, successful target admission or application completion follows from
 resolving the local send promise.
@@ -472,8 +468,8 @@ Forwarding must also specify its observation boundary and progress assumptions.
 Each decision below needs a concrete rule and independent expected observations
 before the dependent implementation begins.
 [Decision 0019](../decisions/0019-hydrated-wire-protocol.md) decides one for each
-row, with [independent vectors](../../conformance/hydrated-vectors.json). They are unresolved protocol work,
-not choices to delegate to individual domain adapters.
+row, with [independent vectors](../../conformance/hydrated-vectors.json). These are shared protocol rules,
+not choices delegated to individual domain adapters.
 
 | Decision | Required definition |
 | --- | --- |
@@ -502,9 +498,9 @@ settle those service semantics or prove end-to-end relay liveness.
 | W5 Honest outcomes | Local admission, remote absence or refusal, termination and application results remain distinct. |
 | W6 Independent meaning | Fixed vectors and behavioral counterexamples precede runtime implementation; a passing build alone cannot establish the new laws. |
 
-Adoption requires an explicit contract extension covering the hydrated boundary
-and its bindings. This proposal does not amend the [released contract](contract.md)
-or turn the [composition target](composition.md) into an implemented protocol.
+The [native contract extension](hydrated-native.md) covers the hydrated boundary
+and its bindings. A declaration does not turn the [composition target](composition.md)
+into a running or released implementation.
 
 ## Acceptance observations
 
@@ -523,8 +519,8 @@ chosen data and expected observations:
    that A can use. Exercise each dependency's loss and declared release behavior.
 6. Forged, wrong-scope, expired and stale-generation references never invoke an
    unintended target. Reference-looking application data is not treated as authority.
-7. Refused message admission cleans up only that attempt's provisional exports;
-   admitted messages retain the required dependencies until the declared release.
+7. Whole-value validation failure commits no staged exports. Lower admission
+   refusal preserves only bounded owner-held exports, reclaimed when the owner closes.
 8. Closure and release do not close borrowed targets or unrelated logical scopes.
    Send/release races, detached receiving and connection replacement obey the contract.
 9. Data/control traffic, nested occurrences, exports and proxies respect aggregate
@@ -556,12 +552,9 @@ carry a usable reply wire back, while transit nodes leave application contents
 opaque. Reusable mechanisms remain in bitruntime; bitnode's topology and
 membership choices remain with bitnode.
 
-system2 is a candidate first domain consumer. Its current service adapters map
-typed calls to ground messages with explicit source paths, IDs and correlation.
-A migration would move capability transport beneath those adapters and define
-their hydrated service convention. Correlation, errors, streaming and completion
-must remain specified where required; hydration does not automatically remove
-them. Preserve the domain observations and storage bytes, and compare direct,
-local-pair and network execution before replacing the active service projection.
-Remove superseded executable projections at the declared cut rather than retaining
-compatibility decoders or parallel protocol versions.
+The new content, cubes, pointers and drafts service repositories are domain
+consumers. Their service-owned adapters map programmatic APIs to/from hydrated
+wires and consume the published shared machinery. The system2 experiment remains
+behavioral reference, not an implementation or compatibility dependency. Domain
+correlation, errors, streaming and completion remain specified where needed;
+hydration does not decide them. Compare direct, local and network observations.
