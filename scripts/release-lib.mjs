@@ -107,7 +107,11 @@ export function checkNpmConsumer(directory, dependency) {
   const actual = JSON.parse(readFileSync(join(installed, 'package.json'), 'utf8'));
   if (actual.version !== version) throw new Error(`Consumer installed ${actual.version}, expected ${version}.`);
   writeJSON(join(directory, 'tsconfig.json'), { compilerOptions: { target: 'ES2022', module: 'NodeNext', strict: true, skipLibCheck: false, outDir: 'dist' }, include: ['index.ts'] });
-  writeFileSync(join(directory, 'index.ts'), `import { atom, tuple, encodeMessage, decodeMessage, packAddressed, unpackAddressed } from '@bitspark/bitwire';
+  writeFileSync(join(directory, 'index.ts'), `import { atom, tuple, encodeMessage, decodeMessage, packAddressed, unpackAddressed,
+  HydratedDataAtom, HydratedDataTuple, HydratedReference, packHydratedBody, unpackHydratedBody,
+  packHydratedFrame, unpackHydratedFrame, packHydratedReference, unpackHydratedReference,
+  hydratedDataFromGround, hydratedDataToGround } from '@bitspark/bitwire';
+import type { HydratedData, HydratedCodecLimits, HydratedFrame } from '@bitspark/bitwire';
 import type { Wire, Endpoint, AddressedEndpoint, WireNode, Path } from '@bitspark/bitwire';
 import { Atom } from '@bitspark/bitwire/ontos';
 import { encodeText } from '@bitspark/bitwire/ontos-data';
@@ -117,6 +121,15 @@ const message = tuple([encodeText('unknown')]);
 const framed = packAddressed(path, message);
 if (!(path[0] instanceof Atom)) throw new Error('duplicate value family');
 if (!unpackAddressed(decodeMessage(encodeMessage(framed))).message.equals(message)) throw new Error('message mismatch');
+const limits: HydratedCodecLimits = { nodes: 20, depth: 8, bytes: 1024 };
+const ref = new HydratedReference(path, atom(new Uint8Array(16)), atom(new Uint8Array(16)));
+const hydrated: HydratedData = new HydratedDataTuple([new HydratedDataAtom(atom([1])), ref]);
+const target: HydratedFrame = { scope: ref.scope, id: ref.id, body: hydrated };
+const returned = unpackHydratedFrame(decodeMessage(encodeMessage(packHydratedFrame(target, limits))), limits);
+if (!(returned.body instanceof HydratedDataTuple) || !(returned.body.at(1) instanceof HydratedReference)) throw new Error('hydrated frame mismatch');
+if (!(unpackHydratedBody(packHydratedBody(ref, limits), limits) instanceof HydratedReference)) throw new Error('hydrated body mismatch');
+if (!unpackHydratedReference(packHydratedReference(ref, limits), limits).id.equals(ref.id)) throw new Error('reference mismatch');
+if (!hydratedDataToGround(hydratedDataFromGround(message, limits), limits).equals(message)) throw new Error('ground conversion mismatch');
 function consume(wire: Wire, endpoint: Endpoint, addressed: AddressedEndpoint, tree: WireNode): void { const detach=endpoint.receive(()=>{}); detach(); void wire.send(message); void addressed.send(path,message); void endpoint.close(); void endpoint.closed; void tree.at([]); }
 void [consume, encode(message)];
 console.log('Installed generic wire and shared ontos value family loaded.');
@@ -140,6 +153,18 @@ func main() {
   b,err:=wire.EncodeMessage(e,wire.DefaultMaxMessageBytes);if err!=nil {panic(err)}
   d,err:=wire.DecodeMessage(b,wire.DefaultMaxMessageBytes);if err!=nil || !d.Equal(e) {panic("mismatch")}
   var access wire.Wire;var tree wire.DeixisNode[wire.Wire];_ = access;_ = tree
+  limits:=wire.HydratedCodecLimits{Nodes:20,Depth:8,Bytes:1024}
+  token:=core.NewAtom(make([]byte,16));ref,err:=wire.NewHydratedReference(wire.Path{core.NewAtom([]byte{0,255})},token,token);if err!=nil {panic(err)}
+  body,err:=wire.NewHydratedDataTuple(wire.NewHydratedDataAtom(core.NewAtom([]byte{1})),ref);if err!=nil {panic(err)}
+  packed,err:=wire.PackHydratedFrame(wire.HydratedFrame{Scope:token,ID:token,Body:body},limits);if err!=nil {panic(err)}
+  decoded,err:=wire.UnpackHydratedFrame(packed,limits);if err!=nil {panic(err)}
+  if _,ok:=decoded.Body.(wire.HydratedDataTuple).At(1).(wire.HydratedReference);!ok {panic("hydrated frame mismatch")}
+  bodyValue,err:=wire.PackHydratedBody(ref,limits);if err!=nil {panic(err)}
+  if _,err=wire.UnpackHydratedBody(bodyValue,limits);err!=nil {panic(err)}
+  reference,err:=wire.PackHydratedReference(ref,limits);if err!=nil {panic(err)}
+  if _,err=wire.UnpackHydratedReference(reference,limits);err!=nil {panic(err)}
+  ground,err:=wire.HydratedDataFromGround(message,limits);if err!=nil {panic(err)}
+  plain,err:=wire.HydratedDataToGround(ground,limits);if err!=nil || !plain.Equal(message) {panic("ground conversion mismatch")}
   fmt.Println("Installed generic Go wire and shared ontos values loaded.")
 }
 `);
