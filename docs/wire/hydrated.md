@@ -10,8 +10,8 @@ The current releases, bitwire 0.5.0 and bitruntime 0.6.0, provide the ground-val
 substrate. The interfaces and encoding below are proposed additions, not released
 APIs or a completed transport protocol. The reference and lifetime choices in
 [Protocol decisions](#protocol-decisions) must be settled before implementation;
-[decision 0019](../decisions/0019-hydrated-wire-protocol.md) proposes them for a
-first edition within one namespace.
+[decision 0019](../decisions/0019-hydrated-wire-protocol.md), accepted 7 October
+2026, decides them for a first edition within one namespace.
 
 ## Purpose
 
@@ -471,7 +471,7 @@ Forwarding must also specify its observation boundary and progress assumptions.
 
 Each decision below needs a concrete rule and independent expected observations
 before the dependent implementation begins.
-[Decision 0019](../decisions/0019-hydrated-wire-protocol.md) proposes one for each
+[Decision 0019](../decisions/0019-hydrated-wire-protocol.md) decides one for each
 row, with [independent vectors](../../conformance/hydrated-vectors.json). They are unresolved protocol work,
 not choices to delegate to individual domain adapters.
 
