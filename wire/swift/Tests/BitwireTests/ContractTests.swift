@@ -7,3 +7,14 @@ final class ContractTests: XCTestCase {
         XCTAssertNotEqual(Value.tuple([.atom(Atom([255]))]), Value.atom(Atom()))
     }
 }
+
+private struct LiveSender: HydratedWire {
+    func send(_ message: HydratedValue) async throws {}
+}
+extension ContractTests {
+    func testHydratedRecursiveInterface() async throws {
+        let sender: any HydratedWire = LiveSender()
+        try await sender.send(.ground(.tuple([.atom(Atom([0, 255]))])))
+        try await sender.send(.wire(sender))
+    }
+}

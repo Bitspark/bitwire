@@ -16,3 +16,17 @@ fn addressless_sender_and_exact_paths() {
     let sender: &dyn Wire = &SendOnly;
     drop(sender.send(Value::atom(vec![0, 255])));
 }
+
+#[test]
+fn hydrated_native_surface_is_recursive() {
+    use bitwire::{HydratedValue, HydratedWire};
+    struct Live;
+    impl HydratedWire for Live {
+        fn send(&self, _message: HydratedValue) -> Completion<'_, Result<(), String>> {
+            Box::pin(async { Ok(()) })
+        }
+    }
+    let wire: std::sync::Arc<dyn HydratedWire> = std::sync::Arc::new(Live);
+    drop(wire.send(HydratedValue::Wire(wire.clone())));
+    drop(wire.send(HydratedValue::Ground(Value::tuple(vec![]))));
+}

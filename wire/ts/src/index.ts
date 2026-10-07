@@ -30,3 +30,4 @@ export interface DeixisNode<T> {
   at(path: Path): DeixisNode<T> | undefined;
   decompose(): Readonly<{ own: T; children: Children<T> }>;
 }
+export type { HydratedValue, HydratedTuple, HydratedWire, HydratedEndpoint, ReceivedContext } from './hydrated.js';
