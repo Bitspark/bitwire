@@ -248,7 +248,7 @@ policy determine authority. Services still check permission for their operations
 | --- | --- | --- |
 | Raw/local/WebSocket endpoints and addressed facade | Implemented in bitruntime 0.6.0 against bitwire 0.5.0. | Preserve their observations across additions. |
 | Complete local trees and exact derived sending | Implemented; no remote discovery implied. | Keep mount execution separate. |
-| Distributed routing/mounts | Direction and obligations only. | Specify binding, roots, reply mapping, failure and ownership, then implement reusable routing. |
+| Distributed routing/mounts | [Tree routing](routing.md), one absolute namespace, proposed by [decision 0017](../decisions/0017-tree-routing.md) with independent cases. No implementation. | Review the record, then implement reusable routing in bitruntime against its vectors. Suffix delegation remains unspecified. |
 | Multiplexing | Direction and requirements only. | Specify establishment, framing, lifecycle and budgets, then implement logical endpoints. |
 | Export/import of existing wires | Direction and requirements only. | Specify scoped references, forwarding, authority and release, then implement proxies/registry. |
 | Multiplexer at an addressed destination | Composition requirement only. | Define the bidirectional addressed binding. |
