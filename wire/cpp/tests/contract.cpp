@@ -6,6 +6,9 @@ int main() {
   assert(Path{} != Path{Atom{}});
   assert((Path{Atom{'a','/','b'}} != Path{Atom{'a'},Atom{'b'}}));
   Value a(Atom{}), t(std::vector<Value>{}); assert(a != t);
+  static_assert(std::is_base_of_v<HydratedWire,HydratedEndpoint>);
+  static_assert(!std::is_base_of_v<Wire,HydratedWire>);
+  HydratedValue ground(a); assert(ground.is_ground()); assert(ground.ground() == a);
   static_assert(std::is_base_of_v<Wire,Endpoint>);
   static_assert(std::is_base_of_v<AddressedWire,AddressedEndpoint>);
 }

@@ -143,3 +143,13 @@ paths and prefix cuts, structural noninterference, missing-versus-refused dispat
 ordering, detach, handler failures, limits and actual resource release. The same
 addressed cases must run over local pairs and WebSocket. Compilation alone is not
 runtime conformance; structural laws alone do not establish transport guarantees.
+
+## Hydrated interaction
+
+[Decision 0019](../decisions/0019-hydrated-wire-protocol.md) adds the recursive
+live-value boundary above this ground contract. The [native declarations and
+laws](hydrated-native.md) define HydratedValue, HydratedWire, HydratedEndpoint and
+received context in all eight presentations. Ground Wire and carriers retain
+only ground values; hydration and addressed transport compose above them.
+Endpoint ownership, admission and termination laws apply equally to this layer.
+The interface declaration alone does not implement registries, proxies or routing.

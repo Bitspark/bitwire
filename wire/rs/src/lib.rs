@@ -42,3 +42,29 @@ pub trait DeixisNode<T>: Send + Sync {
     fn decompose(&self) -> Parts<T>;
 }
 pub type WireNode = dyn DeixisNode<Arc<dyn Wire>>;
+
+/// Arrival context established by the composition, outside the message.
+pub type ReceivedContext = Arc<dyn std::any::Any + Send + Sync>;
+/// The ground case embeds Ontos unchanged. Runtime construction canonicalizes
+/// wholly ground tuples; runtime recognition validates live leaves.
+#[derive(Clone)]
+pub enum HydratedValue {
+    Ground(Value),
+    Tuple(Arc<dyn HydratedTuple>),
+    Wire(Arc<dyn HydratedWire>),
+}
+/// Implementations capture a finite immutable sequence of children.
+pub trait HydratedTuple: Send + Sync {
+    fn items(&self) -> Vec<HydratedValue>;
+}
+pub type HydratedReceiver = Arc<dyn Fn(HydratedValue, ReceivedContext) + Send + Sync>;
+/// Sending grants neither receive ownership nor closure.
+pub trait HydratedWire: Send + Sync {
+    fn send(&self, message: HydratedValue) -> Completion<'_, Result<(), String>>;
+}
+pub trait HydratedEndpoint: HydratedWire {
+    fn wire(&self) -> Arc<dyn HydratedWire>;
+    fn receive(&self, handler: HydratedReceiver) -> Result<Detach, String>;
+    fn closed(&self) -> Completion<'_, Termination>;
+    fn close(&self) -> Completion<'_, ()>;
+}
