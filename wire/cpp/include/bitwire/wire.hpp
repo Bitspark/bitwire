@@ -90,5 +90,5 @@ public:
   virtual std::shared_future<Termination> closed() const = 0;
   virtual std::future<void> close() = 0;
 };
-inline constexpr auto version = "0.5.0";
+inline constexpr auto version = "0.6.0";
 }
