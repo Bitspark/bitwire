@@ -216,10 +216,14 @@ other.
   admissions. A detach removes only the receiver it was returned for. A
   receiver's failure terminates its endpoint, which ends its export. No order is promised across different senders, links or proxies.
 - **Limits.** A scope has finite, configured bounds on live exports, and on each
-  value's nodes, depth and encoded bytes. A sender that exceeds them is refused
-  before admission. An incoming frame counts whole against the byte bound,
-  reference material included, and one that exceeds any bound is refused at the
-  owner before any delivery. A target that does not admit a delivery, for example because its
+  value's nodes, depth and bytes, and on a frame's encoded bytes. Sender and
+  receiver count a value the same way, so one bound means one thing in both
+  directions: each atom, tuple and Wire leaf is one node at its tuple depth, and
+  a value's bytes are its atom bytes plus each Wire leaf's reference material
+  (its path bytes and 32). The whole frame, header and tags included, counts
+  against the byte bound on both sides. A sender that exceeds a bound is refused
+  before admission; an incoming frame that exceeds one is refused at the owner
+  before any delivery. A target that does not admit a delivery, for example because its
   receive queue is full, is refused `target-refused`.
 - **Refusals are host diagnostics, never outcomes.** At the owner:
   `malformed-frame`, `stale-scope`, `unknown-export`, `limit`, `target-refused`.
@@ -330,7 +334,9 @@ carrier, with the same adapters:
 15. **Bounds.** Values beyond the node, depth, byte or export bounds are refused
     before work, an incoming frame whose reference material exceeds the byte
     bound is refused with nothing delivered, and a target that does not admit a
-    delivery is refused `target-refused`.
+    delivery is refused `target-refused`. Under the same bounds, across tight node,
+    depth and byte budgets, a sender accepts a value exactly when a receiver
+    accepts its frame.
 16. **Two languages.** Go and TypeScript peers exchange these frames using fresh
     published dependencies.
 17. **Endpoint laws on every path.** A local send of an endpoint, bare or inside a
@@ -379,4 +385,5 @@ evaluated against what was built, and any change is a new decision.
   further probes found unbounded reference material in incoming frames, an
   endpoint conveyed whole by a local send, and stale detaches and receiver
   failures outside the Endpoint laws; D7, D8 and observations 15 and 17 now
-  cover them.
+  cover them. Fiber Composition's replay then found sender and receiver counting
+  Wire leaves differently under one bound; D8 now fixes one counting domain.
