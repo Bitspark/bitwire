@@ -52,7 +52,9 @@ applies ends the decision.
    installed, refuse it as `stale-binding`.
 2. **Scope.**
    - From binding `k`: `O` must start with `P ++ [k]`, or refuse `origin-out-of-scope`.
-   - From own sending: `O` must equal `P`, or refuse `origin-out-of-scope`.
+   - From own sending: `O` must equal `P`, or refuse `origin-out-of-scope`. A
+     realization may instead give own sending no origin parameter and always use
+     `P`, which meets this step without the refusal.
    - From the parent link: `D` must start with `P`, or refuse `outside-subtree`.
      The origin is not checked; see [trust](#trust-and-its-limit).
 3. **Own.** If `D` equals `P`, deliver `(D, O, m)` to the own receiver, or refuse
@@ -65,6 +67,9 @@ applies ends the decision.
    on the parent link if one is installed; otherwise refuse `missing-route`.
 
 If the send in step 4 or 5 is refused by the next link, refuse `not-admitted`.
+A next link that is closing can therefore give `not-admitted` before its
+binding's release is observed and `missing-route` after it. Both are correct, and
+neither says more than that this hop did not forward the value.
 
 Comparisons are atom-exact and segment-exact: `["a/b"]` is not `["a","b"]`, `[""]`
 is not `[]`, and no string form, normalization or ancestor fallback exists. A

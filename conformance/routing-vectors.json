@@ -71,7 +71,7 @@
      "destination": ["62"], "origin": [], "expect": {"refuse": "origin-out-of-scope"}},
     {"name": "a child claims a sibling's origin", "router": "a", "from": {"binding": "61"},
      "destination": ["62"], "origin": ["61", "62"], "expect": {"refuse": "origin-out-of-scope"}},
-    {"name": "own sending may not claim a descendant", "router": "a", "from": "own",
+    {"name": "own sending may not claim a descendant (only where own sending takes an origin)", "router": "a", "from": "own",
      "destination": ["62"], "origin": ["61", "62"], "expect": {"refuse": "origin-out-of-scope"}},
     {"name": "a parent sends outside the subtree", "router": "a", "from": "parent",
      "destination": ["62", "62"], "origin": ["636c69656e743432"], "expect": {"refuse": "outside-subtree"}},
@@ -96,7 +96,7 @@
     "Releasing a generation that is not current changes nothing. A link's termination removes only the binding of that link's generation.",
     "Binding a key that has a live binding is refused; so is a second parent, a parent at the root, and a link whose receive slot is already owned. The binding limit refuses further bindings without affecting existing ones.",
     "Messages arriving on one link are decided in arrival order, and those forwarded to the same next link keep that order. Nothing is promised between different arriving links.",
-    "A refused forwarding send on the next link is reported as not-admitted. A refusal at any hop is reported to that router's host only; it is never sent as a message and never turns an earlier hop's admission into a refusal.",
+    "A refused forwarding send on the next link is reported as not-admitted; while a next link is closing, either not-admitted or, once its release is observed, missing-route is correct. A refusal at any hop is reported to that router's host only; it is never sent as a message and never turns an earlier hop's admission into a refusal.",
     "A value on a link that is not a routed value fails that link through handler failure, as for the addressed facade. Payloads are never decoded.",
     "Routing adds no queue. Releasing the router detaches its receivers and refuses its own sending; it closes no link."
   ]
