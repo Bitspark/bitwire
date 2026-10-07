@@ -104,6 +104,11 @@ separation alone proves neither independent progress nor freedom from blocking.
 
 ### Exporting an existing Wire
 
+The [hydrated wire proposal](hydrated.md) develops a shared upper interface whose
+messages can contain wires recursively. It covers value traversal and collision-free
+encoding as well as export/import, while leaving explicit protocol decisions open.
+It is proposed design, not an addition to the released interface below.
+
 Creating a channel does not make an existing Wire available remotely. Export
 associates that Wire with a scoped protocol reference. Import produces a local
 Wire proxy; a send through it is carried to the exporting runtime and forwarded
