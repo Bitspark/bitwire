@@ -27,6 +27,12 @@ records the reconsideration; [the contract](docs/wire/contract.md) states the
 current laws. deixis's generic structure permits sender and receiver instances
 equally and is not amended by a bitwire implementation choice.
 
+The [composition architecture](docs/wire/composition.md) applies W1-W6 to future
+distributed routing, multiplexing and live-wire export. It is a target and a set
+of implementation obligations, not a claim that those protocols already exist.
+Their live realizations belong in bitruntime; executable topology policy and
+durable service allocations remain with their consumers.
+
 Changes to these boundaries need an explicit decision identifying the affected
 IDs, the failing use case, alternatives, expected observations and consumer
 migration. Advice that holds a boundary fixed cannot independently justify that
