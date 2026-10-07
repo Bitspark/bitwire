@@ -163,6 +163,225 @@ still defines its request shape, number of permitted replies, success and failur
 messages, and completion behavior. Hydration alone does not supply a universal
 request/response protocol, cancellation semantics or exactly-once execution.
 
+## Composing domain adapters
+
+The proposed compositional property is that adapting a parameterized domain API
+commutes with adapting its parameter and then applying a reusable outer adapter.
+This requires a defined lifting for that API and adapters that preserve its
+observable behavior. A generic type parameter alone does not establish the law.
+
+### Lifting a parameterized API
+
+Write `W` for `HydratedWire`. Starting with independent domain adapters and one
+outer adapter specialized to wires:
+
+```text
+adapter1  : API1 -> W
+adapter2  : API2 -> W
+adapter3_ : API3<W> -> W
+```
+
+For a parameter adapter `adapterT`, the missing operation is:
+
+```text
+lift3(adapterT) : API3<T> -> API3<W>
+
+adapter3<T>(api) = adapter3_(lift3(adapterT)(api))
+```
+
+`adapterT` applies to a `T`, while `api` is an `API3<T>`. `lift3` applies the parameter
+adaptation at the places where `API3` produces or accepts `T`, including future
+method calls and nested callback positions. It is an API view over the original
+service, rather than a snapshot of the values present at construction.
+
+```mermaid
+flowchart LR
+    Typed["API3 of T"] -->|"lift3 of adapterT"| Wires["API3 of HydratedWire"]
+    Wires -->|"adapter3_"| Wire["HydratedWire"]
+    Typed -->|"adapter3 of T"| Wire
+```
+
+Both routes should yield the same declared observations. The same `adapter3_` can
+therefore serve `API3<API1>` and `API3<API2>`; it does not need to understand either
+inner domain. The fiber owning `API3` defines its lifting and outer message
+convention. The common hydration machinery transports the resulting wire leaves.
+
+### Directions required by the parameter
+
+The following table concerns constructing `API3<W>` over an existing `API3<T>`:
+
+| How API3 uses T | Conversion required at that boundary |
+| --- | --- |
+| Produces T | `T -> W`: convert each returned T into a wire. |
+| Accepts T | `W -> T`: reconstruct T before passing the argument to the original service. |
+| Both produces and accepts T | Both directions. |
+
+For an output-only API, a one-way adapter can suffice for this lifting. An
+input-only API uses precomposition in the reverse direction. Mixed use, as in
+Cell below, needs an adapter pair. Nested methods and callbacks follow the same
+direction analysis; a callback parameter cannot be classified just by its outer
+argument position.
+
+For the two-way examples, use this domain adapter contract:
+
+```typescript
+interface Adapter<T> {
+  toWire(value: T): HydratedWire;
+  fromWire(wire: HydratedWire): T;
+}
+```
+
+`fromWire` constructs a programmatic view, typically a proxy. Its argument must
+speak the domain's declared wire convention; a generic `HydratedWire` type alone
+does not certify that. Protocol validation and failure remain required. These
+examples assume an explicitly supplied communication scope is already captured
+by the adapter; they do not introduce an implicit global registry or lifetime.
+
+The captured environment must also identify who owns each materialized local
+wire and when its service lifetime ends. If the chosen profile requires an
+owned endpoint, `toWire` returns that endpoint's sending face and its owner
+retains the close responsibility. Receiving the face grants no close authority.
+The domain convention determines the service's end event; shared runtime
+machinery performs the resulting reference cleanup. Repeated `toWire` calls
+must not silently create unbounded retained endpoints. The signatures below
+omit this ownership plumbing, so the equations alone are not a complete
+resource-lifetime design.
+
+### Cell example
+
+Cell both returns and accepts its parameter. Its lifting converts on each call:
+
+```typescript
+interface Cell<T> {
+  get(): Promise<T>;
+  set(value: T): Promise<void>;
+}
+
+function liftCell<T>(
+  cell: Cell<T>,
+  adapter: Adapter<T>,
+): Cell<HydratedWire> {
+  return {
+    get: async () => adapter.toWire(await cell.get()),
+    set: async wire => cell.set(adapter.fromWire(wire)),
+  };
+}
+```
+
+`get` adapts the value produced by that particular read. `set` receives a wire,
+reconstructs its T view and passes that to the original cell. Constructing the
+lifted cell calls neither get nor set. It adds no cache, eager read or duplicate
+provider invocation. The domain adapter must preserve the cell's declared
+failures and asynchronous completion behavior as well as its successful values.
+
+The reverse lifting produces a typed view over a cell of wires:
+
+```typescript
+function lowerCell<T>(
+  cell: Cell<HydratedWire>,
+  adapter: Adapter<T>,
+): Cell<T> {
+  return {
+    get: async () => adapter.fromWire(await cell.get()),
+    set: async value => cell.set(adapter.toWire(value)),
+  };
+}
+
+function cellAdapter<T>(
+  wireCellAdapter: Adapter<Cell<HydratedWire>>,
+  innerAdapter: Adapter<T>,
+): Adapter<Cell<T>> {
+  return {
+    toWire: cell =>
+      wireCellAdapter.toWire(liftCell(cell, innerAdapter)),
+    fromWire: wire =>
+      lowerCell(wireCellAdapter.fromWire(wire), innerAdapter),
+  };
+}
+```
+
+`wireCellAdapter` is written once for `Cell<HydratedWire>`. With independent
+adapters for `API1` and `API2`, the compositions are:
+
+```typescript
+// API1 and API2 are the independently defined domain interfaces.
+declare const api1Adapter: Adapter<API1>;
+declare const api2Adapter: Adapter<API2>;
+declare const wireCellAdapter: Adapter<Cell<HydratedWire>>;
+
+const api1CellAdapter = cellAdapter(wireCellAdapter, api1Adapter);
+// Adapter<Cell<API1>>
+
+const api2CellAdapter = cellAdapter(wireCellAdapter, api2Adapter);
+// Adapter<Cell<API2>>
+
+const nestedCellAdapter = cellAdapter(wireCellAdapter, api1CellAdapter);
+// Adapter<Cell<Cell<API1>>>
+```
+
+The outer protocol remains the Cell protocol at every nesting depth. Each inner
+adapter contributes its own domain interpretation, and the runtime transports
+the resulting wire capabilities recursively. Replacing API1 with API2 requires
+no Cell protocol branch or additional reference encoding.
+
+### Commuting and coherence laws
+
+The proposed commuting requirement is:
+
+```text
+adapter3<T> ≈ adapter3_ composed with lift3(adapterT)
+```
+
+If `adapter3<T>` is defined by that composition, the equation describes its
+construction. The substantive obligation is that this construction preserves
+`API3<T>`'s domain contract; any independently written direct adapter for the same
+convention must have equivalent observations. A shared function signature is
+insufficient evidence.
+
+Here ≈ means observational equivalence at a declared boundary. Compare
+corresponding initial state, capability aliases, authority, lifetimes, schedules
+and transport conditions. Observations include operation arguments, results,
+effects, invocation counts, failures, ordering and completion. Allocation IDs,
+proxy object identity and byte-for-byte protocol traces need not match unless
+the convention explicitly makes them observable. Network failure or extra
+forwarding cannot be ignored to claim equivalence to unrestricted local calls.
+
+For a two-way adapter, require the appropriate round-trip laws on valid values
+and wires speaking its domain convention:
+
+```text
+fromWire(toWire(value)) ≈ value
+toWire(fromWire(wire))  ≈ wire
+```
+
+These compare service behavior, not object identity. They do not claim that
+every arbitrary wire can be decoded as every domain type, or that the round trip
+grants authority to receive from or close an original endpoint.
+
+Liftings should also respect identity and composition. For bidirectional
+adaptations `r` between A and B and `s` between B and C, `liftF(r)` is the corresponding
+pair between `F<A>` and `F<B>`. Define:
+
+```text
+(s composed with r).forward  = s.forward composed with r.forward
+(s composed with r).backward = r.backward composed with s.backward
+
+liftF(identity)          ≈ identity
+liftF(s composed with r) ≈ liftF(s) composed with liftF(r)
+```
+
+For output-only APIs these can be ordinary forward maps. Input-only APIs reverse
+the mapping direction. For mixed APIs, the displayed equations use coherent
+adapter pairs with the required round-trip properties; they are not a claim that
+Cell is covariant in arbitrary one-way functions. They express why introducing
+an intermediate representation or grouping nested adaptations differently should
+preserve the declared behavior.
+
+An API that relies on local object identity, inspects a concrete implementation
+or transfers ownership needs additional mapping rules before this property can
+be claimed. Recursive hydrated wires make the composition representable; the
+domain's lifting laws and the runtime's transport laws establish its meaning.
+
 ## Ground encoding
 
 The protocol must distinguish a wire reference from any ordinary data that
@@ -300,6 +519,16 @@ chosen data and expected observations:
 10. Go and TypeScript peers exchange the fixed formats using fresh published
     dependencies. Other declared language presentations preserve the same meaning;
     their packaging checks do not substitute for runtime conformance.
+11. Reuse one `Cell<HydratedWire>` adapter with independent API1 and API2 adapters.
+    Exercise get, set and a `Cell<Cell<API1>>` round trip, including values produced
+    after construction. Compare declared results and effects with the direct APIs.
+12. Check both directions of the Cell lifting: reads export returned capabilities
+    and writes import supplied capabilities. Construction invokes no cell operation;
+    later operations preserve provider invocation counts and failure behavior.
+13. Compare identity lifting, successive coherent adaptations and their composed
+    adaptation under corresponding state and schedules. Include malformed domain
+    messages, transport loss and release cases in the declared observation boundary;
+    do not infer these laws from TypeScript assignability or successful happy paths.
 
 ## Adoption sequence
 
