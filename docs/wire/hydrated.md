@@ -9,7 +9,9 @@ within its routing network. Domain adapters would use the hydrated interface.
 The current releases, bitwire 0.5.0 and bitruntime 0.6.0, provide the ground-value
 substrate. The interfaces and encoding below are proposed additions, not released
 APIs or a completed transport protocol. The reference and lifetime choices in
-[Protocol decisions](#protocol-decisions) must be settled before implementation.
+[Protocol decisions](#protocol-decisions) must be settled before implementation;
+[decision 0019](../decisions/0019-hydrated-wire-protocol.md) proposes them for a
+first edition within one namespace.
 
 ## Purpose
 
@@ -36,7 +38,7 @@ flowchart TD
     Adapter["Domain fiber adapter"]
     Live["Hydrated wire: data and live wires"]
     Hydration["Shared hydration and export machinery"]
-    Ground["Addressed wire: ground Ontos data"]
+    Ground["Addressed wire: ground ontos data"]
     Network["bitnode routing network"]
     API <--> Adapter
     Adapter <--> Live
@@ -77,13 +79,13 @@ HydratedValue = Atom(Bytes)
               | HydratedWire
 ```
 
-Atom bytes and tuple arity, order and multiplicity retain their Ontos meanings.
+Atom bytes and tuple arity, order and multiplicity retain their ontos meanings.
 The tuple structure is finite, immutable and well-founded. Wires are opaque live
 leaves: they can participate in cyclic communication relationships without making
 the tuple structure cyclic. Traversal and reconstruction never invoke a leaf's
 send operation.
 
-Ground values embed structurally into hydrated values. Ordinary Ontos Tuple
+Ground values embed structurally into hydrated values. Ordinary ontos Tuple
 instances can serve as tuples containing only ground values; the hydrated tuple
 constructor also admits wire leaves. Its construction and validation must
 capture the supplied structure before asynchronous admission. Wire leaves retain
@@ -119,11 +121,17 @@ export interface HydratedWire {
 }
 
 export interface HydratedEndpoint extends HydratedWire {
-  receive(handler: (message: HydratedValue) => void): () => void;
+  receive(
+    handler: (message: HydratedValue, context: ReceivedContext) => void,
+  ): () => void;
   readonly closed: Promise<Termination>;
   close(): Promise<void>;
 }
 ```
+
+`ReceivedContext` is what the composition establishes about an arrival, such
+as a checked origin; it is never part of the message
+([decision 0019, D4](../decisions/0019-hydrated-wire-protocol.md#d4-addressed-binding-and-received-context)).
 
 HydratedWire grants sending authority. HydratedEndpoint additionally owns one
 receive attachment and the lifetime of its declared communication scope. Passing
@@ -394,7 +402,7 @@ particular application tuples heuristically:
 | Tuple of children | Tuple(tupleTag, Tuple(each encoded child)) |
 | Wire w | Tuple(wireTag, encodedReferenceFor(w)) |
 
-All tags and references in this representation are ground Ontos values. The
+All tags and references in this representation are ground ontos values. The
 three tags are atoms with distinct exact byte spellings. An ordinary tuple resembling the
 third row is encoded through the second row, so decoding restores it as ordinary
 data. The parser recognizes references only within an explicitly selected
@@ -407,7 +415,7 @@ a reference or an ordinary application value retains its exact byte segments;
 neither carrier decoding nor hydration implicitly rebases arbitrary payload data.
 
 The encoding produces an ordinary Value for the existing addressed layer and
-ontos-codec-v1 carrier. Ontos's ground domain and the WebSocket carrier format
+ontos-codec-v1 carrier. ontos's ground domain and the WebSocket carrier format
 need no extension. The complete encoded representation, including reference and
 control overhead, counts toward the declared message and queue limits.
 
@@ -434,12 +442,15 @@ its declared scope; whether that scope exclusively owns a carrier or shares one
 must be explicit at construction. A shared carrier cannot be closed merely
 because one logical scope ends.
 
-Re-export must be a supported operation of the shared layer. If A exports a wire
-to B and B conveys its proxy to C, C must obtain usable authority to the same
-target under the declared forwarding policy. A first realization can retain a
-forwarding export at B. Simply copying an A-to-B reference into the B-to-C scope
-is insufficient. Sending from C may carry new wires whose references also need
-valid bindings along the return path. Releasing or losing a dependency must have
+If A exports a wire to B and B conveys its proxy to C, C must obtain usable
+authority to the same target under the declared forwarding policy. Within one
+namespace, a reference names its owner end to end, so B forwards it by copying
+it and keeps no state
+([decision 0019, D3](../decisions/0019-hydrated-wire-protocol.md#d3-scope-and-authority)).
+Copying is insufficient only for connection-scoped references: carrying a wire
+into another namespace needs a gateway that retains a forwarding export, which
+the first edition does not define. Sending from C may carry new wires whose
+references also need valid bindings along the return path. Releasing or losing a dependency must have
 an explicit result; automatic reconnection, durable restoration and replay are
 outside this initial target.
 
@@ -459,7 +470,9 @@ Forwarding must also specify its observation boundary and progress assumptions.
 ## Protocol decisions
 
 Each decision below needs a concrete rule and independent expected observations
-before the dependent implementation begins. They are unresolved protocol work,
+before the dependent implementation begins.
+[Decision 0019](../decisions/0019-hydrated-wire-protocol.md) proposes one for each
+row, with [independent vectors](../../conformance/hydrated-vectors.json). They are unresolved protocol work,
 not choices to delegate to individual domain adapters.
 
 | Decision | Required definition |

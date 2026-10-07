@@ -13,6 +13,8 @@ that direction from the protocols and implementations still to be delivered.
 The [hydrated wire proposal](wire/hydrated.md) develops the application-facing
 layer for messages containing live wires, with a recursive value domain, candidate
 ground encoding, ownership laws and the protocol decisions needed before code.
+[Decision 0019](decisions/0019-hydrated-wire-protocol.md) proposes those decisions
+for a first edition, with [independent vectors](../conformance/hydrated-vectors.json).
 Its [adapter composition](wire/hydrated.md#composing-domain-adapters) section states
 the commuting and lifting laws, direction requirements and nested Cell examples.
 
