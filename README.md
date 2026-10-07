@@ -32,6 +32,12 @@ instances should route across a logical tree and convey usable wires. It separat
 addressing, multiplexing and export, assigns their contract/runtime boundaries,
 and lists the protocols and evidence still missing from the released foundation.
 
+The hydrated layer adds recursive values containing live sending capabilities.
+Its [native contracts](docs/wire/hydrated-native.md) are available across all
+eight presentations. Go and TypeScript provide the [pure codec](docs/wire/hydrated-codec.md)
+for `bitwire/hydrated/1`; bitruntime supplies live construction, exports, proxies
+and owner lifetimes. See the [0.6.0 change record](docs/releases/0.6.0.md).
+
 The [checked ontos mirror](ontos/README.md) pins v0.9.0 with reversible import
 adaptations, hashes and vectors. TypeScript /ontos, /ontos-codec and /ontos-data
 share one value family; optional data embeddings do not restrict raw messages.

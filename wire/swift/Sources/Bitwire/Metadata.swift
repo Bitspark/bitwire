@@ -1,1 +1,1 @@
-public enum BitwireMetadata { public static let version = "0.5.0" }
+public enum BitwireMetadata { public static let version = "0.6.0" }

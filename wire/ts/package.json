@@ -1,6 +1,6 @@
 {
   "name": "@bitspark/bitwire",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Addressless wires, addressed access and complete byte-keyed wire trees.",
   "license": "Apache-2.0",
   "type": "module",
