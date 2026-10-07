@@ -27,6 +27,11 @@ bitwire.ontos.v2. The optional addressed layer carries bitwire/addressed/1 as an
 ordinary Value. It can be implemented once over every carrier. There is no legacy
 protocol, fallback decoder or compatibility alias.
 
+The [composition architecture](docs/wire/composition.md) describes how runtime
+instances should route across a logical tree and convey usable wires. It separates
+addressing, multiplexing and export, assigns their contract/runtime boundaries,
+and lists the protocols and evidence still missing from the released foundation.
+
 The [checked ontos mirror](ontos/README.md) pins v0.9.0 with reversible import
 adaptations, hashes and vectors. TypeScript /ontos, /ontos-codec and /ontos-data
 share one value family; optional data embeddings do not restrict raw messages.

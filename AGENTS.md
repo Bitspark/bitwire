@@ -6,6 +6,10 @@ Wire is addressless sending. Endpoint owns receiving/closure. AddressedWire adds
 an exact byte-path argument; WireNode adds complete deixis structure. Carriers
 implement addressless endpoints; one addressed layer works over all carriers.
 Invocation protocols belong to consumers. No legacy aliases or profile fallback.
+For distributed routing, multiplexing or conveying wires, read
+[the composition architecture](docs/wire/composition.md) and decision 0016.
+Record pending protocol choices before implementing them; a design discussion
+or consumer ownership table in deixis does not decide them for this repository.
 Changes to these boundaries must name the charter invariant and amend the
 contract explicitly; consumer implementations do not amend deixis by implication.
 
