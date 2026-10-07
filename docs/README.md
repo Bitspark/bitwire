@@ -15,7 +15,7 @@ layer for messages containing live wires, with a recursive value domain, candida
 ground encoding, ownership laws and the protocol decisions needed before code.
 [Decision 0019](decisions/0019-hydrated-wire-protocol.md) proposes those decisions
 for a first edition, with [independent vectors](../conformance/hydrated-vectors.json).
-Its [adapter composition](wire/hydrated.md#composing-domain-adapters) section states
+The proposal's [adapter composition](wire/hydrated.md#composing-domain-adapters) section states
 the commuting and lifting laws, direction requirements and nested Cell examples.
 
 Addressless interaction, addressed access and complete structure are different
