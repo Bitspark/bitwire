@@ -75,15 +75,24 @@ one node. The root is at tuple depth zero; each tuple edge increases depth by
 one. Reference path segments are metadata, not extra value nodes or tuple depth.
 Value bytes are atom payload bytes plus reference path bytes and 32 octets per
 reference occurrence. Aliased/repeated occurrences count separately.
+Path segment count has no separate limit and is not constrained by the tuple
+depth bound; path size is limited through bytes, including encoded overhead.
 
 The same byte bound also limits the complete encoded ground frame, including
 header and tags. A standalone body operation applies it to the encoded body;
-frame operations additionally account for the frame overhead. This difference
+Both the value-byte and encoded-body checks apply to standalone bodies; the
+encoded check implies the value-byte check, but both use the same definition.
+Frame operations additionally account for the frame overhead. This difference
 is explicit because a body alone has no target/header. Reference helpers apply
 it to their encoded payload. Every supplied bound is a finite positive integer.
 An operation checks bounds before potentially large output allocation, and uses
 checked arithmetic. A rejected encode must not leave a partially constructed
 protocol value for the runtime to send.
+
+Bounds are inclusive: node count must be `<= nodes`, every node's depth
+`<= depth`, value bytes `<= bytes`, and the relevant encoded body, reference
+payload or frame bytes `<= bytes`. A value exactly at a bound is accepted if all
+its other requirements hold; exceeding any one bound is refused.
 
 ## Acceptance before implementation
 
@@ -100,7 +109,8 @@ Additional boundary observations, specified here before code, are:
 3. Caller mutation of path/child arrays after construction changes no value.
 4. Tight node, depth and byte limits agree in both directions, including tuple
    overhead, empty atoms and repeated references. Compare exact boundary and
-   one-over cases with independently calculated sizes.
+   one-over cases with independently calculated sizes. A five-segment reference
+   path at value depth zero is accepted under depth two if its bytes fit.
 5. A malformed child rejects the complete frame; there is no partial decoded
    tree. The implementation invokes no runtime or caller callback.
 6. Invalid options, invalid scope/id lengths, unknown tags, excessive depth,
