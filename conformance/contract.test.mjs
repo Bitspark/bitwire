@@ -63,3 +63,13 @@ test('path capture, ground identity and preallocation bounds',()=>{
  assert.ok(!pathEqual([], [atom([])])); assert.ok(!pathEqual([atom([97,47,98])],[atom([97]),atom([98])]));
  assert.ok(!atom([]).equals(tuple([]))); assert.ok(new Atom([255]).equals(atom([255]))); assert.ok(new Tuple([]).equals(tuple([])));
 });
+
+test('independent export vectors are ground values the raw and addressed layers carry unchanged',()=>{
+ const v=json('./export-vectors.json');
+ for(const c of v.encode) {
+  const value='path' in c ? packAddressed(c.path.map(k=>atom(Buffer.from(k,'hex'))),from(c.message)) : from(c.value);
+  assert.equal(hex(encodeMessage(value)),c.hex,c.name);
+  assert.ok(decodeMessage(Buffer.from(c.hex,'hex')).equals(value),c.name);
+ }
+ for(const c of v.rejectReference) { const raw=from(c.value); assert.ok(decodeMessage(encodeMessage(raw)).equals(raw),c.name); }
+});

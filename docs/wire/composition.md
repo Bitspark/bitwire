@@ -250,7 +250,7 @@ policy determine authority. Services still check permission for their operations
 | Complete local trees and exact derived sending | Implemented; no remote discovery implied. | Keep mount execution separate. |
 | Distributed routing/mounts | Direction and obligations only. | Specify binding, roots, reply mapping, failure and ownership, then implement reusable routing. |
 | Multiplexing | Direction and requirements only. | Specify establishment, framing, lifecycle and budgets, then implement logical endpoints. |
-| Export/import of existing wires | Direction and requirements only. | Specify scoped references, forwarding, authority and release, then implement proxies/registry. |
+| Export/import of existing wires | [Exporting a Wire](export.md): live, connection-scoped exports over addressed reference routes with re-export, proposed by [decision 0018](../decisions/0018-wire-export.md) with independent cases. No implementation. | Review the record, then implement the table, import and re-export accounting in bitruntime (Go and TypeScript). |
 | Multiplexer at an addressed destination | Composition requirement only. | Define the bidirectional addressed binding. |
 | Stream carriers | Proposed extension. | Specify stream framing, then implement and test a concrete binding. |
 | Generic `Pages<Wire>` | Motivating consumer, not an API commitment. | Build only after wire conveyance has a usable contract. |
