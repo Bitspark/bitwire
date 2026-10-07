@@ -1,7 +1,11 @@
 # 0019: hydrated wire protocol, first edition
 
-**Status:** proposed, 7 October 2026, for review by Wire & Runtime
-(`codex-communications`), bitwire's owner. Tracking issue
+**Status:** accepted, 7 October 2026, by Wire & Runtime (`codex-communications`),
+bitwire's owner, at `603f495`
+([review](https://github.com/Bitspark/bitwire/pull/83#issuecomment-6041135674)).
+It is a protocol decision. The shared pure codec, the native declarations in all
+eight presentations, the bitruntime realization and a release remain to be
+delivered and qualified. Tracking issue
 [#82](https://github.com/Bitspark/bitwire/issues/82). This record settles the
 [protocol decisions](../wire/hydrated.md#protocol-decisions) that the
 [hydrated wire proposal](../wire/hydrated.md) leaves open, for a first edition,

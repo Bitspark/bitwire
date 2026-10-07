@@ -64,7 +64,7 @@ test('path capture, ground identity and preallocation bounds',()=>{
  assert.ok(!atom([]).equals(tuple([]))); assert.ok(new Atom([255]).equals(atom([255]))); assert.ok(new Tuple([]).equals(tuple([])));
 });
 
-// Decision 0019 (proposed): a test-local reading of the bitwire/hydrated/1 grammar,
+// Decision 0019: a test-local reading of the bitwire/hydrated/1 grammar,
 // so the independent vectors judge a future codec rather than describe one.
 const atomOf=(v,min,max)=>{if(!(v instanceof Atom)||v.length<min||v.length>max) throw new Error('hydrated: atom'); return v;};
 const tupleOf=(v,n)=>{if(!(v instanceof Tuple)||(n!==undefined&&v.length!==n)) throw new Error('hydrated: tuple'); return v;};
@@ -77,7 +77,7 @@ const hydratedBody=v=>{
 };
 const hydratedFrame=v=>{const [h,scope,id,body]=tupleOf(v,4).items(); assert.ok(atomOf(h,0,Infinity).equals(atom(Buffer.from('bitwire/hydrated/1'))),'header'); atomOf(scope,16,16); atomOf(id,16,16); return hydratedBody(body);};
 const wires=h=>h instanceof Atom?0:'wire' in h?1:h.tuple.reduce((n,c)=>n+wires(c),0);
-test('independent hydrated body and frame vectors (decision 0019, proposed)',()=>{
+test('independent hydrated body and frame vectors (decision 0019)',()=>{
  const v=json('./hydrated-vectors.json');
  for(const c of v.encode) {
   const body=from(c.body); assert.equal(hex(encodeMessage(body)),c.hex,c.name);

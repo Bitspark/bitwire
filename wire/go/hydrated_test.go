@@ -12,7 +12,7 @@ import (
 	wire "github.com/Bitspark/bitwire/wire/go"
 )
 
-// Decision 0019 (proposed): a test-local reading of the bitwire/hydrated/1
+// Decision 0019: a test-local reading of the bitwire/hydrated/1
 // grammar, so the independent vectors judge a future codec rather than describe one.
 var errHydrated = errors.New("hydrated: malformed")
 
