@@ -63,3 +63,32 @@ test('path capture, ground identity and preallocation bounds',()=>{
  assert.ok(!pathEqual([], [atom([])])); assert.ok(!pathEqual([atom([97,47,98])],[atom([97]),atom([98])]));
  assert.ok(!atom([]).equals(tuple([]))); assert.ok(new Atom([255]).equals(atom([255]))); assert.ok(new Tuple([]).equals(tuple([])));
 });
+
+// Decision 0019: a test-local reading of the bitwire/hydrated/1 grammar,
+// so the independent vectors judge a future codec rather than describe one.
+const atomOf=(v,min,max)=>{if(!(v instanceof Atom)||v.length<min||v.length>max) throw new Error('hydrated: atom'); return v;};
+const tupleOf=(v,n)=>{if(!(v instanceof Tuple)||(n!==undefined&&v.length!==n)) throw new Error('hydrated: tuple'); return v;};
+const hydratedBody=v=>{
+ if(v instanceof Atom) return v;
+ const [tag,payload]=tupleOf(v,2).items(), t=atomOf(tag,1,1).bytes()[0];
+ if(t===1) return {tuple:tupleOf(payload).items().map(hydratedBody)};
+ if(t===2) {const [p,scope,id]=tupleOf(payload,3).items(); return {wire:{path:tupleOf(p).items().map(a=>atomOf(a,0,Infinity)),scope:atomOf(scope,16,16),id:atomOf(id,16,16)}};}
+ throw new Error('hydrated: tag');
+};
+const hydratedFrame=v=>{const [h,scope,id,body]=tupleOf(v,4).items(); assert.ok(atomOf(h,0,Infinity).equals(atom(Buffer.from('bitwire/hydrated/1'))),'header'); atomOf(scope,16,16); atomOf(id,16,16); return hydratedBody(body);};
+const wires=h=>h instanceof Atom?0:'wire' in h?1:h.tuple.reduce((n,c)=>n+wires(c),0);
+test('independent hydrated body and frame vectors (decision 0019)',()=>{
+ const v=json('./hydrated-vectors.json');
+ for(const c of v.encode) {
+  const body=from(c.body); assert.equal(hex(encodeMessage(body)),c.hex,c.name);
+  assert.ok(decodeMessage(Buffer.from(c.hex,'hex')).equals(body),c.name);
+  assert.equal(wires(hydratedBody(body)),(c.live.match(/wire\{/g)??[]).length,c.name);
+ }
+ for(const c of v.frames) {
+  const path=c.path.map(k=>atom(Buffer.from(k,'hex'))), f=tuple([atom(Buffer.from('bitwire/hydrated/1')),atom(Buffer.from(c.scope,'hex')),atom(Buffer.from(c.id,'hex')),from(c.body)]);
+  assert.equal(hex(encodeMessage(packAddressed(path,f))),c.hex,c.name);
+  const d=unpackAddressed(decodeMessage(Buffer.from(c.hex,'hex'))); assert.ok(pathEqual(d.path,path),c.name); hydratedFrame(d.message);
+ }
+ for(const c of v.rejectBody) assert.throws(()=>hydratedBody(from(c.value)),c.name);
+ for(const c of v.rejectFrame) assert.throws(()=>hydratedFrame(from(c.value)),c.name);
+});

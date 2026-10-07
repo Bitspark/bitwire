@@ -1,7 +1,10 @@
 # Conformance
 
 message-vectors.json contains hand-derived raw and addressed bytes from the
-written grammar, established before the replacement code. Go and TypeScript
+written grammar, established before the replacement code. hydrated-vectors.json
+holds decision 0019's hydrated bodies and frames, with rejected shapes,
+established before any hydration code; both languages judge them with test-local
+grammar readers. Go and TypeScript
 replay the same independent cases. Pinned upstream ontos vectors additionally
 check value identity and encoding without changing their judgments.
 

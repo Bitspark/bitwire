@@ -108,6 +108,9 @@ The [hydrated wire proposal](hydrated.md) develops a shared upper interface whos
 messages can contain wires recursively. It covers value traversal and collision-free
 encoding as well as export/import, while leaving explicit protocol decisions open.
 It is proposed design, not an addition to the released interface below.
+[Decision 0019](../decisions/0019-hydrated-wire-protocol.md) decides its first
+edition: references valid end to end within one namespace, so the per-connection
+sketch below applies to gateways between namespaces.
 
 Creating a channel does not make an existing Wire available remotely. Export
 associates that Wire with a scoped protocol reference. Import produces a local
