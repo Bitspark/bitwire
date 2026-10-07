@@ -35,8 +35,9 @@ construction into rules, and answers the lifetime gap from an existing concept.
   incarnation: a fresh random 16-octet **scope token**, its live exports and its
   bounds. A participant gets a new scope whenever it is newly placed (attached,
   rebound or restarted).
-- An **export** registers a local target under the scope with an **id** that
-  the scope never reuses.
+- An **export** registers a local target under the scope with an **export id**:
+  16 octets that no holder of another reference can predict, never reused within
+  the scope (D3).
 - A **reference** is the ground form of a live Wire: owner path, scope token and
   id.
 - A **proxy** is the live Wire a holder gets from a reference. Sending through it
@@ -68,7 +69,7 @@ body(wire w)              = ( 0x02, ( (owner path segments...), scope, id ) )
 ```
 
 - The header is the 18-octet ASCII atom `bitwire/hydrated/1`. `scope` and `id`
-  are the target's scope token (16 octets) and export id (1 to 16 octets).
+  are the target's scope token and export id, 16 octets each.
 - Tags are one-octet atoms: `01` for a tuple and `02` for a Wire. `00` and every
   other value are reserved.
 - Atoms are written bare. Every tuple and every Wire is a 2-tuple whose first
@@ -94,14 +95,25 @@ change and no new addressed format.
   copying an A-to-B reference into a B-to-C scope is insufficient holds for
   connection-scoped references. Within one namespace, the experiment is its
   counterexample.
-- **Possession is the authority to send.** A reference is a bearer capability
-  within its namespace. Its scope token must come from a cryptographically
-  secure random source, and is confidential wherever frames, payloads,
-  diagnostics or logs travel. Holding a reference authenticates no one (D4).
+- **Possession of one reference is the authority to send to that one Wire, and
+  to no other.** A reference is a bearer capability within its namespace, so
+  each one carries its own unpredictability, in its export id:
+  - An export id is 16 octets drawn from a cryptographically secure random
+    source. A counter, a timestamp or any value derivable from another reference
+    is not an export id: holding one reference would then grant its siblings.
+  - The exporter redraws an id equal to any live id in the scope. A withdrawn id
+    recurs with probability 2^-128 per draw, which this edition treats as never
+    reused. A realization that wants the guarantee by construction may instead
+    use a keyed pseudorandom permutation of a counter, with a per-scope secret
+    key; holders cannot tell the two apart.
+  - The scope token, also 16 random octets, identifies the incarnation (D7). It
+    is shared by every export of the scope and grants nothing by itself.
+  - References are confidential wherever frames, payloads, diagnostics or logs
+    travel. Holding one authenticates no one (D4).
 - **Gateways.** A reference names an owner in one namespace. Carrying a Wire into
-  another namespace needs an explicit gateway that exports a forwarding target
-  there. That gateway is the connection-scoped shape of the closed #80, and this
-  edition does not define it.
+  another namespace needs an explicit gateway, which this edition does not
+  define. The connection-scoped forwarding of the closed #80 is one candidate
+  shape for it, not a selected one.
 
 ### D4. Addressed binding and received context
 
@@ -113,7 +125,8 @@ change and no new addressed format.
   for example a routing layer's checked origin or a direct connection's
   attachment.
 - **Delivery.** Hydration delivers the decoded value to the target's receive
-  together with that context. The context is never part of the value, and no
+  together with that context. A send through a local face that never leaves the
+  process carries the composition's local context instead. The context is never part of the value, and no
   value a caller supplies can alter it. The proposal's `HydratedEndpoint.receive`
   handler gains this second argument.
 - No return coordinates are needed. A reference carries its owner's absolute
@@ -126,6 +139,11 @@ change and no new addressed format.
   scope) refuses the send before admission and registers nothing.
 - **Registration precedes admission.** New exports are registered before the
   frame is handed to the addressed sender, so a fast reply finds them.
+- **Encoding and registration are one step per scope.** Concurrent sends that
+  carry the same new face agree on its single export id, and every frame names
+  the id that was registered. Concurrent sends that carry distinct new faces
+  never take the scope past its export bound: each one either registers within
+  the bound or is refused `limit` before admission.
 - **Refused or failed admission withdraws nothing, and leaves no orphan.** A
   sending face has one export per scope, reused by every send that carries it
   (D7). So a refused attempt never adds an entry the endpoint would not have
@@ -159,10 +177,12 @@ other.
     scope that lives exactly as long as that endpoint; or
   - a proxy (D6).
 
-  Passing the endpoint itself conveys only its sending face. The runtime keeps
-  the link from the face to its endpoint privately, so the receiver gets no
-  receive, `closed` or close. Any other hydrated Wire is refused at encoding as
-  `unexportable`. An arbitrary send-only Wire reveals no lifetime, so it cannot
+  Passing the endpoint itself conveys only its sending face, on every path,
+  local or remote: a value captures an endpoint as its face, and a local send
+  delivers the face. The runtime keeps the link from the face to its endpoint
+  privately, so the receiver gets no
+  receive, `closed` or close. Any other hydrated Wire, and the face of an
+  endpoint that has already closed, is refused at encoding as `unexportable`. An arbitrary send-only Wire reveals no lifetime, so it cannot
   be given one silently.
 - **The owner ends an export by closing its endpoint.** When a HydratedEndpoint
   closes or terminates, its export is withdrawn. A frame that arrives later is
@@ -193,11 +213,13 @@ other.
 - **Ordering.** Frames from one sender that travel one lower link reach the
   target's receive in their admission order. Hydration adds no reordering, and
   delivery follows the Endpoint laws: non-inline dispatch, one receiver, ordered
-  admissions. No order is promised across different senders, links or proxies.
+  admissions. A detach removes only the receiver it was returned for. A
+  receiver's failure terminates its endpoint, which ends its export. No order is promised across different senders, links or proxies.
 - **Limits.** A scope has finite, configured bounds on live exports, and on each
   value's nodes, depth and encoded bytes. A sender that exceeds them is refused
-  before admission. A frame that exceeds them is refused at the owner before any
-  delivery. A target that does not admit a delivery, for example because its
+  before admission. An incoming frame counts whole against the byte bound,
+  reference material included, and one that exceeds any bound is refused at the
+  owner before any delivery. A target that does not admit a delivery, for example because its
   receive queue is full, is refused `target-refused`.
 - **Refusals are host diagnostics, never outcomes.** At the owner:
   `malformed-frame`, `stale-scope`, `unknown-export`, `limit`, `target-refused`.
@@ -239,6 +261,9 @@ where tagging every node costs about 60%. The two forms are equally unambiguous.
   does this for references to its own participant). This makes one closed reply
   Wire poison unrelated content. It is replaced by judging liveness when
   sending.
+- **Counter or derived export ids** (the first draft of this record, and the
+  experiment). Rejected in review: the scope token is shared by every export,
+  so a holder of one reference could construct its siblings' references.
 - **Rolling back an attempt's exports when admission is refused.** It is sound in
   principle, but needs concurrency rules for a Wire reused by a concurrent send.
   It is unnecessary once every export is owner-bounded.
@@ -279,24 +304,39 @@ carrier, with the same adapters:
 7. **Stale scopes.** After the owner's scope is replaced at the same path, frames
    carrying the old scope are refused `stale-scope`, and the replacement target
    receives nothing.
-8. **Returning home.** A participant's own current reference decodes to the
+8. **Sibling forgery.** One owner scope exports a public endpoint and a private
+   one, the private one intended for another holder. A holder given only the
+   public reference, which therefore knows the scope token, replaces its id with
+   any other value, including every id the realization could plausibly issue
+   next. Each such send is refused `unknown-export` at the owner, and the
+   private endpoint receives nothing.
+9. **Returning home.** A participant's own current reference decodes to the
    original sending face. A stale or withdrawn one decodes to a Wire whose sends
    are refused, while the rest of the message is delivered.
-9. **Received context.** The target receives the context the composition supplied.
+10. **Received context.** The target receives the context the composition supplied.
    A value containing a tuple shaped like a context stays data and changes
    nothing.
-10. **Atomic decoding.** A frame with one malformed node is refused
+11. **Atomic decoding.** A frame with one malformed node is refused
     `malformed-frame`: nothing is imported and nothing is delivered.
-11. **Registration before admission.** A reply that races its request's admission
+12. **Registration before admission.** A reply that races its request's admission
     finds its export. A send refused by the lower layer leaves its exports until
     their endpoints close.
-12. **Ordering.** Frames from one sender over one link reach the target in
+13. **Concurrent sends.** Many concurrent sends carrying one new face register
+    exactly one export, and every frame names it; every delivery arrives. With an
+    export bound of N, concurrent sends carrying 2N distinct new faces leave at
+    most N live exports, and every other send is refused `limit` before admission.
+14. **Ordering.** Frames from one sender over one link reach the target in
     admission order.
-13. **Bounds.** Values beyond the node, depth, byte or export bounds are refused
-    before work, and a target that does not admit a delivery is refused
-    `target-refused`.
-14. **Two languages.** Go and TypeScript peers exchange these frames using fresh
+15. **Bounds.** Values beyond the node, depth, byte or export bounds are refused
+    before work, an incoming frame whose reference material exceeds the byte
+    bound is refused with nothing delivered, and a target that does not admit a
+    delivery is refused `target-refused`.
+16. **Two languages.** Go and TypeScript peers exchange these frames using fresh
     published dependencies.
+17. **Endpoint laws on every path.** A local send of an endpoint, bare or inside a
+    tuple, delivers its sending face, with no receive or close. A detach that has
+    gone stale cannot remove a newer receiver. A receiver that fails terminates
+    its endpoint, whose export then refuses `unknown-export`.
 
 ## Consultation
 
@@ -326,5 +366,17 @@ evaluated against what was built, and any change is a new decision.
   retirement. Its realization (bitruntime `a383393`) is evidence of the lower
   table mechanism only.
 - **The vectors.** Hand-derived, and checked against the released bitwire 0.5.0
-  encoder. None of this record's runtime observations has been run, because no
-  realization exists yet.
+  encoder.
+- **An evidence realization** in Go and TypeScript, on the unmerged bitruntime
+  branch `evidence/hydrated-0019-go`, runs the observations; the pull request
+  names the head that matches this revision. It is evidence for review, not a
+  released implementation.
+- **Review history.** Wire & Runtime's review of `20a6b6b` found that counter
+  export ids let one reference's holder construct its siblings' references,
+  and that concurrent Go sends could split one face across two ids or pass the
+  export bound. This revision answers both: unpredictable export ids (D3), one
+  encode-and-register step per scope (D5), and observations 8 and 13. Its
+  further probes found unbounded reference material in incoming frames, an
+  endpoint conveyed whole by a local send, and stale detaches and receiver
+  failures outside the Endpoint laws; D7, D8 and observations 15 and 17 now
+  cover them.

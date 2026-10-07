@@ -77,7 +77,7 @@ func hydratedWires(v core.Value) (int, error) {
 		if _, err := atomOf(ref.At(1), 16, 16); err != nil {
 			return 0, err
 		}
-		if _, err := atomOf(ref.At(2), 1, 16); err != nil {
+		if _, err := atomOf(ref.At(2), 16, 16); err != nil {
 			return 0, err
 		}
 		return 1, nil
@@ -98,7 +98,7 @@ func hydratedFrame(v core.Value) error {
 	if _, err := atomOf(f.At(1), 16, 16); err != nil {
 		return err
 	}
-	if _, err := atomOf(f.At(2), 1, 16); err != nil {
+	if _, err := atomOf(f.At(2), 16, 16); err != nil {
 		return err
 	}
 	_, err = hydratedWires(f.At(3))

@@ -72,10 +72,10 @@ const hydratedBody=v=>{
  if(v instanceof Atom) return v;
  const [tag,payload]=tupleOf(v,2).items(), t=atomOf(tag,1,1).bytes()[0];
  if(t===1) return {tuple:tupleOf(payload).items().map(hydratedBody)};
- if(t===2) {const [p,scope,id]=tupleOf(payload,3).items(); return {wire:{path:tupleOf(p).items().map(a=>atomOf(a,0,Infinity)),scope:atomOf(scope,16,16),id:atomOf(id,1,16)}};}
+ if(t===2) {const [p,scope,id]=tupleOf(payload,3).items(); return {wire:{path:tupleOf(p).items().map(a=>atomOf(a,0,Infinity)),scope:atomOf(scope,16,16),id:atomOf(id,16,16)}};}
  throw new Error('hydrated: tag');
 };
-const hydratedFrame=v=>{const [h,scope,id,body]=tupleOf(v,4).items(); assert.ok(atomOf(h,0,Infinity).equals(atom(Buffer.from('bitwire/hydrated/1'))),'header'); atomOf(scope,16,16); atomOf(id,1,16); return hydratedBody(body);};
+const hydratedFrame=v=>{const [h,scope,id,body]=tupleOf(v,4).items(); assert.ok(atomOf(h,0,Infinity).equals(atom(Buffer.from('bitwire/hydrated/1'))),'header'); atomOf(scope,16,16); atomOf(id,16,16); return hydratedBody(body);};
 const wires=h=>h instanceof Atom?0:'wire' in h?1:h.tuple.reduce((n,c)=>n+wires(c),0);
 test('independent hydrated body and frame vectors (decision 0019, proposed)',()=>{
  const v=json('./hydrated-vectors.json');
