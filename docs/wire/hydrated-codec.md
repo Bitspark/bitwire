@@ -1,10 +1,11 @@
 # Pure hydrated protocol codec
 
-**Candidate work package, 7 October 2026.** This specifies the next implementation
+**Implementation work package, 7 October 2026.** This specifies the implementation
 slice after the [hydrated adapter composition proposal](hydrated.md#composing-domain-adapters).
-It targets proposed [decision 0019](../decisions/0019-hydrated-wire-protocol.md)
-at `603f49583756702c32dad04759710ca629452859`. It neither adopts that decision
-nor claims a released hydrated API. Public API review precedes integration.
+It implements [decision 0019](../decisions/0019-hydrated-wire-protocol.md), with
+counting rules reviewed at `603f49583756702c32dad04759710ca629452859`. The owning
+review accepted this API before implementation. Integration and the first public
+hydrated release still require the owning repository's checks and release gate.
 
 ## Responsibility
 
@@ -43,6 +44,8 @@ They preserve finite acyclic structure without exposing mutable path or child
 storage. Helpers convert ground ontos values into DataAtom/DataTuple and recover
 ground values from a subtree containing no reference. This is an additional
 codec data type, not an extension of ontos's ground Value or a live Wire type.
+Ground conversion helpers take explicit codec limits as well; this prevents a
+compact shared input tree from expanding without bounds during conversion.
 
 ## Proposed pure operations
 
@@ -79,7 +82,7 @@ Path segment count has no separate limit and is not constrained by the tuple
 depth bound; path size is limited through bytes, including encoded overhead.
 
 The same byte bound also limits the complete encoded ground frame, including
-header and tags. A standalone body operation applies it to the encoded body;
+header and tags. A standalone body operation applies it to the encoded body.
 Both the value-byte and encoded-body checks apply to standalone bodies; the
 encoded check implies the value-byte check, but both use the same definition.
 Frame operations additionally account for the frame overhead. This difference
@@ -95,6 +98,37 @@ payload or frame bytes `<= bytes`. A value exactly at a bound is accepted if all
 its other requirements hold; exceeding any one bound is refused.
 
 ## Acceptance before implementation
+
+The Go surface uses value structs with private storage: `NewHydratedDataAtom`,
+`NewHydratedDataTuple` and `NewHydratedReference`. Tuple and reference constructors
+return `(value, error)`; arrays returned by `Items` and `Path` are copies. Codecs
+accept the concrete values, rejecting pointer aliases, nils and foreign embedded
+implementations of `HydratedData`. Reassigning a caller's variable cannot mutate
+an already captured value. Errors use `ErrHydratedMalformed`, `ErrHydratedLimit`
+and `ErrHydratedOptions`.
+
+TypeScript exports the same three constructors as classes. Nodes and their child
+and path arrays are frozen, and construction rejects foreign objects, cycles and
+subclass hooks. Codec shape/bound failures are `HydratedCodecError` with kind
+`malformed` or `limit`; invalid limit options throw `RangeError`. Ground embedding
+and extraction are `hydratedDataFromGround` / `hydratedDataToGround` in TypeScript
+and `HydratedDataFromGround` / `HydratedDataToGround` in Go. They apply the same
+semantic and encoded-body bounds, and extraction refuses a reference leaf.
+
+For example, after a runtime has supplied the reference descriptor:
+
+```typescript
+const limits = { nodes: 1000, depth: 64, bytes: 65536 };
+const body = new HydratedDataTuple([
+  new HydratedDataAtom(atom([42])),
+  new HydratedReference(path, scope, id),
+]);
+const groundFrame = packHydratedFrame({ scope, id, body }, limits);
+const decoded = unpackHydratedFrame(groundFrame, limits);
+// decoded.body contains data descriptors; no endpoint was exported or imported.
+```
+
+## Conformance observations
 
 The independent [0019 vectors](../../conformance/hydrated-vectors.json) predate
 this implementation and remain unchanged by this package. Replay every accepted
