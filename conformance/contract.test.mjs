@@ -64,13 +64,14 @@ test('path capture, ground identity and preallocation bounds',()=>{
  assert.ok(!atom([]).equals(tuple([]))); assert.ok(new Atom([255]).equals(atom([255]))); assert.ok(new Tuple([]).equals(tuple([])));
 });
 
-test('independent routed vectors are ground values the raw layer carries unchanged',()=>{
+test('independent routing vectors are addressed values the raw layer carries unchanged',()=>{
  const v=json('./routing-vectors.json'), header=atom(Buffer.from('bitwire/routed/1'));
- const path=p=>tuple(p.map(k=>atom(Buffer.from(k,'hex'))));
+ const keys=p=>p.map(k=>atom(Buffer.from(k,'hex')));
  for(const c of v.encode) {
-  const value=tuple([header,path(c.destination),path(c.origin),from(c.payload)]);
-  assert.equal(hex(encodeMessage(value)),c.hex,c.name);
-  assert.ok(decodeMessage(Buffer.from(c.hex,'hex')).equals(value),c.name);
+  const record=tuple([header,tuple(keys(c.origin)),from(c.payload)]);
+  assert.equal(hex(encodeMessage(packAddressed(keys(c.destination),record))),c.hex,c.name);
+  const d=unpackAddressed(decodeMessage(Buffer.from(c.hex,'hex')));
+  assert.ok(pathEqual(d.path,keys(c.destination)),c.name); assert.ok(d.message.equals(record),c.name);
  }
  for(const c of v.reject) { const raw=from(c.value); assert.ok(decodeMessage(encodeMessage(raw)).equals(raw),c.name); }
  for(const c of v.decisions) assert.ok(v.routers[c.router],c.name);

@@ -4,7 +4,8 @@
 This is the first [composition](composition.md) protocol record: routing opaque
 messages through a tree of runtime instances in one absolute namespace. It adds no
 method to Wire, Endpoint or AddressedWire and no field to the raw or addressed
-formats. Multiplexing, wire export, suffix delegation and stream framing are not
+formats: links carry ordinary addressed values, and routing opts in to read their
+messages as routing records. Multiplexing, wire export, suffix delegation and stream framing are not
 part of it. bitruntime realizes it; a host such as bitnode decides topology and
 admission.
 
@@ -15,7 +16,8 @@ path in one tree namespace. The tree's root has location `[]`.
 
 A router holds at most one **parent link** and a set of **bindings**. A binding
 gives one exact child key `k` to one link, delegating every destination that
-starts with `P ++ [k]` to it. A **link** is an Endpoint carrying routed values.
+starts with `P ++ [k]` to it. A **link** is an Endpoint carrying routed values:
+addressed values whose messages are routing records ([below](#what-a-link-carries)).
 Whether the peer on a binding is another router, a service or a client is the
 host's knowledge, not the router's: the forwarding rule is the same for all of them.
 A router may also have an **own receiver** for destination `P` exactly.
@@ -23,24 +25,33 @@ A router may also have an **own receiver** for destination `P` exactly.
 Each installed parent link and binding has a **generation** that distinguishes it
 from every earlier and later installation in that router.
 
-## The routed value
+## What a link carries
 
-A link carries ordinary ground values (W1). A routed value is the four-item tuple
+A link is used through the existing addressed facade (W2). Each value is an
+addressed value whose path is the **destination** and whose message is a
+**routing record**, the three-item tuple
 
 ```text
-( "bitwire/routed/1", destination, origin, payload )
+( "bitwire/routed/1", origin, payload )
 ```
 
-The header is the 16-octet ASCII atom `bitwire/routed/1`. Destination and origin
-are tuples of atoms: exact byte paths in the tree namespace, with the same
-identity rules as an addressed path (W2). Payload is any ground value and is never
-interpreted by routing. A value of any other shape on a link is not a routed value.
-The [vectors](../../conformance/routing-vectors.json) give the bytes and the rejected shapes.
+The record header is the 16-octet ASCII atom `bitwire/routed/1`. The origin is a
+tuple of atoms: an exact byte path in the tree namespace, with the same identity
+rules as the destination. Payload is any ground value and is never interpreted
+by routing.
+
+The addressed facade keeps its message opaque. Routing is a higher protocol that
+the host selects for a link; on such a link, every addressed message must be a
+routing record. A value that is not addressed, or whose message is not a routing
+record, is not valid on a routing link. The
+[vectors](../../conformance/routing-vectors.json) give the bytes and the rejected shapes.
 
 The origin names where the message comes from in the namespace. It is routing
 metadata checked against the link it arrived on, never proof of who sent it: a
 binding's authenticated peer and its scope are established by the host when it
-installs the binding.
+installs the binding. Routing checks the origin, never an address named inside a
+payload. A consumer that replies, or attributes a message, must use the checked
+origin or verify its own claims against it; see [replies](#replies).
 
 ## Deciding one message
 
@@ -71,6 +82,9 @@ A next link that is closing can therefore give `not-admitted` before its
 binding's release is observed and `missing-route` after it. Both are correct, and
 neither says more than that this hop did not forward the value.
 
+In these steps, "the unchanged routed value" is the addressed value as it
+arrived: the same destination and the same routing record.
+
 Comparisons are atom-exact and segment-exact: `["a/b"]` is not `["a","b"]`, `[""]`
 is not `[]`, and no string form, normalization or ancestor fallback exists. A
 binding may receive a message addressed into its own subtree through its parent;
@@ -79,7 +93,9 @@ forwarding it back down is the ordinary rule, not a special case.
 ## Refusals and outcomes
 
 A refusal is reported to the router's host with its reason, source, generation,
-destination and origin. It is **not** a message: routing sends nothing toward the
+destination, origin and the refused payload, unchanged. The router owns the
+receive slot, so this observation is the host's only access to a refused value.
+It is **not** a message: routing sends nothing toward the
 origin, and a consumer protocol decides whether and how a failure is reported to
 anyone. The reasons are `stale-binding`, `origin-out-of-scope`, `outside-subtree`,
 `missing-route` and `not-admitted`.
@@ -104,9 +120,12 @@ was acted on. Routing does not retry, deduplicate, correlate or cancel.
   generation is refused rather than forwarded through the replacement.
 - **Closing.** The router never closes a link. The host that supplied a link closes
   it. Releasing the router detaches its receivers and refuses its own sending.
-- **Bad input.** A value on a link that is not a routed value fails that link
-  through handler failure, as the addressed facade does for a malformed addressed
-  value.
+- **Reinstalling.** A link is installed at most once. A host never installs a
+  released link again, because values it buffered while released cannot be
+  attributed to any generation.
+- **Bad input.** A value on a link that is not an addressed value carrying a
+  routing record fails that link through handler failure, as the addressed facade
+  does for a malformed addressed value.
 
 ## Order and resource bounds
 
@@ -138,6 +157,14 @@ a routed value with destination `O` and its own origin. The origin a reply
 targets was scope-checked at the hop where it entered the tree. Request identity
 and correlation, if a consumer needs them, are part of its payload convention,
 not of routing.
+
+**This protects a reply only if the consumer replies to the checked origin.** A
+client bound at `["client42"]` can send a request with the checked origin
+`["client42"]` while its payload names `["client43"]` as a return address. Every
+router accepts it, because routing never reads payloads. A service that replies
+to the payload's address sends the reply to `client43`. A consumer protocol must
+therefore take its reply target, and any source it attributes, from the checked
+origin, or verify its own payload claims against it.
 
 ## Trust and its limit
 

@@ -32,7 +32,7 @@ maps onto an existing contract or a consumer's existing draft:
 
 | Obligation | Existing concept that answers it |
 | --- | --- |
-| Destination of a message | The addressed path (W2): exact atoms, the same identity and comparison. |
+| Destination of a message | The addressed path (W2), carried by the existing addressed value: exact atoms, the same identity and comparison. |
 | Routing root and matching | One absolute namespace, as the [bitnode draft](https://github.com/Bitspark/bitnode/blob/868acc63b014e950a833a6f8e01486460c91de84/docs/DESIGN.md#locations-and-paths) proposes; exact prefix comparison as for `under`. |
 | Precedence of own, children and mounts | Exact selection (W3's `at`), applied one key at a time: own at `P`, the binding for the next key, otherwise the parent. No fallback. |
 | Child versus mount | Not distinguished. A binding delegates a prefix; whether its peer is a router or a service changes nothing in forwarding. |
@@ -43,20 +43,29 @@ maps onto an existing contract or a consumer's existing draft:
 | Receive and close ownership | W4: the router owns receive slots; the supplier of a link closes it. |
 | Bounds | The links' existing limits. Routing adds no queue. |
 
-## The one addition: an origin path
+## The one addition: an origin record
 
-The routed value is the addressed value with one more path. Without it, the scope
-check cannot work beyond one hop. At the first router, the arriving link
-identifies the binding, but the next router sees only a message from its child
-`["a"]`. The only remaining place for a return address is the payload, which
-routing must not read.
+Routing needs the destination, which the addressed path already carries, and one
+more path: the origin. Without it, the scope check cannot work beyond one hop. At
+the first router, the arriving link identifies the binding, but the next router
+sees only a message from its child `["a"]`. A consumer could put a return address
+in its payload, but routing never reads payloads, so no router could confine it.
 
-Then this happens: a client bound at `["client42"]` sends a request whose payload
-names `["client43"]` as its return address. No router can check it, because the
-payload is opaque, and the service replies to `client43`. One client can then
-direct replies to another, or impersonate another origin to every service. With
-the origin in the routed value, the root refuses that request at the client's
-own binding, because `["client43"]` is outside `["client42"]`.
+The origin travels in a **routing record**, `("bitwire/routed/1", origin, payload)`,
+as the message of an ordinary addressed value. Routing is a protocol a host selects
+for a link, and it reads its own tagged record there. This keeps the addressed
+codec and facade exactly as released; no second path-bearing format is needed.
+
+**What the checked origin does and does not protect.** Routing confines the origin
+to the sending binding's scope. It does not validate any address inside the payload
+or authenticate a principal. A client bound at `["client42"]` can send the checked
+origin `["client42"]` while its payload names `["client43"]` as a return address;
+every router accepts that. A service that replies to the payload's address still
+sends the reply to `client43`. The protection exists only under a composition
+obligation: a consumer protocol takes its reply target and any attributed source
+from the checked origin, or verifies its own payload claims against it. Without a
+checked origin no consumer can do this at all, which is why the origin belongs in
+routing.
 
 Carrying the origin adds no identity, kind, correlation or reply object, and it
 does not prove who sent anything: it is metadata confined by bindings, exactly as
@@ -65,16 +74,17 @@ consumer convention and stays out of this protocol.
 
 ## Decision
 
-1. **One optional layer, a separate format.** Links carry the four-item tuple
-   `("bitwire/routed/1", destination, origin, payload)`, an ordinary ground value
-   (W1). It is not an addressed value with a structured message: the addressed
-   message stays opaque, and the two formats cannot be mistaken for each other.
+1. **Composition with the addressed layer.** A routing link carries addressed
+   values (W2) whose path is the destination and whose message is the routing
+   record `("bitwire/routed/1", origin, payload)`. The addressed facade stays
+   opaque; routing, selected by the host for that link, reads its own record.
 2. **One absolute namespace.** Suffix delegation into a new root is not defined
    here. A later record can add it as a separate profile; it is not an
    interpretation of the same format.
 3. **The decision procedure** of [tree routing](../wire/routing.md#deciding-one-message):
    stale, scope, own, down, up, with five refusal reasons reported to the host
-   only.
+   only. The host's refusal observation includes the refused payload, unchanged,
+   since the router owns the receive slot.
 4. **Bindings** are opaque prefixes with generations. The router owns their
    receive slots and never closes a link.
 5. **Independent cases first.** The encode, reject and decision vectors and the
@@ -83,14 +93,17 @@ consumer convention and stays out of this protocol.
 
 ## Alternatives
 
-- **No origin; return address in the payload.** Rejected because of the
-  `client43` case above.
+- **No origin; return address in the payload.** Rejected: no router could confine
+  it, so no consumer could obtain a checked reply target (see above).
 - **Origin implied by the arriving link, not carried.** This works for one hop
   only. Any intermediate router would have to rewrite or wrap messages per hop,
   and there is nothing to rewrite them into without carrying a path.
-- **Reuse the addressed format, with a message of `(origin, payload)`.** Rejected:
-  routers would interpret an addressed message, which W2 keeps opaque, and an
-  ordinary addressed value would become ambiguous with a routed one.
+- **A separate four-item format `("bitwire/routed/1", destination, origin, payload)`.**
+  This was the first proposal, at `edf13d6`. It was rejected in review: it adds a
+  second path-bearing format without a requirement the addressed composition
+  cannot meet. W2 keeps the message opaque to the addressed facade, not to a
+  protocol that explicitly opts in. The tagged record header keeps routing
+  messages distinct from any other use of the addressed layer.
 - **A hop count or time-to-live.** Not needed: location agreement already bounds
   every route at twice the tree's depth. It would add a field that every hop
   rewrites.
@@ -130,7 +143,8 @@ a new decision.
 ## Charter invariants
 
 W1 is unchanged: the routed value is an ordinary value on an addressless link.
-W2 is unchanged: the same path identity is applied twice. W3 is respected: a
+W2 is unchanged and reused: the destination is the addressed path, the message
+stays opaque to the addressed facade, and the origin uses the same path identity. W3 is respected: a
 binding is opaque and enumerates nothing. W4 is applied: one receive owner per
 link, and no closing by the router. W5 is applied per hop. W6 is applied: the
 cases precede implementation.
@@ -138,7 +152,16 @@ cases precede implementation.
 ## Evidence and limits
 
 The encode vectors were checked against the released bitwire 0.5.0 codec, and
-the decision vectors against a literal reading of the procedure. Neither check
-is a routing implementation. Inspected sources are bitwire `10259bd`, bitruntime
+the decision vectors against a literal reading of the procedure. A local,
+unpublished experimental Go router written from the first revision passed the
+encode, reject, decision and behavioural cases; it found the two clarifications
+in revision `6ad55f4`. It is not the bitruntime realization and not acceptance
+evidence for it.
+
+**Review.** Wire & Runtime requested changes at `edf13d6`: reuse the addressed
+composition rather than a second path-bearing format; state the consumer
+obligation in the `client43` case rather than implying that routing validates
+payload addresses; and include the refused payload in the host's refusal
+observation. This revision makes all three. Inspected sources are bitwire `10259bd`, bitruntime
 `0bc971f` and v0.6.0 `b19458f`, and bitnode `868acc6`. No router exists yet, and
 none of the required observations has been run.
