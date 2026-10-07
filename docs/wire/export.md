@@ -7,6 +7,20 @@ over addressed reference routes, with explicit re-export through another hop. It
 adds no method to Wire, Endpoint or AddressedWire and no field to the raw or
 addressed formats. bitruntime realizes it; a consumer chooses where it is used.
 
+## Two layers
+
+The owner's decomposition (7 October) separates two layers:
+- **The message layer** carries only data: addressed values, with each Wire
+  represented as a reference, an export path plus an id. Nothing on this layer is
+  live, and no router or carrier treats a value as a capability.
+- **The live layer** holds Wires hydrated in the runtime that uses them, for
+  example by an adapter. A consumer works only with live Wires.
+
+At a composition boundary that has opted in, sending a Wire over a Wire puts it
+in a registry (export), and the peer turns the reference back into a live Wire
+(import). A reference that comes back to the side that issued it is swapped back
+to the registered Wire itself.
+
 ## Terms
 
 A **connection** joins two sides, each with an Endpoint. A side that opts in to
@@ -77,6 +91,14 @@ A reference is meaningful only on the connection it arrived on. Copied onto
 another connection, it carries a scope that no table there holds, so it is
 refused `foreign-reference` there even if the ids happen to coincide.
 
+**Swapping back.** If a side receives, on a connection, a reference whose scope
+is its own table's scope for that connection, the reference names one of its
+own exports. The peer is returning it. Importing it yields the registered target
+itself while the export is live: a live Wire in its own runtime, not a proxy that
+would travel out and back. A returned reference whose export has ended imports as
+a Wire whose sends are refused locally. The refusal is observed as
+`unknown-reference`, and nothing is sent.
+
 ## Lifetime
 
 - **An export ends** when it is released, when its exporter withdraws it, or when
@@ -131,6 +153,7 @@ pairs and WebSocket connections:
    reference shapes.
 2. Every delivery case against the declared table.
 3. The listed observations, including:
+   - a reference swapped back on return;
    - the two-connection alias case;
    - scope renewal on a new connection;
    - fan-out with release of one branch;

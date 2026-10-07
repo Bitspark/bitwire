@@ -53,10 +53,11 @@ hop (R3.4).
    `foreign-reference`, an unknown or released id `unknown-reference`, and any
    other route shape `malformed-route`. All refusals are observed by the
    exporting side only.
-5. **Re-export** records its source import. It retires when the source connection
+5. **Two layers and swapping back.** The message layer carries only data (references); the live layer holds hydrated Wires that consumers use, following the owner's 7 October decomposition. A reference returning to the side that issued it imports as the registered Wire itself.
+6. **Re-export** records its source import. It retires when the source connection
    ends and never follows a replacement. An import is released upstream once,
    when its last dependent is released.
-6. **Independent cases first.** The encode bytes are hand-derived and checked
+7. **Independent cases first.** The encode bytes are hand-derived and checked
    against the released codec, and the delivery cases and observations precede
    any implementation.
 
