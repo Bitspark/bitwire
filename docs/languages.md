@@ -15,6 +15,9 @@ The public npm package is the TypeScript distribution. Its released tarball is a
 mirrored, byte for byte, into the private `@bitspark` scope on GitHub Packages, for
 Bitspark's private consumers whose `@bitspark` scope resolves there
 (`.github/workflows/mirror-private-scope.yml`). The public distribution is unchanged.
+The mirror package is private: its first publication from this public repository was
+public on GitHub Packages despite `--access=restricted`, and was set private before any
+consumer was granted Read. Later versions keep the package's settings.
 
 The 0.6.0 hydrated addition must pass every declaration/package lane and fresh
 installed consumers before release. All eight presentations declare the live
