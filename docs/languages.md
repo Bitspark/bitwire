@@ -11,6 +11,11 @@
 | Java | dev.bitspark:bitwire on Maven Central | JAR tests and fresh repository consumer |
 | Haskell | public tagged source/sdist | Cabal tests and isolated source consumer; Hackage deferred |
 
+The public npm package is the TypeScript distribution. Its released tarball is also
+mirrored, byte for byte, into the private `@bitspark` scope on GitHub Packages, for
+Bitspark's private consumers whose `@bitspark` scope resolves there
+(`.github/workflows/mirror-private-scope.yml`). The public distribution is unchanged.
+
 The 0.6.0 hydrated addition must pass every declaration/package lane and fresh
 installed consumers before release. All eight presentations declare the live
 value and interaction contract; Go and TypeScript additionally provide the pure
