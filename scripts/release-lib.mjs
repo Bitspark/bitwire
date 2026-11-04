@@ -168,6 +168,9 @@ func main() {
 `);
   const env = { ...process.env, GOENV: 'off', GOWORK: 'off', GOPRIVATE: '', GONOPROXY: 'none', GONOSUMDB: 'none', GOFLAGS: '-modcacherw', GOMODCACHE: join(directory, 'module-cache'), ...environment };
   run('go', ['mod', 'download', moduleName], { cwd: directory, env });
+  // Resolve and record the public Ontos dependencies before the read-only run.
+  // The scratch consumer starts without a go.sum or indirect requirements.
+  run('go', ['mod', 'tidy'], { cwd: directory, env });
   run('go', ['run', '-mod=readonly', '.'], { cwd: directory, env });
   const resolved = JSON.parse(output('go', ['list', '-m', '-json', moduleName], { cwd: directory, env }));
   if (resolved.Replace || resolved.Version !== requiredVersion) throw new Error('Go consumer did not resolve the exact packaged module.');
