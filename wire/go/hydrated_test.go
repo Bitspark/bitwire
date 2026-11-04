@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	core "github.com/bitspark/ontos/core/go"
 	wire "github.com/Bitspark/bitwire/wire/go"
+	core "github.com/bitspark/ontos/core/go"
 )
 
 // Decision 0019: a test-local reading of the bitwire/hydrated/1

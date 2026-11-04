@@ -3,9 +3,9 @@ package wire_test
 import (
 	"encoding/hex"
 	"encoding/json"
+	wire "github.com/Bitspark/bitwire/wire/go"
 	codec "github.com/bitspark/ontos/codec/go"
 	core "github.com/bitspark/ontos/core/go"
-	wire "github.com/Bitspark/bitwire/wire/go"
 	"os"
 	"testing"
 )

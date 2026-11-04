@@ -15,7 +15,7 @@ wires and composable domain adapters. [Decision 0019](decisions/0019-hydrated-wi
 is accepted. The [native contracts](wire/hydrated-native.md) and [pure Go/TypeScript
 codec](wire/hydrated-codec.md) implement its public foundation, with
 [independent vectors](../conformance/hydrated-vectors.json). The
-[0.6.0 change record](releases/0.6.0.md) separates these artifacts from the runtime.
+[0.7.0 change record](releases/0.7.0.md) separates these artifacts from the runtime.
 Its [adapter composition](wire/hydrated.md#composing-domain-adapters) section states
 the commuting and lifting laws, direction requirements and nested Cell examples.
 

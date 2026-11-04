@@ -19,7 +19,7 @@ The mirror package is private: its first publication from this public repository
 public on GitHub Packages despite `--access=restricted`, and was set private before any
 consumer was granted Read. Later versions keep the package's settings.
 
-The 0.6.0 hydrated addition must pass every declaration/package lane and fresh
+The 0.7.0 hydrated addition must pass every declaration/package lane and fresh
 installed consumers before release. All eight presentations declare the live
 value and interaction contract; Go and TypeScript additionally provide the pure
 frame/body/reference codec. Stateful hydration is qualified in bitruntime. Historical PR 74 results describe 0.4.0 only. Declarations
