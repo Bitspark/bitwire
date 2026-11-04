@@ -23,7 +23,11 @@ jobs:
       - name: Prepare formatting and dependency locks on the runner
         shell: bash
         run: |
-          trap 'git diff --binary > "$RUNNER_TEMP/source-preparation.patch"' EXIT
+          save_patch() {
+            if test -f go.sum; then git add -N go.sum; fi
+            git diff --binary > "$RUNNER_TEMP/source-preparation.patch"
+          }
+          trap save_patch EXIT
           git ls-files -z '*.go' | xargs -0 -r gofmt -w
           go mod tidy
           pnpm install --lockfile-only --ignore-scripts
@@ -35,4 +39,3 @@ jobs:
           retention-days: 7
       - name: Prepared artifacts must be committed
         run: git diff --exit-code
-
