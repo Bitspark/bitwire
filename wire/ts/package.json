@@ -1,6 +1,6 @@
 {
   "name": "@bitspark/bitwire",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Addressless wires, addressed access and complete byte-keyed wire trees.",
   "license": "Apache-2.0",
   "type": "module",
@@ -14,18 +14,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./ontos": {
-      "types": "./dist/ontos/core.d.ts",
-      "import": "./dist/ontos/core.js"
-    },
-    "./ontos-codec": {
-      "types": "./dist/ontos/codec.d.ts",
-      "import": "./dist/ontos/codec.js"
-    },
-    "./ontos-data": {
-      "types": "./dist/ontos/data.d.ts",
-      "import": "./dist/ontos/data.js"
     },
     "./conformance": {
       "types": "./dist/conformance.d.ts",
@@ -46,5 +34,10 @@
   "scripts": {
     "check": "tsc -p tsconfig.check.json",
     "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@bitspark/ontos-codec": "0.16.0",
+    "@bitspark/ontos-wire": "0.16.0",
+    "@bitspark/ontos-core": "0.16.0"
   }
 }

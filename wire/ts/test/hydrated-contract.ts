@@ -1,4 +1,4 @@
-import { atom, tuple } from '../src/index.js';
+import { atom, tuple } from '@bitspark/ontos-core';
 import type { Wire, HydratedValue, HydratedWire, HydratedTuple, HydratedEndpoint, Termination } from '../src/index.js';
 const ground: HydratedValue = tuple([atom([0, 255])]);
 export function nativeSurface(endpoint: HydratedEndpoint, raw: Wire): void {

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	core "github.com/Bitspark/bitwire/ontos/go/core"
+	core "github.com/bitspark/ontos/core/go"
 	wire "github.com/Bitspark/bitwire/wire/go"
 )
 

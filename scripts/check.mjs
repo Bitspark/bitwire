@@ -4,7 +4,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const run = (cmd, args) => execFileSync(cmd, args, { cwd: root, stdio: 'inherit' });
 run(process.execPath, ['scripts/links.mjs']);
 run(process.execPath, ['scripts/independence.mjs']);
-const formatted = execFileSync('gofmt', ['-l', 'wire/go', 'ontos/go'], { cwd: root, encoding: 'utf8' });
+const formatted = execFileSync('gofmt', ['-l', 'wire/go'], { cwd: root, encoding: 'utf8' });
 if (formatted.trim()) throw new Error('Unformatted Go sources: ' + formatted);
 run('go', ['vet', './...']);
 run('go', ['test', './...']);

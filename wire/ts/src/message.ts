@@ -1,6 +1,6 @@
 // Canonical raw messages and the separate addressed representation.
-import { Atom, Tuple, atom, tuple, assertValue, type Value } from './ontos/core.js';
-import { encode, decode } from './ontos/codec.js';
+import { Atom, Tuple, atom, tuple, assertValue, type Value } from '@bitspark/ontos-core';
+import { encode, decode } from '@bitspark/ontos-codec';
 import type { Path } from './index.js';
 
 const addressedVersion = atom(new TextEncoder().encode('bitwire/addressed/1'));

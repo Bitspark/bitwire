@@ -1,5 +1,5 @@
 // Pure bitwire/hydrated/1 data and grammar. Live endpoints and registries belong to bitruntime.
-import { Atom, Tuple, atom, tuple, type Value } from './ontos/core.js';
+import { Atom, Tuple, atom, tuple, type Value } from '@bitspark/ontos-core';
 import { capturePath } from './message.js';
 import type { Path } from './index.js';
 

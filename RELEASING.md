@@ -3,7 +3,7 @@
 Use a reviewed green PR, squash to main, synchronize the primary checkout, and
 hold all eight package versions to the candidate. Run release-prepare, core
 checks, native packaged consumers and smoke-packed. Dispatch release.yml with
-the candidate tag (for this release, v0.6.0) and provenance true on the exact main commit; this rehearsal never
+the candidate tag (for this release, v0.7.0) and provenance true on the exact main commit; this rehearsal never
 publishes. Only after success create the annotated immutable vX.Y.Z tag and push
 it. The tag workflow requires the successful exact-commit rehearsal, publishes
 npm with provenance and the crate, verifies fresh public npm/Go installation,

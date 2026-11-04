@@ -39,7 +39,7 @@ func main() {
   writeFileSync(join(versions, `${rehearsalVersion}.mod`), readFileSync(join(root, 'go.mod')));
   writeJSON(join(versions, `${rehearsalVersion}.info`), { Version: rehearsalVersion, Time: output('git', ['show', '-s', '--format=%cI', 'HEAD']) });
   writeFileSync(join(versions, 'list'), rehearsalVersion + '\n');
-  checkGoConsumer(join(directory, 'go-consumer'), rehearsalVersion, { GOPROXY: pathToFileURL(proxy).href, GOSUMDB: 'off' });
+  checkGoConsumer(join(directory, 'go-consumer'), rehearsalVersion, { GOPROXY: `${pathToFileURL(proxy).href},https://proxy.golang.org`, GONOSUMDB: moduleName });
   console.log(`Packed npm and Go consumers passed outside the checkout (${artifact.integrity}).`);
 } finally {
   cleanup(directory);

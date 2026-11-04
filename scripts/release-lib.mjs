@@ -100,22 +100,20 @@ export function pack(directory) {
 export function checkNpmConsumer(directory, dependency) {
   mkdirSync(directory, { recursive: true });
   const compilerVersion = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).devDependencies.typescript;
-  writeJSON(join(directory, 'package.json'), { name: 'bitwire-package-consumer', private: true, type: 'module', dependencies: { [manifest.name]: dependency }, devDependencies: { typescript: compilerVersion } });
+  writeJSON(join(directory, 'package.json'), { name: 'bitwire-package-consumer', private: true, type: 'module', dependencies: { [manifest.name]: dependency, '@bitspark/ontos-core': '0.16.0', '@bitspark/ontos-codec': '0.16.0', '@bitspark/ontos-data': '0.16.0', '@bitspark/ontos-wire': '0.16.0' }, devDependencies: { typescript: compilerVersion } });
   npm(['install', '--ignore-scripts', '--no-audit', '--no-fund', '--registry', npmRegistry, `--@bitspark:registry=${npmRegistry}`], { cwd: directory });
   const installed = join(directory, 'node_modules/@bitspark/bitwire');
   if (!realpathSync(installed).startsWith(realpathSync(directory) + sep)) throw new Error('Consumer resolved a checkout link.');
   const actual = JSON.parse(readFileSync(join(installed, 'package.json'), 'utf8'));
   if (actual.version !== version) throw new Error(`Consumer installed ${actual.version}, expected ${version}.`);
   writeJSON(join(directory, 'tsconfig.json'), { compilerOptions: { target: 'ES2022', module: 'NodeNext', strict: true, skipLibCheck: false, outDir: 'dist' }, include: ['index.ts'] });
-  writeFileSync(join(directory, 'index.ts'), `import { atom, tuple, encodeMessage, decodeMessage, packAddressed, unpackAddressed,
-  HydratedDataAtom, HydratedDataTuple, HydratedReference, packHydratedBody, unpackHydratedBody,
-  packHydratedFrame, unpackHydratedFrame, packHydratedReference, unpackHydratedReference,
-  hydratedDataFromGround, hydratedDataToGround } from '@bitspark/bitwire';
+  writeFileSync(join(directory, 'index.ts'), `import { atom, tuple } from '@bitspark/ontos-core';
+import { encodeMessage, decodeMessage, packAddressed, unpackAddressed, HydratedDataAtom, HydratedDataTuple, HydratedReference, packHydratedBody, unpackHydratedBody, packHydratedFrame, unpackHydratedFrame, packHydratedReference, unpackHydratedReference, hydratedDataFromGround, hydratedDataToGround } from '@bitspark/bitwire';
 import type { HydratedData, HydratedCodecLimits, HydratedFrame } from '@bitspark/bitwire';
 import type { Wire, Endpoint, AddressedEndpoint, WireNode, Path } from '@bitspark/bitwire';
-import { Atom } from '@bitspark/bitwire/ontos';
-import { encodeText } from '@bitspark/bitwire/ontos-data';
-import { encode } from '@bitspark/bitwire/ontos-codec';
+import { Atom } from '@bitspark/ontos-core';
+import { encodeText } from '@bitspark/ontos-data';
+import { encode } from '@bitspark/ontos-codec';
 const path: Path = [atom([0,255])];
 const message = tuple([encodeText('unknown')]);
 const framed = packAddressed(path, message);
@@ -146,7 +144,7 @@ export function checkGoConsumer(directory, requiredVersion, environment = {}) {
 import (
   "fmt"
   wire "github.com/Bitspark/bitwire/wire/go"
-  core "github.com/Bitspark/bitwire/ontos/go/core"
+  core "github.com/bitspark/ontos/core/go"
 )
 func main() {
   message:=core.NewTuple(); e,err:=wire.PackAddressed(wire.Path{core.NewAtom([]byte{0,255})},message);if err!=nil {panic(err)}

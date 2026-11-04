@@ -14,6 +14,7 @@ function scan(path) {
 }
 scan('wire');
 const npm=JSON.parse(readFileSync('wire/ts/package.json','utf8'));
-assert.deepEqual(npm.dependencies ?? {}, {});
+assert.deepEqual(Object.keys(npm.dependencies ?? {}).sort(), ['@bitspark/ontos-codec', '@bitspark/ontos-core', '@bitspark/ontos-wire']);
+assert.ok(Object.values(npm.dependencies).every(v => v === '0.16.0'));
 assert.doesNotMatch(readFileSync('go.mod','utf8'), /^replace\s/m);
 console.log('Generic contract is independent of runtime, legacy profiles and private dependencies.');

@@ -1,7 +1,7 @@
 // Package wire declares addressless interaction and addressed access.
 package wire
 
-import core "github.com/Bitspark/bitwire/ontos/go/core"
+import core "github.com/bitspark/ontos/core/go"
 
 type Path []core.Atom
 type Termination struct {
