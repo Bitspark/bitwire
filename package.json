@@ -3,12 +3,23 @@
   "private": true,
   "license": "Apache-2.0",
   "packageManager": "pnpm@12.4.1",
-  "engines": { "node": ">=24.0.0" },
-  "repository": { "type": "git", "url": "git+https://github.com/Bitspark/bitwire.git" },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bitspark/bitwire.git"
+  },
   "scripts": {
     "check": "node scripts/check.mjs",
     "build": "tsc -p wire/ts/tsconfig.build.json",
     "smoke:packed": "node scripts/smoke-packed.mjs"
   },
-  "devDependencies": { "typescript": "7.0.2" }
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "@bitspark/ontos-core": "0.16.0",
+    "@bitspark/ontos-codec": "0.16.0",
+    "@bitspark/ontos-data": "0.16.0",
+    "@bitspark/ontos-wire": "0.16.0"
+  }
 }

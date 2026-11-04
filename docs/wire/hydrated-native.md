@@ -2,7 +2,7 @@
 
 Decision [0019](../decisions/0019-hydrated-wire-protocol.md) is implemented by the
 public declarations in all eight presentations. These declarations add a live
-value boundary above ground Wire; they do not extend Ontos or change a carrier.
+value boundary above ground Wire; they do not extend ground ontos or change a carrier.
 The executable codec and a conforming runtime are separately qualified artifacts.
 
 `HydratedValue` contains exact atoms, finite immutable tuples and opaque
@@ -12,6 +12,12 @@ the ordinary ground tuple if there is no wire beneath it. It performs no sends.
 A foreign container, a cyclic tuple or an arbitrary object with a send method is
 not thereby an admissible value. The runtime recognizes capabilities it owns or
 has imported; native interface conformance is not evidence of that recognition.
+Go and TypeScript obtain this structure from the optional `ontos/wire` compact
+native realization. A runtime-private factory supplies only leaf recognition
+and owner-to-face projection; another factory's tuples carry no qualification
+under that runtime. Native construction retains its shallow cost and existing
+runtime bounds. Explicit Deixis conversion has separate structural budgets and
+is not inserted into the send path.
 
 `HydratedWire` grants only `send(value)`. `HydratedEndpoint` additionally owns one
 receive attachment and closure, exposes its sending face, and observes the same

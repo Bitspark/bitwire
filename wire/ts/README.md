@@ -5,7 +5,7 @@ closure. AddressedWire adds an exact byte-path argument; AddressedEndpoint carri
 that layer over one endpoint. WireNode is the complete deixis structure over Wire
 values (a nominal interface in Java), not opaque route access.
 
-See the repository's docs/wire/contract.md and docs/wire/carriers.md. Version 0.5.0
+See the repository's docs/wire/contract.md and docs/wire/carriers.md. Version 0.7.0
 is a clean breaking replacement; compilation and packaged consumers check the
 native surface, while bitruntime supplies independently tested implementations.
 
@@ -17,3 +17,7 @@ finite immutable tuples, ground canonicalization and owned capability identity;
 implementing a native interface alone does not make a foreign object exportable.
 See [hydrated native contracts](../../docs/wire/hydrated-native.md) and
 [decision 0019](../../docs/decisions/0019-hydrated-wire-protocol.md).
+
+Ground classes and codec functions are imported from the public ontos packages.
+The optional @bitspark/ontos-wire/native owns mixed tuple structure; the runtime
+qualifies live leaves. Removed mirror subpaths and ground re-exports have no aliases.

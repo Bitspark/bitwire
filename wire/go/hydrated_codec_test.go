@@ -8,8 +8,8 @@ import (
 	"reflect"
 	"testing"
 
-	core "github.com/Bitspark/bitwire/ontos/go/core"
 	wire "github.com/Bitspark/bitwire/wire/go"
+	core "github.com/bitspark/ontos/core/go"
 )
 
 var codecLimits = wire.HydratedCodecLimits{Nodes: 10000, Depth: 100, Bytes: 1000000}

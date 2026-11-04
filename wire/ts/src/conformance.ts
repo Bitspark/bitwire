@@ -1,5 +1,6 @@
 // Consumer-supplied endpoints are judged by contract-owned observations.
-import { atom, tuple, pathEqual, type Endpoint, type Value, type Path, type AddressedEndpoint } from './index.js';
+import { atom, tuple, type Value } from '@bitspark/ontos-core';
+import { pathEqual, type Endpoint, type Path, type AddressedEndpoint } from './index.js';
 export interface PairLimits { maxMessageBytes?: number; maxQueuedBytes?: number; maxQueuedMessages?: number }
 export type PairFactory = (limits?: PairLimits) => readonly [Endpoint, Endpoint];
 function check(value: unknown, message: string): void { if (!value) throw new Error(message); }

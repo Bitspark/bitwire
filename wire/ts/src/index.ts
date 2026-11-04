@@ -1,7 +1,5 @@
 // Layered interaction contracts. Runtime implementations belong to bitruntime.
-import type { Atom, Value } from './ontos/core.js';
-export { Atom, Tuple, atom, tuple, equals, isValue } from './ontos/core.js';
-export type { Value, BytesLike } from './ontos/core.js';
+import type { Atom, Value } from '@bitspark/ontos-core';
 export { encodeMessage, decodeMessage, packAddressed, unpackAddressed, capturePath, pathEqual, pathStartsWith,
   MAX_MESSAGE_DEPTH, DEFAULT_MAX_MESSAGE_BYTES, WEBSOCKET_PROTOCOL } from './message.js';
 export type Path = readonly Atom[];

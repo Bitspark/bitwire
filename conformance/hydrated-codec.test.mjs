@@ -1,12 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import {
-  Atom, Tuple, atom, tuple, encodeMessage, decodeMessage, packAddressed, unpackAddressed,
-  HydratedDataAtom, HydratedDataTuple, HydratedReference, HydratedCodecError,
-  hydratedDataFromGround, hydratedDataToGround, packHydratedBody, unpackHydratedBody,
-  packHydratedReference, unpackHydratedReference, packHydratedFrame, unpackHydratedFrame,
-} from '../wire/ts/dist/index.js';
+import { Atom, Tuple, atom, tuple } from '@bitspark/ontos-core';
+import { encodeMessage, decodeMessage, packAddressed, unpackAddressed, HydratedDataAtom, HydratedDataTuple, HydratedReference, HydratedCodecError, hydratedDataFromGround, hydratedDataToGround, packHydratedBody, unpackHydratedBody, packHydratedReference, unpackHydratedReference, packHydratedFrame, unpackHydratedFrame } from '../wire/ts/dist/index.js';
 
 const vectors = JSON.parse(readFileSync(new URL('./hydrated-vectors.json', import.meta.url)));
 const limits = { nodes: 10000, depth: 100, bytes: 1000000 };

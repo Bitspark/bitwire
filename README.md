@@ -35,12 +35,15 @@ and lists the protocols and evidence still missing from the released foundation.
 The hydrated layer adds recursive values containing live sending capabilities.
 Its [native contracts](docs/wire/hydrated-native.md) are available across all
 eight presentations. Go and TypeScript provide the [pure codec](docs/wire/hydrated-codec.md)
-for `bitwire/hydrated/1`; bitruntime supplies live construction, exports, proxies
-and owner lifetimes. See the [0.6.0 change record](docs/releases/0.6.0.md).
+for `bitwire/hydrated/1`; bitruntime supplies recognition, exports, proxies
+and owner lifetimes. Go and TypeScript specialize the shared `ontos/wire`
+native model. See the [migration record](docs/releases/0.7.0.md).
 
-The [checked ontos mirror](ontos/README.md) pins v0.9.0 with reversible import
-adaptations, hashes and vectors. TypeScript /ontos, /ontos-codec and /ontos-data
-share one value family; optional data embeddings do not restrict raw messages.
+Go and TypeScript use the public ontos 0.16.0 packages directly. Import ground
+types from `@bitspark/ontos-core`, encoding from `@bitspark/ontos-codec` and data
+embeddings from `@bitspark/ontos-data`; the copied implementations and bitwire
+re-exports are removed. The [remaining checked mirror](ontos/README.md) retains
+its independent v0.9.0 vectors and sources for other language presentations.
 Eight native presentations live in wire/{go,ts,py,rs,swift,cpp,java,hs}.
 The [language matrix](docs/languages.md) distinguishes declarations from runtime
 conformance.

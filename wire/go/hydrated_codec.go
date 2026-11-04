@@ -3,7 +3,7 @@ package wire
 import (
 	"errors"
 
-	core "github.com/Bitspark/bitwire/ontos/go/core"
+	core "github.com/bitspark/ontos/core/go"
 )
 
 // HydratedCodecLimits bounds semantic nodes, tuple depth (root zero), and both

@@ -1,2 +1,7 @@
 packages:
   - wire/ts
+minimumReleaseAgeExclude:
+  - '@bitspark/ontos-codec@0.16.0'
+  - '@bitspark/ontos-core@0.16.0'
+  - '@bitspark/ontos-data@0.16.0'
+  - '@bitspark/ontos-wire@0.16.0'

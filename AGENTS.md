@@ -14,8 +14,10 @@ Changes to these boundaries must name the charter invariant and amend the
 contract explicitly; consumer implementations do not amend deixis by implication.
 
 Keep published contracts independent of bitruntime and generators. Runtime Wire
-implementations belong in bitruntime. Preserve the pinned ontos consumer mirror;
-change the whole release pin/vectors/checks together, never its value semantics.
+implementations belong in bitruntime. Go and TypeScript use the public ontos
+packages and optional wire value model; keep one ground value family. Other
+presentations retain their pinned consumer mirror. Update dependency pins and
+qualification together, never the frozen value or codec semantics.
 Align all eight presentations and independent observations. Compilation is not
 runtime conformance. Use component-first two-letter language directories.
 
