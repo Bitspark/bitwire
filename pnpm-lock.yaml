@@ -166,13 +166,53 @@ importers:
 
   .:
     devDependencies:
+      '@bitspark/ontos-codec':
+        specifier: 0.16.0
+        version: 0.16.0
+      '@bitspark/ontos-core':
+        specifier: 0.16.0
+        version: 0.16.0
+      '@bitspark/ontos-data':
+        specifier: 0.16.0
+        version: 0.16.0
+      '@bitspark/ontos-wire':
+        specifier: 0.16.0
+        version: 0.16.0
       typescript:
         specifier: 7.0.2
         version: 7.0.2
 
-  wire/ts: {}
+  wire/ts:
+    dependencies:
+      '@bitspark/ontos-codec':
+        specifier: 0.16.0
+        version: 0.16.0
+      '@bitspark/ontos-core':
+        specifier: 0.16.0
+        version: 0.16.0
+      '@bitspark/ontos-wire':
+        specifier: 0.16.0
+        version: 0.16.0
 
 packages:
+
+  '@bitspark/deixis-core@0.6.0':
+    resolution: {integrity: sha512-NozhLN14Pa7F8SwBRuZ8uwVp50S1h1DHhG0F/bnU3pUVE60A4HJisHaAxFaMDbDY3KGfLHbeEzxlUAK8s/QEWg==}
+
+  '@bitspark/deixis-pos@0.6.0':
+    resolution: {integrity: sha512-cHHaGfeVhV2WY94696LbmQAu5iKwLZ14brkZbRO1ZGCQgNYQZEIDe32RkcFu0TmMmX5R0MzYDHFtomDvX+x0Gw==}
+
+  '@bitspark/ontos-codec@0.16.0':
+    resolution: {integrity: sha512-IwKFL4nrBRFfdlzCxu2i7nPHO+3+HHoqcgU6yyt5gYnq2BoPjr9vo8j4cuElJtfotGCAfh3L2xR8VMjDEdKXyg==}
+
+  '@bitspark/ontos-core@0.16.0':
+    resolution: {integrity: sha512-23AlUWmQMwZrKNaneMKnepzLViRM+PiSbgkY4ycjqELvj2ibO7HQLNIwKS7xpRmTbjoU2UCuOiGa/MLwRSIEog==}
+
+  '@bitspark/ontos-data@0.16.0':
+    resolution: {integrity: sha512-2QfmGMzYtuV35f03l291Z2ssTX6UqQvcoavl22iSQuFv8O9g6RqAbeNFFZPBRiHOWNGbI6NVcRLGIXaROj1LBg==}
+
+  '@bitspark/ontos-wire@0.16.0':
+    resolution: {integrity: sha512-0mbjbl1Lw5gdxw8iFxebRzrcAQde/vZZ0XWIjhgFi+zNHfXdaCQmIES1DUk83+nK3McwH+n4cfQv3PduoRncKA==}
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     resolution: {integrity: sha512-MTKKkWB7p/0E9xi1d1tHtZ5PiLkGEMIq88pK2CubZjOsLtYTLqhgIgi6zepFa+9GHZ6h05NMCkQxGKiPXMxXtQ==}
@@ -300,6 +340,27 @@ packages:
     hasBin: true
 
 snapshots:
+
+  '@bitspark/deixis-core@0.6.0': {}
+
+  '@bitspark/deixis-pos@0.6.0': {}
+
+  '@bitspark/ontos-codec@0.16.0':
+    dependencies:
+      '@bitspark/ontos-core': 0.16.0
+
+  '@bitspark/ontos-core@0.16.0': {}
+
+  '@bitspark/ontos-data@0.16.0':
+    dependencies:
+      '@bitspark/ontos-codec': 0.16.0
+      '@bitspark/ontos-core': 0.16.0
+
+  '@bitspark/ontos-wire@0.16.0':
+    dependencies:
+      '@bitspark/deixis-core': 0.6.0
+      '@bitspark/deixis-pos': 0.6.0
+      '@bitspark/ontos-core': 0.16.0
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     optional: true
