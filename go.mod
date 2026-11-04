@@ -6,3 +6,5 @@ require (
 	github.com/bitspark/ontos v0.16.0
 	github.com/bitspark/ontos/wire/go v0.16.0
 )
+
+require github.com/bitspark/deixis v0.6.0 // indirect
