@@ -167,8 +167,8 @@ importers:
   .:
     devDependencies:
       '@bitspark/ontos-codec':
-        specifier: 0.16.0
-        version: 0.16.0
+        specifier: 0.17.1
+        version: 0.17.1
       '@bitspark/ontos-core':
         specifier: 0.16.0
         version: 0.16.0
@@ -185,8 +185,8 @@ importers:
   wire/ts:
     dependencies:
       '@bitspark/ontos-codec':
-        specifier: 0.16.0
-        version: 0.16.0
+        specifier: 0.17.1
+        version: 0.17.1
       '@bitspark/ontos-core':
         specifier: 0.16.0
         version: 0.16.0
@@ -205,8 +205,16 @@ packages:
   '@bitspark/ontos-codec@0.16.0':
     resolution: {integrity: sha512-IwKFL4nrBRFfdlzCxu2i7nPHO+3+HHoqcgU6yyt5gYnq2BoPjr9vo8j4cuElJtfotGCAfh3L2xR8VMjDEdKXyg==}
 
+  '@bitspark/ontos-codec@0.17.1':
+    resolution: {integrity: sha512-mp1QNSBNwdt4TYK6C5llDE3QPZkiG1SmYX9HnCtxGtZUjr5LklsnUn8iqlAhpIN9t0nUiO+dwuWqt/fdXgJ73A==}
+    engines: {node: '>=18.3.0'}
+
   '@bitspark/ontos-core@0.16.0':
     resolution: {integrity: sha512-23AlUWmQMwZrKNaneMKnepzLViRM+PiSbgkY4ycjqELvj2ibO7HQLNIwKS7xpRmTbjoU2UCuOiGa/MLwRSIEog==}
+
+  '@bitspark/ontos-core@0.17.1':
+    resolution: {integrity: sha512-y/LVjrakJVgUJOeRShBn9VBnt9NTBbgS0YM87VTvWtma/4r5rA6jZyNzSFz8RV6hY2Y2ZLRt4tECxSzJ7vo2PQ==}
+    engines: {node: '>=18.3.0'}
 
   '@bitspark/ontos-data@0.16.0':
     resolution: {integrity: sha512-2QfmGMzYtuV35f03l291Z2ssTX6UqQvcoavl22iSQuFv8O9g6RqAbeNFFZPBRiHOWNGbI6NVcRLGIXaROj1LBg==}
@@ -349,7 +357,13 @@ snapshots:
     dependencies:
       '@bitspark/ontos-core': 0.16.0
 
+  '@bitspark/ontos-codec@0.17.1':
+    dependencies:
+      '@bitspark/ontos-core': 0.17.1
+
   '@bitspark/ontos-core@0.16.0': {}
+
+  '@bitspark/ontos-core@0.17.1': {}
 
   '@bitspark/ontos-data@0.16.0':
     dependencies:

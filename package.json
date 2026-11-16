@@ -18,7 +18,7 @@
   "devDependencies": {
     "typescript": "7.0.2",
     "@bitspark/ontos-core": "0.16.0",
-    "@bitspark/ontos-codec": "0.16.0",
+    "@bitspark/ontos-codec": "0.17.1",
     "@bitspark/ontos-data": "0.16.0",
     "@bitspark/ontos-wire": "0.16.0"
   }
