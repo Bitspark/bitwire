@@ -170,8 +170,8 @@ importers:
         specifier: 0.16.0
         version: 0.16.0
       '@bitspark/ontos-core':
-        specifier: 0.16.0
-        version: 0.16.0
+        specifier: 0.17.1
+        version: 0.17.1
       '@bitspark/ontos-data':
         specifier: 0.16.0
         version: 0.16.0
@@ -188,8 +188,8 @@ importers:
         specifier: 0.16.0
         version: 0.16.0
       '@bitspark/ontos-core':
-        specifier: 0.16.0
-        version: 0.16.0
+        specifier: 0.17.1
+        version: 0.17.1
       '@bitspark/ontos-wire':
         specifier: 0.16.0
         version: 0.16.0
@@ -207,6 +207,10 @@ packages:
 
   '@bitspark/ontos-core@0.16.0':
     resolution: {integrity: sha512-23AlUWmQMwZrKNaneMKnepzLViRM+PiSbgkY4ycjqELvj2ibO7HQLNIwKS7xpRmTbjoU2UCuOiGa/MLwRSIEog==}
+
+  '@bitspark/ontos-core@0.17.1':
+    resolution: {integrity: sha512-y/LVjrakJVgUJOeRShBn9VBnt9NTBbgS0YM87VTvWtma/4r5rA6jZyNzSFz8RV6hY2Y2ZLRt4tECxSzJ7vo2PQ==}
+    engines: {node: '>=18.3.0'}
 
   '@bitspark/ontos-data@0.16.0':
     resolution: {integrity: sha512-2QfmGMzYtuV35f03l291Z2ssTX6UqQvcoavl22iSQuFv8O9g6RqAbeNFFZPBRiHOWNGbI6NVcRLGIXaROj1LBg==}
@@ -350,6 +354,8 @@ snapshots:
       '@bitspark/ontos-core': 0.16.0
 
   '@bitspark/ontos-core@0.16.0': {}
+
+  '@bitspark/ontos-core@0.17.1': {}
 
   '@bitspark/ontos-data@0.16.0':
     dependencies:
