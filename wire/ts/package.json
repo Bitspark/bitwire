@@ -36,7 +36,7 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@bitspark/ontos-codec": "0.16.0",
+    "@bitspark/ontos-codec": "0.17.1",
     "@bitspark/ontos-wire": "0.16.0",
     "@bitspark/ontos-core": "0.16.0"
   }
