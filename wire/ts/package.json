@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "@bitspark/ontos-codec": "0.16.0",
-    "@bitspark/ontos-wire": "0.16.0",
+    "@bitspark/ontos-wire": "0.17.1",
     "@bitspark/ontos-core": "0.16.0"
   }
 }
