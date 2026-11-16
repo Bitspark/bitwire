@@ -176,8 +176,8 @@ importers:
         specifier: 0.16.0
         version: 0.16.0
       '@bitspark/ontos-wire':
-        specifier: 0.16.0
-        version: 0.16.0
+        specifier: 0.17.1
+        version: 0.17.1
       typescript:
         specifier: 7.0.2
         version: 7.0.2
@@ -191,8 +191,8 @@ importers:
         specifier: 0.16.0
         version: 0.16.0
       '@bitspark/ontos-wire':
-        specifier: 0.16.0
-        version: 0.16.0
+        specifier: 0.17.1
+        version: 0.17.1
 
 packages:
 
@@ -208,11 +208,16 @@ packages:
   '@bitspark/ontos-core@0.16.0':
     resolution: {integrity: sha512-23AlUWmQMwZrKNaneMKnepzLViRM+PiSbgkY4ycjqELvj2ibO7HQLNIwKS7xpRmTbjoU2UCuOiGa/MLwRSIEog==}
 
+  '@bitspark/ontos-core@0.17.1':
+    resolution: {integrity: sha512-y/LVjrakJVgUJOeRShBn9VBnt9NTBbgS0YM87VTvWtma/4r5rA6jZyNzSFz8RV6hY2Y2ZLRt4tECxSzJ7vo2PQ==}
+    engines: {node: '>=18.3.0'}
+
   '@bitspark/ontos-data@0.16.0':
     resolution: {integrity: sha512-2QfmGMzYtuV35f03l291Z2ssTX6UqQvcoavl22iSQuFv8O9g6RqAbeNFFZPBRiHOWNGbI6NVcRLGIXaROj1LBg==}
 
-  '@bitspark/ontos-wire@0.16.0':
-    resolution: {integrity: sha512-0mbjbl1Lw5gdxw8iFxebRzrcAQde/vZZ0XWIjhgFi+zNHfXdaCQmIES1DUk83+nK3McwH+n4cfQv3PduoRncKA==}
+  '@bitspark/ontos-wire@0.17.1':
+    resolution: {integrity: sha512-U6nHCUFrwv87ynbaYwq5c4Ymqe+ohOOyXg0wu1di9kdnG2yPO024JASLy00rKPaCabY5pmsjYn5kq5i4tIdFWw==}
+    engines: {node: '>=18.3.0'}
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     resolution: {integrity: sha512-MTKKkWB7p/0E9xi1d1tHtZ5PiLkGEMIq88pK2CubZjOsLtYTLqhgIgi6zepFa+9GHZ6h05NMCkQxGKiPXMxXtQ==}
@@ -351,16 +356,18 @@ snapshots:
 
   '@bitspark/ontos-core@0.16.0': {}
 
+  '@bitspark/ontos-core@0.17.1': {}
+
   '@bitspark/ontos-data@0.16.0':
     dependencies:
       '@bitspark/ontos-codec': 0.16.0
       '@bitspark/ontos-core': 0.16.0
 
-  '@bitspark/ontos-wire@0.16.0':
+  '@bitspark/ontos-wire@0.17.1':
     dependencies:
       '@bitspark/deixis-core': 0.6.0
       '@bitspark/deixis-pos': 0.6.0
-      '@bitspark/ontos-core': 0.16.0
+      '@bitspark/ontos-core': 0.17.1
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     optional: true
